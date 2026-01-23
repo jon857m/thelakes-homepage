@@ -76,9 +76,13 @@ a{color:inherit}
   align-items:flex-end;
   padding: 56px 0;
   background:
-    linear-gradient(180deg, rgba(15,16,9,0.15), rgba(15,16,9,0.85)),
-    url("./assets/logo.jpg") center/cover no-repeat; /* placeholder: swap later for a proper hero photo */
-}
+  linear-gradient(
+    180deg,
+    rgba(15,16,9,0.25) 0%,
+    rgba(15,16,9,0.55) 40%,
+    rgba(15,16,9,0.90) 100%
+  ),
+  url("./assets/hero1.jpg") center/cover no-repeat;
 .hero__overlay{
   position:absolute; inset:0;
   background: radial-gradient(900px 500px at 20% 20%, rgba(234,182,121,0.22), transparent 60%);
@@ -100,6 +104,7 @@ h1{
   line-height: 1.05;
   margin: 14px 0 12px;
   letter-spacing: -0.8px;
+  color: #F6F2E7;
 }
 .subhead{font-size: 17px; color: var(--muted); max-width: 62ch}
 .hero__note{margin-top: 14px; color: var(--muted); font-size: 13.5px}

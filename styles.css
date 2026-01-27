@@ -63,12 +63,21 @@ a{color:inherit}
 }
 .mobileNav {
   display: none;               /* hidden by default */
+  position: absolute;          /* KEY: removes it from flow so it won't push the page */
+  left: 0;
+  right: 0;
+  top: 100%;                   /* sits directly below the header bar */
+  z-index: 9999;
+
   border-top: 1px solid var(--border);
   padding: 10px 10px 14px;
   flex-direction: column;
   gap: 10px;
+  background: rgba(25,26,15,0.65);   /* matches header feel (no colour scheme change) */
+  backdrop-filter: blur(10px);
 }
-.mobileNav.open {display: flex;}
+
+.mobileNav.open { display: flex; }
 .mobileNav a{color:var(--muted); font-weight:800; text-decoration:none}
 .mobileNav a:hover{color:var(--cloud)}
 

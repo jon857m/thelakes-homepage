@@ -250,3 +250,43 @@ input:focus{border-color: rgba(234,182,121,0.55)}
   .menuBtn{display:inline-flex}
   input{min-width: 220px}
 }
+
+/* --- Overlay dropdown (stop pushing page down) --- */
+
+/* Make sure the header sits above the hero */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+}
+
+/* Force the menu panel to be removed from page flow */
+.mobileMenu,
+.navMenu,
+.dropdown,
+.nav-links {
+  position: fixed !important;     /* fixed = overlays the page */
+  left: 0;
+  right: 0;
+  top: 72px;                      /* adjust if your header is taller/shorter */
+  z-index: 2100;
+  margin: 0 !important;
+}
+
+/* Keep your nice open/close animation */
+.mobileMenu,
+.navMenu,
+.dropdown,
+.nav-links {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 220ms ease;
+}
+
+/* When open, show it */
+.nav-open .mobileMenu,
+.nav-open .navMenu,
+.nav-open .dropdown,
+.nav-open .nav-links {
+  max-height: 60vh;
+}

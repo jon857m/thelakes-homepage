@@ -47,16 +47,3 @@ form?.addEventListener("submit", async (e) => {
     btn.textContent = "Notify me";
   }
 });
-
-document.addEventListener("DOMContentLoaded", () => {
-  const menuBtn = document.getElementById("menuToggle");
-  const mobileNav = document.getElementById("mobileNav");
-
-  if (!menuBtn || !mobileNav) return;
-
-  menuBtn.addEventListener("click", () => {
-    const isOpen = mobileNav.classList.toggle("open");
-    mobileNav.hidden = !isOpen;
-    menuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-  });
-});

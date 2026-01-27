@@ -53,7 +53,7 @@ a{color:inherit}
 .nav a{color:var(--muted); font-weight:700; font-size:14px; text-decoration:none}
 .nav a:hover{color:var(--cloud)}
 
-.menuBtn{
+.menu-toggle{
   display:none;
   border:1px solid var(--border);
   background: var(--panel);
@@ -236,6 +236,6 @@ input:focus{border-color: rgba(234,182,121,0.55)}
 }
 @media (max-width: 760px){
   .nav{display:none}
-  .menuBtn{display:inline-flex}
+  .menu-toggle{display:inline-flex}
   input{min-width: 220px}
 }

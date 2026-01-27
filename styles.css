@@ -243,4 +243,10 @@ input:focus{border-color: rgba(234,182,121,0.55)}
   .nav{display:none}
   .menuBtn{display:inline-flex}
   input{min-width: 220px}
+
+  /* HERO IMAGE – shift left on iOS */
+  .hero img{
+    object-fit: cover;
+    object-position: 25% center;
+  }
 }

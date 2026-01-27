@@ -12,6 +12,7 @@ menuBtn?.addEventListener("click", () => {
 const form = document.getElementById("signupForm");
 const note = document.getElementById("formNote");
 const btn = document.getElementById("signupBtn");
+const SIGNUP_ENDPOINT = "https://script.google.com/macros/s/AKfycbz8IcuYG6IdA8qYab1gbSqnPL5ctuNr3NgLvD1e0_fE7RfuQyWKNw7xF6JuFVQbs8ix/execPASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE";
 
 form?.addEventListener("submit", async (e) => {
   e.preventDefault();

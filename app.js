@@ -9,55 +9,56 @@ menuBtn?.addEventListener("click", () => {
   else mobileNav.setAttribute("hidden", "");
 });
 
-const form = document.getElementById("signupForm");
-const note = document.getElementById("formNote");
-const btn = document.getElementById("signupBtn");
-const SIGNUP_ENDPOINT = "https://script.google.com/macros/s/AKfycbz8IcuYG6IdA8qYab1gbSqnPL5ctuNr3NgLvD1e0_fE7RfuQyWKNw7xF6JuFVQbs8ix/execPASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE";
-
-form?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const email = (document.getElementById("email").value || "").trim();
-  if (!email) return;
-
-  try {
-    btn.disabled = true;
-    btn.textContent = "Sending…";
-
-    // This will work once we add the Cloudflare Worker endpoint /api/signup
-    const r = await fetch("/api/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, source: "homepage" })
-    });
-
-    const data = await r.json().catch(() => ({}));
-
-    if (!r.ok || !data.ok) {
-      note.textContent = "Sorry — something went wrong. Please try again in a minute.";
-      btn.disabled = false;
-      btn.textContent = "Notify me";
-      return;
-    }
-
-    note.textContent = "Thanks — you’re on the list ✅";
-    form.reset();
-    btn.textContent = "Added";
-  } catch (err) {
-    note.textContent = "Sorry — something went wrong. Please try again in a minute.";
-    btn.disabled = false;
-    btn.textContent = "Notify me";
-  }
-});
+const SIGNUP_ENDPOINT = "https://script.google.com/macros/s/AKfycbz8IcuYG6IdA8qYab1gbSqnPL5ctuNr3NgLvD1e0_fE7RfuQyWKNw7xF6JuFVQbs8ix/exec";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("menuToggle");
-  const nav = document.getElementById("mobileNav");
+  const form = document.getElementById("signupForm");
+  const note = document.getElementById("signupMsg");
+  const btn  = document.getElementById("signupBtn");
+  const emailInput = document.getElementById("email");
 
-  if (!btn || !nav) return;
+  if (!form || !note || !btn || !emailInput) {
+    console.log("Signup form elements missing");
+    return;
+  }
 
-  btn.addEventListener("click", () => {
-    const isOpen = nav.classList.toggle("open");
-    btn.setAttribute("aria-expanded", String(isOpen));
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = emailInput.value.trim();
+    if (!email) return;
+
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+    note.textContent = "Submitting…";
+
+    try {
+      const r = await fetch(SIGNUP_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          source: "get-updates",
+          ua: navigator.userAgent
+        })
+      });
+
+      const data = await r.json();
+
+      note.textContent = data.message || "Please check your email to verify.";
+      if (data.ok) {
+        form.reset();
+        btn.textContent = "Sent ✓";
+      } else {
+        btn.disabled = false;
+        btn.textContent = "Notify me";
+      }
+
+    } catch (err) {
+      console.error(err);
+      note.textContent = "Sorry — something went wrong. Please try again.";
+      btn.disabled = false;
+      btn.textContent = "Notify me";
+    }
   });
 });

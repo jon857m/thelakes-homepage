@@ -26,18 +26,8 @@ body{
 a{color:inherit}
 .container{max-width:1080px;margin:0 auto;padding:0 18px}
 
-.mobileMenu, .navMenu, .dropdown, .nav-links {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 1100;
-  background: rgba(15,16,9,0.95);
-  backdrop-filter: blur(6px);
-}
-
 .header{
-  position: sticky; top: 0; z-index: 1000;
+  position: sticky; top: 0; z-index: 50;
   backdrop-filter: blur(10px);
   background: rgba(25,26,15,0.65);
   border-bottom: 1px solid var(--border);
@@ -47,11 +37,6 @@ a{color:inherit}
   padding: 12px 0;
   gap: 12px;
 }
-
-header nav {
-  position: relative;
-}
-
 
 .brand{display:flex; align-items:center; gap:12px; text-decoration:none}
 .brand__logo{
@@ -249,44 +234,4 @@ input:focus{border-color: rgba(234,182,121,0.55)}
   .nav{display:none}
   .menuBtn{display:inline-flex}
   input{min-width: 220px}
-}
-
-/* --- Overlay dropdown (stop pushing page down) --- */
-
-/* Make sure the header sits above the hero */
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 2000;
-}
-
-/* Force the menu panel to be removed from page flow */
-.mobileMenu,
-.navMenu,
-.dropdown,
-.nav-links {
-  position: fixed !important;     /* fixed = overlays the page */
-  left: 0;
-  right: 0;
-  top: 72px;                      /* adjust if your header is taller/shorter */
-  z-index: 2100;
-  margin: 0 !important;
-}
-
-/* Keep your nice open/close animation */
-.mobileMenu,
-.navMenu,
-.dropdown,
-.nav-links {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 220ms ease;
-}
-
-/* When open, show it */
-.nav-open .mobileMenu,
-.nav-open .navMenu,
-.nav-open .dropdown,
-.nav-open .nav-links {
-  max-height: 60vh;
 }

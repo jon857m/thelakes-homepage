@@ -245,8 +245,9 @@ input:focus{border-color: rgba(234,182,121,0.55)}
   input{min-width: 220px}
 
   /* HERO IMAGE – shift left on iOS */
-  .hero img{
+  .hero{
     object-fit: cover;
     object-position: 25% center;
   }
+
 }

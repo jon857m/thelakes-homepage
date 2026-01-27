@@ -26,11 +26,8 @@ body{
 a{color:inherit}
 .container{max-width:1080px;margin:0 auto;padding:0 18px}
 
-header{
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  position: relative; /* add this line */
+.header{
+  position: sticky; top: 0; z-index: 50;
   backdrop-filter: blur(10px);
   background: rgba(25,26,15,0.65);
   border-bottom: 1px solid var(--border);
@@ -70,15 +67,10 @@ header{
   padding: 10px 10px 14px;
   flex-direction: column;
   gap: 10px;
-
-  position: absolute;          /* <-- key: removes it from flow */
-  left: 0;
-  right: 0;
-  top: 100%;                   /* sits directly below header */
-  z-index: 60;                 /* above hero */
-  background: inherit;         /* keeps the same look */
-  backdrop-filter: inherit;    /* keeps the same look */
 }
+.mobileNav.open {display: flex;}
+.mobileNav a{color:var(--muted); font-weight:800; text-decoration:none}
+.mobileNav a:hover{color:var(--cloud)}
 
 .hero{
   position: relative;

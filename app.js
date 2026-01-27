@@ -47,3 +47,15 @@ form?.addEventListener("submit", async (e) => {
     btn.textContent = "Notify me";
   }
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("menuToggle");
+  const nav = document.getElementById("mobileNav");
+
+  if (!btn || !nav) return;
+
+  btn.addEventListener("click", () => {
+    const isOpen = nav.classList.toggle("open");
+    btn.setAttribute("aria-expanded", String(isOpen));
+  });
+});

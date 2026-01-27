@@ -9,45 +9,34 @@
 </head>
 
 <body>
-  <!-- Header -->
   <header class="header">
     <div class="container header__inner">
       <a class="brand" href="/" aria-label="Home">
         <img class="brand__logo" src="./assets/hero1.jpg" alt="The Lake District logo" />
         <div class="brand__text">
           <div class="brand__name">The Lake District</div>
-          <div class="brand__tag">A visitor &amp; local community hub</div>
+          <div class="brand__tag">A visitor & local community hub</div>
         </div>
       </a>
 
-      <nav class="nav" aria-label="Primary">
+      <nav class="nav">
         <a href="#metrics">Metrics</a>
         <a href="#audience">Audience</a>
         <a href="#contact">Contact</a>
       </nav>
 
-      <button
-        id="menuToggle"
-        class="menu-toggle"
-        type="button"
-        aria-label="Open menu"
-        aria-controls="mobileNav"
-        aria-expanded="false"
-      >
-        ☰
-      </button>
+      <button id="menuToggle" class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
     </div>
 
-    <!-- Mobile dropdown (overlay) -->
-    <nav class="mobileNav" id="mobileNav" aria-label="Mobile">
+    <div class="mobileNav" id="mobileNav" hidden>
       <a href="#metrics">Metrics</a>
       <a href="#audience">Audience</a>
       <a href="#contact">Contact</a>
-    </nav>
+    </div>
   </header>
 
-  <!-- Hero -->
   <main>
+    <!-- HERO -->
     <section class="hero">
       <div class="hero__overlay"></div>
       <div class="container hero__content">
@@ -60,134 +49,126 @@
           <a class="btn btn--primary" href="#signup">Get updates</a>
           <a class="btn btn--ghost" href="#metrics">View metrics</a>
         </div>
-        <p class="hero__note">Operated independently of any single social platform.</p>
+        <p class="hero__note">
+          Operated independently of any single social platform.
+        </p>
       </div>
     </section>
 
-    <!-- Metrics -->
+    <!-- METRICS -->
     <section class="section" id="metrics">
       <div class="container">
-        <h2>Scale &amp; activity</h2>
-        <p class="lead">Rolling 28-day totals across Facebook Page and Group insights.</p>
-
-        <div class="cards">
-          <div class="card">
-            <div class="card__value">91,700+</div>
-            <div class="card__label">Community members</div>
-          </div>
-          <div class="card">
-            <div class="card__value">7,600+</div>
-            <div class="card__label">Page followers</div>
-          </div>
-          <div class="card">
-            <div class="card__value">2.6m</div>
-            <div class="card__label">People reached (28 days)</div>
-          </div>
-          <div class="card">
-            <div class="card__value">7,100+</div>
-            <div class="card__label">Active contributors (28 days)</div>
-          </div>
-          <div class="card">
-            <div class="card__value">10,300</div>
-            <div class="card__label">Comments (28 days)</div>
-          </div>
-          <div class="card">
-            <div class="card__value">92,000</div>
-            <div class="card__label">Reactions (28 days)</div>
-          </div>
-        </div>
-
-        <div class="section__cta">
-          <a class="btn btn--primary" href="#signup">Get updates</a>
-          <a class="btn btn--ghost" href="#audience">View audience</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Audience -->
-    <section class="section section--alt" id="audience">
-      <div class="container">
-        <h2>Audience</h2>
-        <p class="lead">
-          A mix of locals, day-trippers and holiday planners. Content is designed to be useful, shareable and evergreen.
+        <h2>Scale & activity</h2>
+        <p class="sectionLead">
+          Rolling 28-day totals across Facebook Page and Group insights.
         </p>
 
-        <div class="grid2">
-          <div class="panel">
-            <h3>Who it reaches</h3>
-            <ul>
-              <li>Visitors planning trips and looking for recommendations</li>
-              <li>Locals sharing updates, photos and advice</li>
-              <li>Businesses wanting high-intent exposure</li>
-            </ul>
+        <div class="metricsGrid">
+          <div class="metric">
+            <div class="metric__value">91,700+</div>
+            <div class="metric__label">Community members</div>
           </div>
-          <div class="panel">
-            <h3>What performs</h3>
-            <ul>
-              <li>Weather, road conditions and seasonal tips</li>
-              <li>Photo-led posts and local stories</li>
-              <li>Curated suggestions (walks, stays, cafés, viewpoints)</li>
-            </ul>
+          <div class="metric">
+            <div class="metric__value">7,600+</div>
+            <div class="metric__label">Page followers</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value">2.6m</div>
+            <div class="metric__label">People reached (28 days)</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value">7,100+</div>
+            <div class="metric__label">Active contributors (28 days)</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value">10,300</div>
+            <div class="metric__label">Comments (28 days)</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value">92,000</div>
+            <div class="metric__label">Reactions (28 days)</div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Signup -->
-    <section class="section" id="signup">
-      <div class="container">
-        <div class="signup">
+        <!-- EMAIL SIGNUP (directly under metrics) -->
+        <div class="signup" id="signup">
           <div class="signup__copy">
-            <h2>Get updates</h2>
-            <p class="lead">
-              Occasional email updates. No spam. Unsubscribe any time.
-            </p>
-            <p class="fine">
-              We’ll only use your email for updates related to The Lake District community hub.
+            <h3>Get updates</h3>
+            <p>
+              We’re developing new tools and resources around visiting, planning, and discovering the Lake District.
+              Leave your email and we’ll let you know when something launches.
             </p>
           </div>
 
           <form class="signup__form" id="signupForm">
             <label class="srOnly" for="email">Email address</label>
-            <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
-            <button class="btn btn--primary" type="submit">Join</button>
-            <p class="note" id="formNote" role="status" aria-live="polite"></p>
+            <input id="email" name="email" type="email" placeholder="you@email.com" required />
+            <button class="btn btn--primary" type="submit" id="signupBtn">Notify me</button>
+            <p class="formNote" id="formNote">No spam. Unsubscribe any time.</p>
           </form>
         </div>
       </div>
     </section>
 
-    <!-- Contact -->
-    <section class="section section--alt" id="contact">
+    <!-- WHAT THIS IS -->
+    <section class="section section--alt">
       <div class="container">
-        <h2>Contact</h2>
-        <p class="lead">For partnerships, sponsorships and collaborations.</p>
+        <h2>What this is</h2>
+        <p class="bodyCopy">
+          The Lake District is one of the most discussed destinations in the UK.
+          This community brings together real people asking real questions — from where to stay, to what to do, to how to experience the Lakes responsibly.
+        </p>
+        <p class="bodyCopy">
+          We sit at the intersection of local knowledge, visitor intent, and authentic discussion.
+        </p>
+      </div>
+    </section>
 
-        <div class="contact">
-          <div class="panel">
-            <h3>Email</h3>
-            <p><a href="mailto:hello@thelakesincumbria.co.uk">hello@thelakesincumbria.co.uk</a></p>
+    <!-- AUDIENCE -->
+    <section class="section" id="audience">
+      <div class="container">
+        <h2>Audience snapshot</h2>
+        <div class="cards">
+          <div class="card">
+            <h3>Predominantly UK-based</h3>
+            <p>Strong representation across Cumbria, the North West, and major UK cities.</p>
           </div>
-          <div class="panel">
-            <h3>Social</h3>
-            <p>Facebook Group + Page: The Lake District</p>
+          <div class="card">
+            <h3>Core age range: 35–64</h3>
+            <p>Particularly strong in 35–44 and 45–54 — aligned with high-intent planning and booking.</p>
+          </div>
+          <div class="card">
+            <h3>61% women / 39% men</h3>
+            <p>Consistent with real-world travel planning and family/group decision making.</p>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- FOOTER / CONTACT -->
+    <footer class="footer" id="contact">
+      <div class="container footer__inner">
+        <div class="footer__left">
+          <div class="footer__brand">The Lake District</div>
+          <div class="footer__small">
+            These assets are owned and managed by <strong>Waypoint Media</strong>.<br/>
+            Business enquiries:
+            <a href="mailto:Jon.Margree@WayPointMedia.co.uk">Jon.Margree@WayPointMedia.co.uk</a>
+          </div>
+        </div>
+
+        <div class="footer__right">
+          <a href="#metrics">Metrics</a>
+          <a href="#audience">Audience</a>
+          <a href="#signup">Get updates</a>
+        </div>
+      </div>
+      <div class="container footer__bottom">
+        <span>© <span id="year"></span> Waypoint Media</span>
+      </div>
+    </footer>
   </main>
 
-  <footer class="footer">
-    <div class="container footer__inner">
-      <div>© <span id="year"></span> The Lake District</div>
-      <div class="footer__links">
-        <a href="#metrics">Metrics</a>
-        <a href="#audience">Audience</a>
-        <a href="#contact">Contact</a>
-      </div>
-    </div>
-  </footer>
-
-  <script src="./app.js" defer></script>
+  <script src="./app.js"></script>
 </body>
 </html>

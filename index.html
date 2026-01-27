@@ -10,30 +10,31 @@
 
 <body>
   <header class="header">
-    <div class="container header__inner">
-      <a class="brand" href="/" aria-label="Home">
-        <img class="brand__logo" src="./assets/hero1.jpg" alt="The Lake District logo" />
-        <div class="brand__text">
-          <div class="brand__name">The Lake District</div>
-          <div class="brand__tag">A visitor & local community hub</div>
-        </div>
-      </a>
+  <div class="container header_inner">
+    <a class="brand" href="/" aria-label="Home">
+      <img class="brand_logo" src="./assets/hero1.jpg" alt="The Lake District logo" />
+      <div class="brand_text">
+        <div class="brand_name">The Lake District</div>
+        <div class="brand_tag">A visitor &amp; local community hub</div>
+      </div>
+    </a>
 
-      <nav class="nav">
-        <a href="#metrics">Metrics</a>
-        <a href="#audience">Audience</a>
-        <a href="#contact">Contact</a>
-      </nav>
+    <nav class="nav">
+      <a href="#metrics">Metrics</a>
+      <a href="#audience">Audience</a>
+      <a href="#contact">Contact</a>
+    </nav>
 
-      <button id="menuToggle" class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
-    </div>
+    <button id="menuToggle" class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
 
-    <div class="mobileNav" id="mobileNav" hidden>
+    <!-- THIS must be inside header_inner -->
+    <div class="mobileNav" id="mobileNav">
       <a href="#metrics">Metrics</a>
       <a href="#audience">Audience</a>
       <a href="#contact">Contact</a>
     </div>
-  </header>
+  </div>
+</header>
 
   <main>
     <!-- HERO -->

@@ -183,7 +183,7 @@ h2{font-size: 30px; margin: 0 0 8px}
 .signup h3{margin: 0 0 8px; font-size: 20px}
 .signup p{margin: 0; color: var(--muted); max-width: 60ch}
 
-.signup__form{display:flex; gap: 10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+.signup__form{display:flex; gap: 10px; align-items:center; margin-top: 0.75rem; /*try 0.75-1rem*/ flex-wrap:wrap; justify-content:flex-end}
 input{
   background: rgba(246,242,231,0.06);
   border:1px solid var(--border);

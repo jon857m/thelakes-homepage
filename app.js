@@ -9,11 +9,18 @@ menuBtn?.addEventListener("click", () => {
   else mobileNav.setAttribute("hidden", "");
 });
 
-const form = document.getElementById("signupForm");
-const note = document.getElementById("formNote");
-const btn = document.getElementById("signupBtn");
+const SIGNUP_ENDPOINT = "https://script.google.com/macros/s/AKfycbz8IcuYG6IdA8qYab1gbSqnPL5ctuNr3NgLvD1e0_fE7RfuQyWKNw7xF6JuFVQbs8ix/exec";
 
-form?.addEventListener("submit", async (e) => {
+const form = document.getElementById("signupForm");
+const note = document.getElementById("signupMsg");
+const btn  = document.getElementById("signupBtn");
+
+if (!form || !note || !btn) {
+  console.log("Signup elements missing", { form, note, btn });
+  return;
+}
+
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const email = (document.getElementById("email").value || "").trim();
@@ -24,7 +31,7 @@ form?.addEventListener("submit", async (e) => {
     btn.textContent = "Sending…";
 
     // This will work once we add the Cloudflare Worker endpoint /api/signup
-    const r = await fetch("/api/signup", {
+    const r = await fetch(SIGNUP_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, source: "homepage" })

@@ -127,14 +127,18 @@ h1{
 .hero__note{margin-top: 14px; color: var(--muted); font-size: 13.5px}
 
 .ctaRow{display:flex; gap:12px; margin: 18px 0 0; flex-wrap:wrap}
-.btn{
-  display:inline-flex; align-items:center; justify-content:center;
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
   border-radius: 999px;
   padding: 12px 16px;
   font-weight: 900;
   border: 1px solid transparent;
   cursor: pointer;
-  text-decoration:none;
+  text-decoration: none;
 }
 .btn--primary{
   background: linear-gradient(135deg, var(--sun), var(--earth));
@@ -145,7 +149,64 @@ h1{
   border-color: var(--border);
   color: var(--cloud);
 }
+
+.btn--icon {
+  padding: 12px;
+  gap: 0;
+}
+
 .btn:hover{filter: brightness(1.05)}
+
+
+.icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+  flex: 0 0 auto;
+}
+
+.btn__label {
+  white-space: nowrap;
+}
+
+/*
+..btn__icon {    /*switched off becasue little difference
+  font-size: 0.95em;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+
+.btn:hover .btn__icon,
+.btn:focus-visible .btn__icon {
+  opacity: 0.85;
+}
+*/
+
+
+.ctaGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .ctaGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .ctaGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 .section{padding: 42px 0}
 .section--alt{

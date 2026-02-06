@@ -105,8 +105,8 @@ a{color:inherit}
 /* Desktop tweak: reduce hero height on wide screens without affecting iOS/mobile */
 @media (min-width: 901px){
   .hero{
-    min-height: 40vh; /* was 62vh */
-    padding: 44px 0;  /* was 56px 0 */
+    min-height: 0; /* was 62vh THIS CHANGED THE HERO IMAGE HEIGHT ON DESKTOP*/
+    height: clamp(460px, 40vh, 560px);
   }
 }
 .hero__overlay{

@@ -114,7 +114,7 @@ a{color:inherit}
   .hero{
     height: auto;          /* let content define height */
     min-height: 0;
-    padding: 72px 0 20px;  /* clears sticky header, reduces scroll */
+    padding: 72px 0 12px;  /* clears sticky header, reduces scroll */
     background-position: 25% 50%;
   }
 

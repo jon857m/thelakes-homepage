@@ -13,47 +13,51 @@ const form = document.getElementById("signupForm");
 const note = document.getElementById("formNote");
 const btn = document.getElementById("signupBtn");
 
-form?.addEventListener("submit", async (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  e.stopPropagation();
 
-const email = (document.getElementById("email").value || "").trim();
-const consent = !!document.getElementById("consent")?.checked;
+  const email = document.getElementById("email").value.trim();
+  const consent = document.getElementById("consent").checked;
 
-if (!email) {
-  note.textContent = "Please enter an email address.";
-  return;
-}
+  if (!email) {
+    note.textContent = "Please enter an email address.";
+    return;
+  }
 
-if (!consent) {
-  note.textContent = "Please tick the box to agree to receive emails.";
-  return;
-}
+  if (!consent) {
+    note.textContent = "Please tick the box to agree to receive emails.";
+    return;
+  }
 
-try {
   btn.disabled = true;
   btn.textContent = "Sending…";
+  note.textContent = "";
 
-  const r = await fetch("/api/signup", {
+  try {
+    const r = await fetch("/api/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-  email,
-  consent: true,
-  source: "homepage"
-})
+    body: JSON.stringify({ email, consent, source: "homepage" })
   });
 
-    const data = await r.json().catch(() => ({}));
+  const text = await r.text();
+  let data = {};
+  try { data = JSON.parse(text); } catch {}
 
-    if (!r.ok || !data.ok) {
-  const msg = data?.message || data?.error || `Request failed (${r.status})`;
-  note.textContent = `Sorry — ${msg}`;
-  btn.disabled = false;
-  btn.textContent = "Notify me";
-  return;
-}
+  if (!r.ok || !data.ok) {
+    note.textContent =
+      `Request failed (${r.status}) — ${data.message || text.slice(0,120)}`;
+    btn.disabled = false;
+    btn.textContent = "Notify me";
+    return;
+  }
 
-    note.textContent = "Thanks — you’re on the list ✅";
+    note.textContent =
+      data.status === "EXISTS"
+        ? "You’re already on the list ✅"
+        : "Thanks — you’re on the list ✅";
+
     form.reset();
     btn.textContent = "Added";
   } catch (err) {
@@ -62,6 +66,7 @@ try {
     btn.textContent = "Notify me";
   }
 });
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("menuToggle");

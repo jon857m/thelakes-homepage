@@ -132,6 +132,10 @@ a{color:inherit}
     margin-bottom: 10px;
   }
 
+  .hero .subhead + .subhead {
+    margin-top: 6px;
+  }
+
   .hero .ctaRow{
     margin-top: 14px;
   }

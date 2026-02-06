@@ -97,9 +97,10 @@ a{color:inherit}
   display:flex;
   align-items:flex-end;
   padding: 56px 0;
+
   background:
     linear-gradient(180deg, rgba(15,16,9,0.15), rgba(15,16,9,0.85)),
-    url("./assets/hero1.jpg") center/cover no-repeat; /* placeholder: swap later for a proper hero photo */
+    url("./assets/hero1.jpg") center/ cover no-repeat;
 }
 .hero__overlay{
   position:absolute; inset:0;

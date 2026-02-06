@@ -117,6 +117,26 @@ a{color:inherit}
   font-weight:800;
   font-size: 13px;
 }
+
+@media (max-width: 768px) {
+  .hero{
+    padding-top: 64px;
+    padding-bottom: 56px;
+  }
+
+  .hero h1{
+    margin-bottom: 12px;
+  }
+
+  .hero .subhead{
+    margin-bottom: 10px;
+  }
+
+  .hero .ctaRow{
+    margin-top: 14px;
+  }
+}
+
 h1{
   font-size: clamp(34px, 4.2vw, 54px);
   line-height: 1.05;
@@ -124,6 +144,7 @@ h1{
   letter-spacing: -0.8px;
 }
 .subhead{font-size: 17px; color: var(--muted); max-width: 62ch}
+.subhead + .subhead {opacity: 0.85}
 .hero__note{margin-top: 14px; color: var(--muted); font-size: 13.5px}
 
 .ctaRow{display:flex; gap:12px; margin: 18px 0 0; flex-wrap:wrap}

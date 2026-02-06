@@ -16,19 +16,28 @@ const btn = document.getElementById("signupBtn");
 form?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const email = (document.getElementById("email").value || "").trim();
-  if (!email) return;
+const email = (document.getElementById("email").value || "").trim();
+const consent = !!document.getElementById("consent")?.checked;
 
-  try {
-    btn.disabled = true;
-    btn.textContent = "Sending…";
+if (!email) {
+  note.textContent = "Please enter an email address.";
+  return;
+}
 
-    // This will work once we add the Cloudflare Worker endpoint /api/signup
-    const r = await fetch("/api/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, source: "homepage" })
-    });
+if (!consent) {
+  note.textContent = "Please tick the box to agree to receive emails.";
+  return;
+}
+
+try {
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+
+  const r = await fetch("/api/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, consent: true, source: "homepage" })
+  });
 
     const data = await r.json().catch(() => ({}));
 

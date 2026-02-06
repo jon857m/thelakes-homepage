@@ -39,17 +39,27 @@ a{color:inherit}
   position: relative;
   z-index: 10001;
   pointer-events: auto;
+  padding: 10px;
 }
 
 .header__inner{
-  display:flex; align-items:center; justify-content:space-between;
-  padding: 12px 0;
-  gap: 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+
+  /* vertical padding */
+  padding-top: 12px;
+  padding-bottom: 12px;
+
+  /* horizontal padding with iOS safe-area */
+  padding-left: calc(16px + env(safe-area-inset-left));
+  padding-right: calc(16px + env(safe-area-inset-right));
 }
 
 .brand{display:flex; align-items:center; gap:12px; text-decoration:none}
 .brand__logo{
-  width: 40px; height: 40px;
+  width: 50px; height: 50px;   /*was40*/
   border-radius: 12px;
   object-fit: cover;
   border: 1px solid var(--border);

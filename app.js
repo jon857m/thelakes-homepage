@@ -42,11 +42,12 @@ try {
     const data = await r.json().catch(() => ({}));
 
     if (!r.ok || !data.ok) {
-      note.textContent = "Sorry — something went wrong. Please try again in a minute.";
-      btn.disabled = false;
-      btn.textContent = "Notify me";
-      return;
-    }
+  const msg = data?.message || data?.error || `Request failed (${r.status})`;
+  note.textContent = `Sorry — ${msg}`;
+  btn.disabled = false;
+  btn.textContent = "Notify me";
+  return;
+}
 
     note.textContent = "Thanks — you’re on the list ✅";
     form.reset();

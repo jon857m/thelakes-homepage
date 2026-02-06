@@ -132,6 +132,7 @@ h1{
   letter-spacing: -0.8px;
 }
 .subhead{font-size: 17px; color: var(--muted); max-width: 62ch}
+.subhead + .subhead {opacity: 0.85;}
 .hero__note{margin-top: 14px; color: var(--muted); font-size: 13.5px}
 
 .ctaRow{display:flex; gap:12px; margin: 18px 0 0; flex-wrap:wrap}

@@ -92,15 +92,22 @@ a{color:inherit}
 
 .hero{
   position: relative;
+  height: clamp(420px, 52vh, 620px); /* smaller frame */
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 40px 0; /* slightly smaller */
+  /*
+  position: relative;
   min-height: 62vh;
   z-index: 0;
   display:flex;
   align-items:flex-end;
   padding: 56px 0;
-
+  */
   background:
     linear-gradient(180deg, rgba(15,16,9,0.15), rgba(15,16,9,0.85)),
-    url("./assets/hero1.jpg") center/ cover no-repeat;
+    url("./assets/hero1.jpg") center / cover no-repeat;
 }
 .hero__overlay{
   position:absolute; inset:0;

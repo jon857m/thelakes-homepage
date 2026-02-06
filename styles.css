@@ -123,7 +123,7 @@ a{color:inherit}
   .hero{
     height: auto;
     min-height: 0;
-    padding: 84px 0 32px; /* extra top padding so content clears the sticky header */
+    padding: 72px 0 20px; /* extra top padding so content clears the sticky header */
     background-position: 50% 50%; /* keep simple */
   }
 }

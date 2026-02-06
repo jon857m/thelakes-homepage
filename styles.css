@@ -109,6 +109,34 @@ a{color:inherit}
     linear-gradient(180deg, rgba(15,16,9,0.15), rgba(15,16,9,0.85)),
     url("./assets/hero1.jpg") center / cover no-repeat;
 }
+
+/* 1) Desktop only: use the clamp height (Option A) */
+@media (min-width: 769px){
+  .hero{
+    height: clamp(420px, 52vh, 620px);
+    min-height: 0; /* important: stop the old min-height fighting the new height */
+  }
+}
+
+/* 2) Mobile: DO NOT lock height (let content define it) */
+@media (max-width: 768px){
+  .hero{
+    height: auto;
+    min-height: 0;
+    padding: 84px 0 32px; /* extra top padding so content clears the sticky header */
+    background-position: 50% 50%; /* keep simple */
+  }
+}
+
+/* 3) iOS / modern browsers: use stable viewport units when available */
+@supports (height: 1svh){
+  @media (min-width: 769px){
+    .hero{
+      height: clamp(420px, 52svh, 620px);
+    }
+  }
+}
+
 .hero__overlay{
   position:absolute; inset:0;
   background: radial-gradient(900px 500px at 20% 20%, rgba(234,182,121,0.22), transparent 60%);

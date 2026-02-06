@@ -101,6 +101,14 @@ a{color:inherit}
     linear-gradient(180deg, rgba(15,16,9,0.15), rgba(15,16,9,0.85)),
     url("./assets/hero1.jpg") center/cover no-repeat; /* placeholder: swap later for a proper hero photo */
 }
+
+/* Desktop tweak: reduce hero height on wide screens without affecting iOS/mobile */
+@media (min-width: 901px){
+  .hero{
+    min-height: 40vh; /* was 62vh */
+    padding: 44px 0;  /* was 56px 0 */
+  }
+}
 .hero__overlay{
   position:absolute; inset:0;
   background: radial-gradient(900px 500px at 20% 20%, rgba(234,182,121,0.22), transparent 60%);

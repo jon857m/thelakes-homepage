@@ -14,7 +14,7 @@
 }
 
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
+html,body{margin:0;padding:0; padding-bottom: env(safe-area-inset-bottom);}
 body{
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
   background: radial-gradient(1200px 700px at 15% -10%, rgba(234,182,121,0.22), transparent 60%),
@@ -90,45 +90,41 @@ a{color:inherit}
 .mobileNav a{color:var(--muted); font-weight:800; text-decoration:none}
 .mobileNav a:hover{color:var(--cloud)}
 
+/* HERO (single source of truth) */
 .hero{
   position: relative;
-  height: clamp(420px, 52vh, 620px); /* smaller frame */
   overflow: hidden;
   display: flex;
   align-items: flex-end;
-  padding: 40px 0; /* slightly smaller */
-  /*
-  position: relative;
-  min-height: 62vh;
-  z-index: 0;
-  display:flex;
-  align-items:flex-end;
-  padding: 56px 0;
-  */
+  padding: 40px 0;
   background:
     linear-gradient(180deg, rgba(15,16,9,0.15), rgba(15,16,9,0.85)),
     url("./assets/hero1.jpg") center / cover no-repeat;
 }
 
-/* 1) Desktop only: use the clamp height (Option A) */
+/* Desktop hero frame */
 @media (min-width: 769px){
   .hero{
     height: clamp(420px, 52vh, 620px);
-    min-height: 0; /* important: stop the old min-height fighting the new height */
   }
 }
 
-/* 2) Mobile: DO NOT lock height (let content define it) */
+/* Mobile/iOS: flexible height, tuned padding */
 @media (max-width: 768px){
   .hero{
-    height: auto;
+    height: auto;          /* let content define height */
     min-height: 0;
-    padding: 72px 0 20px; /* extra top padding so content clears the sticky header */
-    background-position: 50% 50%; /* keep simple */
+    padding: 72px 0 20px;  /* clears sticky header, reduces scroll */
+    background-position: 25% 50%;
   }
+
+  .hero h1{ margin-bottom: 12px; }
+  .hero .subhead{ margin-bottom: 10px; }
+  .hero .subhead + .subhead{ margin-top: 6px; }
+  .hero .ctaRow{ margin-top: 14px; }
 }
 
-/* 3) iOS / modern browsers: use stable viewport units when available */
+/* iOS stable viewport for desktop (optional) */
 @supports (height: 1svh){
   @media (min-width: 769px){
     .hero{
@@ -377,7 +373,7 @@ input:focus{border-color: rgba(234,182,121,0.55)}
   input{min-width: 220px}
 }
 @media (max-width: 768px){
-  section.hero{
-    background-position: 25% center;
+  .section{
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
   }
 }

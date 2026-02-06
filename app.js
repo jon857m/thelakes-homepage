@@ -36,7 +36,11 @@ try {
   const r = await fetch("/api/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, consent: true, source: "homepage" })
+    body: JSON.stringify({
+  email,
+  consent: true,
+  source: "homepage"
+})
   });
 
     const data = await r.json().catch(() => ({}));

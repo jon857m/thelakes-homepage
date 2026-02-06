@@ -152,7 +152,6 @@ a{color:inherit}
 
 @media (max-width: 768px) {
   .hero{
-    padding: 140px 0 0 ;
     padding-top: 64px;
     padding-bottom: 56px;
   }

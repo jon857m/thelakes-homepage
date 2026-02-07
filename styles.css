@@ -451,3 +451,13 @@ footer .signup .consent,
     top: env(safe-area-inset-top);
   }
 }
+
+@media (max-width: 900px){
+  .signup__form{
+    justify-content: flex-start !important;
+  }
+  .signup__form .consent{
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+}

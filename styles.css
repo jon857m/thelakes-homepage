@@ -312,6 +312,7 @@ input:not([type="checkbox"]){
   border-radius: 999px;
   min-width: 260px;
   outline: none;
+  justify-content: flex-start;
 }
 
 input:focus{border-color: rgba(234,182,121,0.55)}

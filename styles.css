@@ -13,6 +13,10 @@
   --radius: 18px;
 }
 
+main {
+  padding-top: 72px; /* match your header height */
+}
+
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
@@ -365,10 +369,13 @@ input:focus{border-color: rgba(234,182,121,0.55)}
   input{min-width: 220px}
 }
 @media (max-width: 768px){
-  section.hero{
-    background-position: 25% center;
-  }
+  section.hero{ background-position: 25% center;}
+  .signup__consent { align-items: flex-start; gap: 10px;}
+  .updates-intro-secondary { display: none; }
 }
+
+
+
 
 /* Footer signup: compact + subtle (robust selectors) */
 #siteFooter .signup,
@@ -440,3 +447,10 @@ footer .signup .consent,
 /* Prevent page jump while header/footer partials load */
 #siteHeader { min-height: 82px; }   /* tweak if needed */
 #siteFooter { min-height: 140px; }  /* tweak if needed */
+
+@supports (-webkit-touch-callout: none) {
+  header {
+    position: sticky;
+    top: env(safe-area-inset-top);
+  }
+}

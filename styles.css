@@ -289,6 +289,33 @@ h2{font-size: 30px; margin: 0 0 8px}
   margin-top: 2px;
 }
 
+
+/* iOS/mobile: keep checkbox + consent text together */
+@media (max-width: 900px){
+  .signup_form .consent{
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .signup_form .consent input[type="checkbox"]{
+    margin: 2px 0 0 0;
+    flex: 0 0 auto;
+  }
+
+  .signup_form .consent span{
+    display: block;
+    margin: 0;
+  }
+
+  .signup_form .consentNote{
+    display: block;      /* puts "No spam..." on its own line */
+    margin-top: 6px;
+    opacity: .85;
+  }
+}
+
+
 .signup{
   margin-top: 18px;
   border:1px solid var(--border);
@@ -313,43 +340,6 @@ input:not([type="checkbox"]){
   min-width: 260px;
   outline: none;
 }
-
-/* iOS/mobile: fix consent row layout (checkbox + text) */
-@media (max-width: 900px){
-  .signup__consent,
-  .consent,
-  .consentRow,
-  .signup__form .consent{
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .signup__consent input[type="checkbox"],
-  .consent input[type="checkbox"],
-  .consentRow input[type="checkbox"],
-  .signup__form .consent input[type="checkbox"]{
-    margin: 2px 0 0 0;         /* aligns with first line of text */
-    transform: scale(1.15);     /* slightly bigger on iOS */
-    flex: 0 0 auto;
-  }
-
-  .signup__consent label,
-  .signup__consent .consentText,
-  .consent label,
-  .consent .consentText,
-  .consentRow label,
-  .consentRow .consentText,
-  .signup__form .consent label,
-  .signup__form .consent .consentText{
-    margin: 0 !important;
-    max-width: 100%;
-  }
-}
-
-
-
-
 
 input:focus{border-color: rgba(234,182,121,0.55)}
 .formNote{margin: 8px 0 0; color: var(--muted); font-size: 12.5px; width:100%}

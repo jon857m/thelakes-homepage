@@ -313,6 +313,44 @@ input:not([type="checkbox"]){
   min-width: 260px;
   outline: none;
 }
+
+/* iOS/mobile: fix consent row layout (checkbox + text) */
+@media (max-width: 900px){
+  .signup__consent,
+  .consent,
+  .consentRow,
+  .signup__form .consent{
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .signup__consent input[type="checkbox"],
+  .consent input[type="checkbox"],
+  .consentRow input[type="checkbox"],
+  .signup__form .consent input[type="checkbox"]{
+    margin: 2px 0 0 0;         /* aligns with first line of text */
+    transform: scale(1.15);     /* slightly bigger on iOS */
+    flex: 0 0 auto;
+  }
+
+  .signup__consent label,
+  .signup__consent .consentText,
+  .consent label,
+  .consent .consentText,
+  .consentRow label,
+  .consentRow .consentText,
+  .signup__form .consent label,
+  .signup__form .consent .consentText{
+    margin: 0 !important;
+    max-width: 100%;
+  }
+}
+
+
+
+
+
 input:focus{border-color: rgba(234,182,121,0.55)}
 .formNote{margin: 8px 0 0; color: var(--muted); font-size: 12.5px; width:100%}
 .srOnly{position:absolute; left:-9999px}

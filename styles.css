@@ -289,33 +289,6 @@ h2{font-size: 30px; margin: 0 0 8px}
   margin-top: 2px;
 }
 
-
-/* iOS/mobile: keep checkbox + consent text together */
-@media (max-width: 900px){
-  .signup_form .consent{
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .signup_form .consent input[type="checkbox"]{
-    margin: 2px 0 0 0;
-    flex: 0 0 auto;
-  }
-
-  .signup_form .consent span{
-    display: block;
-    margin: 0;
-  }
-
-  .signup_form .consentNote{
-    display: block;      /* puts "No spam..." on its own line */
-    margin-top: 6px;
-    opacity: .85;
-  }
-}
-
-
 .signup{
   margin-top: 18px;
   border:1px solid var(--border);

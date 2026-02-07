@@ -437,3 +437,6 @@ footer .signup .consent,
   padding: 12px 14px !important;
 }
 
+/* Prevent page jump while header/footer partials load */
+#siteHeader { min-height: 82px; }   /* tweak if needed */
+#siteFooter { min-height: 140px; }  /* tweak if needed */

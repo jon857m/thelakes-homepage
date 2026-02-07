@@ -461,3 +461,46 @@ footer .signup .consent,
     justify-content: flex-start;
   }
 }
+
+/* === Signup component (rebuild) === */
+.signupForm{
+  display: grid;
+  gap: 10px;
+}
+
+.signupForm__row{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.signupForm__email{
+  width: 100%;
+  min-width: 0; /* iOS grid/flex shrink fix */
+}
+
+.signupForm__consent{
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: start;
+  opacity: 0.85;
+}
+
+.signupForm__check{
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0 0;
+}
+
+/* Small screens: make button full-width (better conversion) */
+@media (max-width: 480px){
+  .signupForm__row{
+    grid-template-columns: 1fr;
+  }
+  .signupForm__btn{
+    width: 100%;
+    justify-content: center;
+  }
+}

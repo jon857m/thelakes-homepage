@@ -461,33 +461,3 @@ footer .signup .consent,
     justify-content: flex-start;
   }
 }
-
-.signup__row{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-
-.signup__row input:not([type="checkbox"]){
-  flex: 1 1 260px;
-  min-width: 0;
-}
-
-.signup__row .btn{
-  flex: 0 0 auto;
-}
-
-/* consent always full width, checkbox tight to text */
-.signup__form .consent{
-  display:flex;
-  gap:10px;
-  align-items:flex-start;
-  margin-top:10px;
-}
-
-.signup__form .consent input{
-  margin: 3px 0 0 0;
-  width: 18px;
-  height: 18px;
-}

@@ -11,33 +11,7 @@
 </head>
 
 <body>
-  <header class="header">
-    <div class="container header__inner">
-      <a class="brand" href="/" aria-label="Home">
-        <img class="brand__logo" src="./assets/hero.jpg" alt="The Lake District logo" />
-        <div class="brand__text">
-          <div class="brand__name">The Lake District</div>
-          <div class="brand__tag">A visitor & local community hub</div>
-        </div>
-      </a>
-
-      <nav class="nav">
-        <a href="/get-updates" aria-current="page">Get updates</a>
-        <a href="/#metrics">Metrics</a>
-        <a href="/#audience">Audience</a>
-        <a href="/#contact">Contact</a>
-      </nav>
-
-      <button id="menuToggle" class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
-    </div>
-
-    <div class="mobileNav" id="mobileNav">
-      <a href="/get-updates" aria-current="page">Get updates</a>
-      <a href="/#metrics">Metrics</a>
-      <a href="/#audience">Audience</a>
-      <a href="/#contact">Contact</a>
-    </div>
-  </header>
+  <div id="siteHeader"></div>
 
   <main>
     <!-- HERO -->
@@ -87,7 +61,13 @@
             <label class="srOnly" for="email">Email address</label>
             <input id="email" name="email" type="email" placeholder="you@email.com" required />
             <button class="btn btn--primary" type="submit" id="signupBtn">Notify me</button>
-            <p class="formNote" id="formNote">No spam. Unsubscribe any time.</p>
+            <label class="consent">
+              <input type="checkbox" name="consent" required />
+              <span>
+                I agree to receive occasional emails.
+                <em class="consentNote">No spam. Unsubscribe any time.</em>
+                </span>
+            </label>
           </form>
         </div>
       </div>
@@ -114,31 +94,7 @@
       </div>
     </section>
 
-    <footer class="footer">
-      <div class="container footer__inner">
-        <div class="footer__left">
-          <div>
-            <strong>The Lake District</strong><br/>
-            A visitor & local community hub
-          </div>
-          <div class="footer__meta">
-            Operated independently by <strong>Waypoint Media</strong>.<br/>
-            Business enquiries:
-            <a href="mailto:Jon.Margree@WayPointMedia.co.uk">Jon.Margree@WayPointMedia.co.uk</a>
-          </div>
-        </div>
-
-        <div class="footer__right">
-          <a href="/#metrics">Metrics</a>
-          <a href="/#audience">Audience</a>
-          <a href="/get-updates">Get updates</a>
-        </div>
-      </div>
-
-      <div class="container footer__bottom">
-        <span>© <span id="year"></span> Waypoint Media</span>
-      </div>
-    </footer>
+    <div id="siteFooter"></div>
   </main>
 
   <script src="./app.js"></script>

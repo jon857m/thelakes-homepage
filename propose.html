@@ -18,33 +18,7 @@
 </head>
 
 <body>
-  <header class="header">
-    <div class="container header__inner">
-      <a class="brand" href="/" aria-label="Home">
-        <img class="brand__logo" src="./assets/hero.jpg" alt="The Lake District logo" />
-        <div class="brand__text">
-          <div class="brand__name">The Lake District</div>
-          <div class="brand__tag">A visitor & local community hub</div>
-        </div>
-      </a>
-
-      <nav class="nav">
-        <a href="/get-updates">Get updates</a>
-        <a href="/#metrics">Metrics</a>
-        <a href="/#audience">Audience</a>
-        <a href="/#contact">Contact</a>
-      </nav>
-
-      <button id="menuToggle" class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
-    </div>
-
-    <div class="mobileNav" id="mobileNav">
-      <a href="/get-updates">Get updates</a>
-      <a href="/#metrics">Metrics</a>
-      <a href="/#audience">Audience</a>
-      <a href="/#contact">Contact</a>
-    </div>
-  </header>
+  <div id="siteHeader"></div>
 
   <main>
     <!-- HERO (reuses your existing .hero styling + hero image) -->
@@ -222,27 +196,7 @@
     </section>
 
     <!-- FOOTER -->
-    <footer class="footer" id="contact">
-      <div class="container footer__inner">
-        <div class="footer__left">
-          <div class="footer__brand">The Lake District</div>
-          <div class="footer__small">
-            These assets are owned and managed by <strong>Waypoint Media</strong>.<br/>
-            Business enquiries:
-            <a href="mailto:Jon.Margree@WayPointMedia.co.uk">Jon.Margree@WayPointMedia.co.uk</a>
-          </div>
-        </div>
-
-        <div class="footer__right">
-          <a href="/#metrics">Metrics</a>
-          <a href="/#audience">Audience</a>
-          <a href="/get-updates">Get updates</a>
-        </div>
-      </div>
-      <div class="container footer__bottom">
-        <span>© <span id="year"></span> Waypoint Media</span>
-      </div>
-    </footer>
+    <div id="siteFooter"></div>
   </main>
 
   <script src="./app.js"></script>

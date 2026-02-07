@@ -26,12 +26,18 @@ body{
 a{color:inherit}
 .container{max-width:1080px;margin:0 auto;padding:0 18px}
 
+#siteHeader{
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+}
+
 .header{
-  position: sticky; top: 0; z-index: 50;
+  position: relative; /* was sticky */
   backdrop-filter: blur(10px);
   background: rgba(25,26,15,0.65);
   border-bottom: 1px solid var(--border);
-  z-index: 10000; /* override the 50 */
+  z-index: 1; /* doesn't need to be huge now */
 }
 
 #menuToggle,
@@ -226,6 +232,30 @@ h1{
   }
 }
 
+/* Consent checkbox */
+.consent{
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  opacity: 0.85;
+  margin-top: 10px;
+}
+
+.consent input{
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+}
+
+.consentNote{
+  display: block;
+  font-style: normal;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-top: 2px;
+}
 
 .section{padding: 42px 0}
 .section--alt{
@@ -274,7 +304,7 @@ h2{font-size: 30px; margin: 0 0 8px}
 .signup p{margin: 0; color: var(--muted); max-width: 60ch}
 
 .signup__form{display:flex; gap: 10px; align-items:center; margin-top: 0.75rem; /*try 0.75-1rem*/ flex-wrap:wrap; justify-content:flex-end}
-input{
+input:not([type="checkbox"]){
   background: rgba(246,242,231,0.06);
   border:1px solid var(--border);
   color: var(--cloud);
@@ -304,23 +334,23 @@ input:focus{border-color: rgba(234,182,121,0.55)}
 .card p{margin: 0; color: var(--muted)}
 
 .footer{
-  padding: 26px 0 18px;
+  padding: 16px 0 18px;
   border-top: 1px solid var(--border);
   background: rgba(15,16,9,0.55);
 }
 .footer__inner{
-  display:flex; justify-content:space-between; gap: 12px; flex-wrap:wrap;
+  display:flex; justify-content:space-between; gap: 10px; flex-wrap:wrap;
 }
-.footer__brand{font-weight:950; margin-bottom: 6px}
-.footer__small{color: var(--muted); font-size: 13.5px}
+.footer__brand{font-weight:950; margin-bottom: 4px}
+.footer__small{color: var(--muted); font-size: 12.5px; line-height: 1.35;}
 .footer__small a{color: var(--cloud)}
-.footer__right{display:flex; gap: 14px; align-items:flex-start}
+.footer__right{display:flex; gap: 12px; align-items:flex-start}
 .footer__right a{color: var(--muted); font-weight: 800; text-decoration:none}
 .footer__right a:hover{color: var(--cloud)}
 .footer__bottom{
-  margin-top: 14px;
+  margin-top: 10px;
   color: rgba(246,242,231,0.55);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 @media (max-width: 900px){
@@ -339,3 +369,71 @@ input:focus{border-color: rgba(234,182,121,0.55)}
     background-position: 25% center;
   }
 }
+
+/* Footer signup: compact + subtle (robust selectors) */
+#siteFooter .signup,
+footer .signup,
+.footer .signup{
+  margin-top: 12px !important;
+  padding: 12px 14px !important;
+  background: rgba(246,242,231,0.025) !important;
+  border-color: rgba(246,242,231,0.08) !important;
+  box-shadow: none !important;
+}
+
+#siteFooter .signup h3,
+footer .signup h3,
+.footer .signup h3{
+  font-size: 17px !important;
+  margin-bottom: 4px !important;
+}
+
+#siteFooter .signup p,
+footer .signup p,
+.footer .signup p{
+  font-size: 13.5px !important;
+  opacity: 0.8 !important;
+  max-width: 55ch !important;
+}
+
+#siteFooter .signup__form,
+footer .signup__form,
+.footer .signup__form{
+  margin-top: 6px !important;
+}
+
+#siteFooter .signup input:not([type="checkbox"]),
+footer .signup input:not([type="checkbox"]),
+.footer .signup input:not([type="checkbox"]){
+  min-width: 200px !important;
+  padding: 9px 12px !important;
+  font-size: 14px !important;
+  background: rgba(246,242,231,0.045) !important;
+}
+
+#siteFooter .signup .btn,
+footer .signup .btn,
+.footer .signup .btn{
+  padding: 9px 14px !important;
+  font-size: 14px !important;
+}
+
+#siteFooter .signup .consent,
+footer .signup .consent,
+.footer .signup .consent{
+  margin-top: 6px !important;
+  font-size: 0.8rem !important;
+  opacity: 0.75 !important;
+}
+
+/* The signup CTA that lives inside the footer include */
+#siteFooter .section{
+  padding: 18px 0 !important;   /* was 42px 0 */
+}
+
+/* Make the signup card inside that section tighter too */
+#siteFooter .section .signup{
+  margin-top: 0 !important;     /* was 18px */
+  padding: 12px 14px !important;
+}
+

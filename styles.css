@@ -371,7 +371,12 @@ input:focus{border-color: rgba(234,182,121,0.55)}
   .updates-intro-secondary { display: none; }
 }
 
-
+/* Prevent iOS zoom on form focus */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
 
 
 /* Footer signup: compact + subtle (robust selectors) */

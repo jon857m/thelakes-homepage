@@ -107,3 +107,19 @@ document.addEventListener("DOMContentLoaded", () => {
   wireMenuToggle();
   wireSignupForms();
 });
+
+document.querySelectorAll('.stayThumb').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const src = btn.getAttribute('data-img');
+    const main = document.getElementById('stayMainImg');
+    if (!main || !src) return;
+
+    main.src = src;
+
+    document.querySelectorAll('.stayThumb').forEach(b => b.classList.remove('isActive'));
+    btn.classList.add('isActive');
+  });
+});
+
+const firstThumb = document.querySelector('.stayThumb');
+if (firstThumb) firstThumb.classList.add('isActive');

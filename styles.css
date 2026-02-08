@@ -504,3 +504,175 @@ footer .signup .consent,
     justify-content: center;
   }
 }
+
+/* =========================
+   Stay pages: hero gallery
+   ========================= */
+
+/* Per-stay hero image (page-only) */
+.hero--stay{
+  position: relative;
+}
+
+/* Give the stay hero a touch more breathing room for the panel */
+.stayHero{
+  padding-bottom: 34px;
+}
+
+/* Floating gallery panel INSIDE hero */
+.stayPanel{
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  background: rgba(25,26,15,0.55);
+  backdrop-filter: blur(10px);
+  border-radius: calc(var(--radius) + 6px);
+  box-shadow: var(--shadow);
+  padding: 12px;
+
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 12px;
+  align-items: stretch;
+
+  max-width: 980px; /* keeps it looking designed */
+}
+
+/* Main image area */
+.stayPanel__main{
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(246,242,231,0.10);
+}
+
+.stayPanel__main img{
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  aspect-ratio: 16/9;
+}
+
+/* Thumbs stack */
+.stayPanel__thumbs{
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.stayThumb{
+  border: 1px solid rgba(246,242,231,0.12);
+  background: rgba(246,242,231,0.03);
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.stayThumb img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  aspect-ratio: 16/9;
+}
+
+.stayThumb.isActive{
+  outline: 2px solid rgba(234,182,121,0.55);
+  outline-offset: 2px;
+}
+
+/* Info layout under hero (optional, but matches the HTML I gave you) */
+.cardLike{
+  border:1px solid var(--border);
+  background: rgba(246,242,231,0.04);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.stayInfoGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.stayInfoMedia{
+  border:1px solid var(--border);
+  background: rgba(246,242,231,0.04);
+  border-radius: var(--radius);
+  overflow:hidden;
+}
+
+.stayInfoMedia img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit: cover;
+  aspect-ratio: 16/10;
+}
+
+/* Right-side text card (replaces the old image panel) */
+.stayInfoText{
+  padding: 18px;
+}
+
+.stayInfoText h2{
+  margin-top: 0;
+}
+
+.staySubhead{
+  margin: 14px 0 8px;
+  font-size: 18px;
+}
+
+.stayMeta{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+  margin: 10px 0 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(246,242,231,0.03);
+}
+
+.stayBullets{
+  margin: 0;
+  padding-left: 18px;
+}
+
+.stayBullets li{
+  margin: 6px 0;
+}
+
+/* Mobile */
+@media (max-width: 900px){
+  .stayPanel{
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .stayPanel__thumbs{
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 84px;
+    gap: 10px;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+
+  .stayThumb{
+    scroll-snap-align: start;
+  }
+
+  .stayInfoGrid{
+    grid-template-columns: 1fr;
+  }
+
+  .stayPanel__thumbs::-webkit-scrollbar{ height: 6px; }
+}
+

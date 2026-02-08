@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Riggside Keswick — The Lake District</title>
+  <meta name="description" content="Riggside Keswick — spacious holiday accommodation near Keswick with easy access to the northern Lake District." />
+  <link rel="icon" href="/assets/hero.jpg">
+  <link rel="apple-touch-icon" href="/assets/hero.jpg">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <div id="siteHeader"></div>
+
+  <main>
+
+    <!-- HERO (background image controlled via --hero-img, gallery panel sits inside hero) -->
+    <section class="hero hero--stay">
+      <div class="hero__overlay"></div>
+
+      <div class="container hero__content stayHero">
+        <p class="pill">Featured stay • Near Keswick</p>
+
+        <h1>Riggside Keswick</h1>
+        <p class="subhead">
+          Spacious holiday accommodation just outside Keswick, with fell views and
+          easy access to the northern Lake District.
+        </p>
+
+        <!-- Gallery panel INSIDE hero -->
+        <div class="stayPanel" aria-label="Photo gallery">
+          <div class="stayPanel__main">
+            <img
+              id="stayMainImg"
+              src="/assets/stays/riggside-keswick/hero.jpg"
+              alt="Riggside Keswick — main photo"
+              loading="eager"
+            />
+          </div>
+
+          <div class="stayPanel__thumbs" aria-label="Gallery thumbnails">
+            <button class="stayThumb isActive" type="button" data-img="/assets/stays/riggside-keswick/hero.jpg" aria-label="View photo 1">
+              <img src="/assets/stays/riggside-keswick/hero.jpg" alt="" loading="lazy" />
+            </button>
+
+            <button class="stayThumb" type="button" data-img="/assets/stays/riggside-keswick/img-1.jpg" aria-label="View photo 2">
+              <img src="/assets/stays/riggside-keswick/img-1.jpg" alt="" loading="lazy" />
+            </button>
+
+            <button class="stayThumb" type="button" data-img="/assets/stays/riggside-keswick/img-2.jpg" aria-label="View photo 3">
+              <img src="/assets/stays/riggside-keswick/img-2.jpg" alt="" loading="lazy" />
+            </button>
+
+            <button class="stayThumb" type="button" data-img="/assets/stays/riggside-keswick/img-3.jpg" aria-label="View photo 4">
+              <img src="/assets/stays/riggside-keswick/img-3.jpg" alt="" loading="lazy" />
+            </button>
+
+            <button class="stayThumb" type="button" data-img="/assets/stays/riggside-keswick/img-4.jpg" aria-label="View photo 5">
+              <img src="/assets/stays/riggside-keswick/img-4.jpg" alt="" loading="lazy" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Optional quick CTAs (keeps conversion high) -->
+        <div class="ctaRow" style="margin-top:14px;">
+          <a class="btn btn--primary" href="https://riggsidekeswick.com/" target="_blank" rel="noopener">Check availability</a>
+          <a class="btn btn--ghost" href="#about">About this stay</a>
+        </div>
+
+        <p class="hero__note">
+          Featured on thelakesincumbria.co.uk with permission from the property owner.
+        </p>
+      </div>
+    </section>
+
+    <!-- INFO -->
+    <section class="section" id="about">
+      <div class="container">
+        <div class="stayInfoGrid">
+          <div class="cardLike">
+            <h2>About this stay</h2>
+            <p class="bodyCopy">
+              Editorial description here. Keep this to 2–4 sentences: what it is, who it’s best for,
+              and why the location is great as a base.
+            </p>
+
+            <ul class="stayFacts">
+              <li><strong>Location:</strong> Near Keswick</li>
+              <li><strong>Ideal for:</strong> Families & groups</li>
+              <li><strong>Setting:</strong> Quiet rural location</li>
+            </ul>
+
+            <a class="btn btn--primary" href="https://riggsidekeswick.com/" target="_blank" rel="noopener">
+              Check availability
+            </a>
+
+            <p class="formNote" style="margin-top:10px;">
+              You’ll book directly with the property via their official website.
+            </p>
+          </div>
+
+          <div class="cardLike stayInfoText">
+                <h2>Property highlights</h2>
+                <p class="bodyCopy">
+                    A spacious home just outside Keswick with fell views — ideal for family getaways and group trips.
+                </p>
+
+                <div class="stayMeta">
+                    <div><strong>Sleeps:</strong> 8</div>
+                    <div><strong>Bedrooms:</strong> 4</div>
+                    <div><strong>Bathrooms:</strong> 2</div>
+                    <div><strong>Type:</strong> Entire home</div>
+                </div>
+
+                <h3 class="staySubhead">Good to know</h3>
+                <ul class="stayBullets">
+                    <li>Easy access to Keswick & the northern lakes</li>
+                    <li>Great base for walks, days out, and group breaks</li>
+                    <li>Book direct with the owner via the official site</li>
+                </ul>
+
+                <a class="btn btn--ghost" href="https://riggsidekeswick.com/about/" target="_blank" rel="noopener">
+                    View full details
+                </a>
+
+                <p class="formNote" style="margin-top:10px;">
+                    Featured on thelakesincumbria.co.uk with permission from the property owner.
+                </p>
+            </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="siteFooter"></div>
+  </main>
+
+  <script src="./app.js"></script>
+
+  <!-- Tiny gallery script (you said you'll paste JS yourself; keep/remove as you like) -->
+  <script>
+    document.querySelectorAll('.stayThumb').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const src = btn.getAttribute('data-img');
+        const main = document.getElementById('stayMainImg');
+        if (!main || !src) return;
+        main.src = src;
+
+        document.querySelectorAll('.stayThumb').forEach(b => b.classList.remove('isActive'));
+        btn.classList.add('isActive');
+      });
+    });
+  </script>
+</body>
+</html>

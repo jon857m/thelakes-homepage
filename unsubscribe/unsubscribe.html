@@ -1,1 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unsubscribe</title>
 
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
+
+<main class="container">
+  <section class="card">
+    <h1 id="title">Unsubscribing…</h1>
+    <p id="msg">Please wait.</p>
+  </section>
+</main>
+
+<script>
+(async () => {
+  const params = new URLSearchParams(location.search);
+  const token = params.get("token");
+
+  const title = document.getElementById("title");
+  const msg = document.getElementById("msg");
+
+  if (!token) {
+    title.textContent = "Invalid link";
+    msg.textContent = "That unsubscribe link looks incomplete.";
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/unsubscribe?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+
+    if (data.ok) {
+      title.textContent = "Unsubscribed";
+      msg.textContent = "✅ You’ve been unsubscribed. You won’t receive further emails.";
+    } else {
+      title.textContent = "Link not valid";
+      msg.textContent = data.message || "This link is not valid.";
+    }
+  } catch {
+    title.textContent = "Error";
+    msg.textContent = "Something went wrong. Please try again.";
+  }
+})();
+</script>
+
+</body>
+</html>

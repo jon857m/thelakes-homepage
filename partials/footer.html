@@ -9,11 +9,18 @@
         </p>
       </div>
 
-<form class="signupForm" id="signupForm">
+<form class="signupForm js-signup-form"
+      id="signupForm"
+      data-source="footer"
+      data-offer-id=""
+      data-consent-text="I agree to receive occasional emails from The Lake District community hub. I can unsubscribe at any time."
+      data-consent-version="v1">
   <div class="signupForm__row">
     <label class="srOnly" for="email">Email address</label>
     <input class="signupForm__email" id="email" name="email" type="email" placeholder="you@email.com" required />
     <button class="btn btn--primary signupForm__btn" type="submit" id="signupBtn">Notify me</button>
+    <p class="formNote" data-subscribe-status></p>
+    <p class="signup__status" data-subscribe-status></p>
   </div>
 
   <label class="signupForm__consent">
@@ -50,3 +57,13 @@
     <span>© <span id="year"></span> Waypoint Media</span>
   </div>
 </footer>
+
+<script src="/app.js"></script>
+<script>
+  document.querySelectorAll("form.signupForm").forEach(f => {
+    f.addEventListener("submit", (e) => {
+      e.preventDefault();
+      ldSubscribe(f);
+    });
+  });
+</script>

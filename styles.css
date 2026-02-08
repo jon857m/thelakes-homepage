@@ -371,12 +371,7 @@ input:focus{border-color: rgba(234,182,121,0.55)}
   .updates-intro-secondary { display: none; }
 }
 
-/* Prevent iOS zoom on form focus */
-input,
-textarea,
-select {
-  font-size: 16px;
-}
+
 
 
 /* Footer signup: compact + subtle (robust selectors) */
@@ -722,5 +717,21 @@ footer .signup .consent,
     aspect-ratio: 4 / 3;      /* keeps them consistent */
     object-fit: cover;
     display: block;
+  }
+}
+
+@media (max-width: 900px){
+  #siteFooter .signup input:not([type="checkbox"]),
+  footer .signup input:not([type="checkbox"]),
+  .footer .signup input:not([type="checkbox"]){
+    font-size: 16px !important; /* this is the key */
+  }
+
+  /* Optional: keep the button looking balanced if it looks small next to 16px input */
+  #siteFooter .signup .btn,
+  footer .signup .btn,
+  .footer .signup .btn{
+    font-size: 16px !important;
+    padding: 10px 14px !important;
   }
 }

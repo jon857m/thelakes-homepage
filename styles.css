@@ -676,3 +676,46 @@ footer .signup .consent,
   .stayPanel__thumbs::-webkit-scrollbar{ height: 6px; }
 }
 
+/* Mobile: turn the thumbnail column into a horizontal swipe strip */
+@media (max-width: 900px){
+
+  /* The media area becomes one column */
+  .stayPanel__media{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Make sure the main image spans full width */
+  .stayMain{
+    width: 100%;
+  }
+
+  /* Thumbs become a horizontal strip */
+  .stayPanel__thumbs{
+    display: flex;
+    gap: 10px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+
+    padding: 6px 2px 10px;
+    scroll-snap-type: x mandatory;
+  }
+
+  /* Each thumb is a fixed-size card in the strip */
+  .stayThumb{
+    flex: 0 0 auto;
+    width: 92px;              /* tweak: 80–110 */
+    scroll-snap-align: start;
+  }
+
+  .stayThumb img{
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;      /* keeps them consistent */
+    object-fit: cover;
+    display: block;
+  }
+}

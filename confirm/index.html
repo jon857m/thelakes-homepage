@@ -1,1 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirm subscription</title>
 
+  <!-- reuse your existing CSS -->
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
+
+<main class="container">
+  <section class="card">
+    <h1 id="title">Confirming…</h1>
+    <p id="msg">Please wait.</p>
+  </section>
+</main>
+
+<script>
+(async () => {
+  const params = new URLSearchParams(location.search);
+  const token = params.get("token");
+
+  const title = document.getElementById("title");
+  const msg = document.getElementById("msg");
+
+  if (!token) {
+    title.textContent = "Invalid link";
+    msg.textContent = "That confirmation link looks incomplete.";
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/verify?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+
+    if (data.ok) {
+      title.textContent = "Confirmed ✅";
+      msg.textContent =
+        data.offer_status === "sent"
+          ? "You’re confirmed. Your guide has been sent to your email."
+          : "You’re confirmed — all set.";
+    } else {
+      title.textContent = "Link not valid";
+      msg.textContent = data.message || "This link has already been used.";
+    }
+  } catch {
+    title.textContent = "Error";
+    msg.textContent = "Something went wrong. Please try again.";
+  }
+})();
+</script>
+
+</body>
+</html>

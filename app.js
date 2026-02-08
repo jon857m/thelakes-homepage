@@ -44,59 +44,130 @@ function wireYear() {
 
 // 5) Signup handler (supports multiple forms: homepage + footer)
 function wireSignupForms() {
+  // Finds ALL signup forms (footer + pages) and wires them once.
+  // Requirements:
+  // - form has class: js-signup-form
+  // - has an email input (type="email" OR name="email")
+  // - optional: [data-subscribe-status] element to show messages
+
   const forms = document.querySelectorAll("form.js-signup-form");
+  if (!forms.length) return;
+
+  // Local dev (Live Server) can’t hit /api/*, so send to production.
+  const API_BASE =
+    (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+      ? "https://www.thelakesincumbria.co.uk"
+      : "";
+
   forms.forEach((form) => {
+    // Avoid double-wiring if partials load more than once
+    if (form.dataset.wired === "1") return;
+    form.dataset.wired = "1";
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const input = form.querySelector('input[name="email"]');
-      const note =
+      const emailEl =
+        form.querySelector('input[type="email"]') ||
+        form.querySelector('input[name="email"]');
+
+      const consentEl =
+        form.querySelector('input[type="checkbox"][name="consent"]') ||
+        form.querySelector('input[type="checkbox"]');
+
+      const buttonEl =
+        form.querySelector('button[type="submit"]') ||
+        form.querySelector('input[type="submit"]');
+
+      const statusEl =
+        form.querySelector("[data-subscribe-status]") ||
         form.querySelector(".formNote") ||
-        form.parentElement?.querySelector(".formNote");
-      const btn = form.querySelector('button[type="submit"]');
-      const consent = !!form.querySelector('input[name="consent"]')?.checked;
+        form.querySelector(".signup__status");
 
-      const email = (input?.value || "").trim();
-      if (!email) return;
+      const email = (emailEl?.value || "").trim();
 
+      // Read tracking + consent from data-* (per your plan)
       const source = form.getAttribute("data-source") || "unknown";
+      const offerId = form.getAttribute("data-offer-id") || "";
+      const consentText = form.getAttribute("data-consent-text") || "";
+      const consentVersion = form.getAttribute("data-consent-version") || "v1";
+
+      // Basic validation (keep it friendly)
+      if (!email || !email.includes("@")) {
+        if (statusEl) statusEl.textContent = "Please enter a valid email address.";
+        emailEl?.focus?.();
+        return;
+      }
+
+      if (consentEl && !consentEl.checked) {
+        if (statusEl) statusEl.textContent = "Please tick the consent box to continue.";
+        consentEl?.focus?.();
+        return;
+      }
+
+      if (!consentText) {
+        if (statusEl) statusEl.textContent = "Consent text missing (site config).";
+        return;
+      }
+
+      // Button state to prevent double clicks
+      const oldBtnText = buttonEl ? (buttonEl.textContent || buttonEl.value || "") : "";
+      if (buttonEl) {
+        buttonEl.disabled = true;
+        if ("textContent" in buttonEl) buttonEl.textContent = "Submitting…";
+        else buttonEl.value = "Submitting…";
+      }
+      if (statusEl) statusEl.textContent = "Working…";
 
       try {
-        if (btn) {
-          btn.disabled = true;
-          btn.textContent = "Sending…";
-        }
-
-        const r = await fetch("/api/signup", {
+        const res = await fetch(API_BASE + "/api/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, source, consent })
+          body: JSON.stringify({
+            email,
+            source,
+            offer_id: offerId,
+            page_url: location.pathname,
+            user_agent: navigator.userAgent,
+            consent_text: consentText,
+            consent_version: consentVersion
+          })
         });
 
-        const data = await r.json().catch(() => ({}));
+        // If something upstream returns HTML (bad route), this will throw.
+        const data = await res.json();
 
-        if (!r.ok || !data.ok) {
-          if (note) note.textContent = "Sorry — something went wrong. Please try again in a minute.";
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = "Notify me";
+        if (data.ok) {
+          // Match your Apps Script statuses
+          if (data.status === "pending") {
+            if (statusEl) statusEl.textContent = "Check your email to confirm (including spam/junk).";
+          } else if (data.status === "already_active" || data.status === "already_active_offer_requested") {
+            if (data.offer_status === "sent") {
+              if (statusEl) statusEl.textContent = "You’re already subscribed — we’ve sent your guide.";
+            } else {
+              if (statusEl) statusEl.textContent = "You’re already subscribed — all set.";
+            }
+          } else {
+            if (statusEl) statusEl.textContent = data.message || "Done.";
           }
-          return;
+        } else {
+          if (statusEl) statusEl.textContent = data.message || "Something went wrong — please try again.";
         }
-
-        if (note) note.textContent = "Thanks — you’re on the list ✅";
-        form.reset();
-        if (btn) btn.textContent = "Added";
-      } catch {
-        if (note) note.textContent = "Sorry — something went wrong. Please try again in a minute.";
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = "Notify me";
+      } catch (err) {
+        if (statusEl) statusEl.textContent = "Network error — please try again.";
+        // Optional: console for debugging without bothering users
+        console.error("Signup submit failed:", err);
+      } finally {
+        if (buttonEl) {
+          buttonEl.disabled = false;
+          if ("textContent" in buttonEl) buttonEl.textContent = oldBtnText;
+          else buttonEl.value = oldBtnText;
         }
       }
     });
   });
 }
+
 
 document.addEventListener("DOMContentLoaded", () => {
   injectPartials().catch((err) => {
@@ -123,3 +194,80 @@ document.querySelectorAll('.stayThumb').forEach(btn => {
 
 const firstThumb = document.querySelector('.stayThumb');
 if (firstThumb) firstThumb.classList.add('isActive');
+
+async function ldSubscribe(formEl, opts = {}) {
+  const emailEl = formEl.querySelector('input[type="email"]');
+  const buttonEl = formEl.querySelector('button[type="submit"], input[type="submit"]');
+  const statusEl = formEl.querySelector('[data-subscribe-status]');
+
+  const email = (emailEl?.value || "").trim();
+
+  const payload = {
+    email,
+    source: opts.source || formEl.getAttribute("data-source") || "unknown",
+    offer_id: opts.offerId || formEl.getAttribute("data-offer-id") || "",
+    page_url: location.pathname,
+    user_agent: navigator.userAgent,
+    consent_text: opts.consentText || formEl.getAttribute("data-consent-text") || "",
+    consent_version: opts.consentVersion || formEl.getAttribute("data-consent-version") || "v1"
+  };
+
+const API_BASE =
+    (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+      ? "https://www.thelakesincumbria.co.uk"
+      : "";
+
+  // Basic validation
+  if (!email || !email.includes("@")) {
+    if (statusEl) statusEl.textContent = "Please enter a valid email.";
+    return;
+  }
+  if (!payload.consent_text) {
+    if (statusEl) statusEl.textContent = "Consent text missing (site config).";
+    return;
+  }
+
+  // Button state to prevent double clicks
+  const oldBtnText = buttonEl ? (buttonEl.textContent || buttonEl.value) : "";
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    if ("textContent" in buttonEl) buttonEl.textContent = "Submitting…";
+    else buttonEl.value = "Submitting…";
+  }
+  if (statusEl) statusEl.textContent = "Working…";
+
+  try {
+    const res = await fetch(API_BASE + "/api/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    // Interpret responses from your Apps Script
+    if (data.ok) {
+      if (data.status === "pending") {
+        if (statusEl) statusEl.textContent = "Check your email to confirm (including spam/junk).";
+      } else if (data.status === "already_active") {
+        if (data.offer_status === "sent") {
+          if (statusEl) statusEl.textContent = "You’re already subscribed — we’ve sent your guide.";
+        } else {
+          if (statusEl) statusEl.textContent = "You’re already subscribed — all set.";
+        }
+      } else {
+        if (statusEl) statusEl.textContent = data.message || "Done.";
+      }
+    } else {
+      if (statusEl) statusEl.textContent = data.message || "Something went wrong.";
+    }
+  } catch (e) {
+    if (statusEl) statusEl.textContent = "Network error. Please try again.";
+  } finally {
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      if ("textContent" in buttonEl) buttonEl.textContent = oldBtnText;
+      else buttonEl.value = oldBtnText;
+    }
+  }
+}

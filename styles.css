@@ -736,3 +736,43 @@ footer .signup .consent,
     padding: 10px 14px !important;
   }
 }
+
+/* =========================================
+   Footer signup: wider + more "premium" (desktop only)
+   ========================================= */
+@media (min-width: 901px){
+
+  /* Turn the footer signup card into a 2-col grid so the form column is wider */
+  #siteFooter .signup{
+    display: grid !important;
+    grid-template-columns: 1fr minmax(420px, 420px);
+    align-items: start !important;
+    gap: 18px !important;
+  }
+
+  /* Let the copy breathe but not dominate */
+  #siteFooter .signup p{
+    max-width: 52ch !important;
+  }
+
+  /* Make the form column stretch and start earlier (less "pushed right") */
+  #siteFooter .signupForm{
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  /* Ensure the input can grow properly */
+  #siteFooter .signupForm__row{
+    grid-template-columns: 1fr auto;
+  }
+
+  #siteFooter .signupForm__email{
+    width: 100%;
+    min-width: 0; /* important for Safari/grid */
+  }
+
+  /* Keep consent aligned to the same visual width as the input area */
+  #siteFooter .signupForm__consent{
+    max-width: 420px;
+  }
+}

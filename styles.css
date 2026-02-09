@@ -409,7 +409,7 @@ footer .signup__form,
 #siteFooter .signup input:not([type="checkbox"]),
 footer .signup input:not([type="checkbox"]),
 .footer .signup input:not([type="checkbox"]){
-  min-width: 300px !important;
+  min-width: 200px !important;
   padding: 9px 12px !important;
   font-size: 14px !important;
   background: rgba(246,242,231,0.045) !important;

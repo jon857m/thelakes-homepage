@@ -719,3 +719,20 @@ footer .signup .consent,
     display: block;
   }
 }
+
+/* iOS/mobile: stop Safari zooming the page when tapping into the email field */
+@media (max-width: 900px){
+  #siteFooter .signup input:not([type="checkbox"]),
+  footer .signup input:not([type="checkbox"]),
+  .footer .signup input:not([type="checkbox"]){
+    font-size: 16px !important; /* this is the key */
+  }
+
+  /* Optional: keep the button looking balanced if it looks small next to 16px input */
+  #siteFooter .signup .btn,
+  footer .signup .btn,
+  .footer .signup .btn{
+    font-size: 16px !important;
+    padding: 10px 14px !important;
+  }
+}

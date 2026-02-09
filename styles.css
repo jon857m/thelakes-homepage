@@ -462,17 +462,6 @@ footer .signup .consent,
   }
 }
 
-@media (min-width: 900px){
-  .signupForm__email{
-    height: 44px;
-    padding: 0 14px;
-    font-size: 16px;
-  }
-  .signupForm__btn{
-    height: 44px;
-  }
-}
-
 /* === Signup component (rebuild) === */
 .signupForm{
   display: grid;
@@ -497,11 +486,6 @@ footer .signup .consent,
   gap: 10px;
   align-items: start;
   opacity: 0.85;
-}
-
-.signupForm__btn{
-  min-width: 120px;
-  white-space: nowrap;
 }
 
 .signupForm__check{
@@ -733,21 +717,5 @@ footer .signup .consent,
     aspect-ratio: 4 / 3;      /* keeps them consistent */
     object-fit: cover;
     display: block;
-  }
-}
-
-@media (max-width: 900px){
-  #siteFooter .signup input:not([type="checkbox"]),
-  footer .signup input:not([type="checkbox"]),
-  .footer .signup input:not([type="checkbox"]){
-    font-size: 16px !important; /* this is the key */
-  }
-
-  /* Optional: keep the button looking balanced if it looks small next to 16px input */
-  #siteFooter .signup .btn,
-  footer .signup .btn,
-  .footer .signup .btn{
-    font-size: 16px !important;
-    padding: 10px 14px !important;
   }
 }

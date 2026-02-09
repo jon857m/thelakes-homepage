@@ -10,6 +10,7 @@
       </div>
 
 <form class="signupForm" data-form-id="footer_global_v1">
+
   <div class="signupForm__row">
     <label class="srOnly" for="email_footer">Email address</label>
     <input
@@ -21,16 +22,27 @@
       autocomplete="email"
       required
     />
-    <button class="btn btn--primary signupForm__btn" type="submit">Notify me</button>
+    <button class="btn btn--primary signupForm__btn" type="submit">
+      Notify me
+    </button>
   </div>
 
   <label class="signupForm__consent">
-    <input class="signupForm__check" type="checkbox" name="consent" required />
+    <input
+      class="signupForm__check"
+      type="checkbox"
+      name="consent"
+      required
+    />
     <span class="signupForm__copy">
       I agree to receive occasional emails.
-      <em class="consentNote">No spam. Unsubscribe any time.</em>
     </span>
   </label>
+
+  <!-- ✅ Single dynamic line (reassure → verify) -->
+  <p class="formNote formNote--reassure">
+    No spam. Unsubscribe any time.
+  </p>
 
   <!-- Exact consent text written to Google Sheet -->
   <input
@@ -38,11 +50,14 @@
     name="consent_text"
     value="I agree to receive occasional emails from The Lake District community hub. I can unsubscribe at any time."
   />
-  <input type="hidden" name="consent_version" value="v1" />
+  <input
+    type="hidden"
+    name="consent_version"
+    value="v1"
+  />
 
-  <!-- Message area (JS writes status here) -->
-  <p class="formNote">No spam. Unsubscribe any time.</p>
 </form>
+
 
 
         </div>

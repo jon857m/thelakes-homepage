@@ -129,25 +129,18 @@ function wireSignupForms() {
         }
 
         // Match your Apps Script statuses
+
         if (data.status === "pending") {
-          if (note) note.textContent = "Check your email to confirm (including spam/junk).";
-          if (input) {
-            input.value = "";
-            input.blur();
+          if (note) {
+            note.textContent = "Check your email to confirm (including spam/junk).";
+            note.classList.remove("formNote--reassure");
+            note.classList.add("formNote--verify");
           }
+          if (input) { input.value = ""; input.blur(); }
           if (btn) btn.textContent = "Sent";
-          return;
+        return;
         }
 
-        if (data.status === "already_active" || data.status === "already_active_offer_requested") {
-          if (note) note.textContent = data.message || "You’re already subscribed — all set.";
-          if (input) {
-            input.value = "";
-            input.blur();
-          }
-          if (btn) btn.textContent = "Done";
-          return;
-        }
 
         if (note) note.textContent = data.message || "Done.";
         form.reset();

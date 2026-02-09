@@ -141,6 +141,9 @@ function wireSignupForms() {
           // Match your Apps Script statuses
           if (data.status === "pending") {
             if (statusEl) statusEl.textContent = "Check your email to confirm (including spam/junk).";
+            // ✅ clear the field + drop focus (feels deliberate, helps iOS)
+    if (emailEl) { emailEl.value = ""; emailEl.blur(); }
+  
           } else if (data.status === "already_active" || data.status === "already_active_offer_requested") {
             if (data.offer_status === "sent") {
               if (statusEl) statusEl.textContent = "You’re already subscribed — we’ve sent your guide.";

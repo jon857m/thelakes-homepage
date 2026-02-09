@@ -462,6 +462,17 @@ footer .signup .consent,
   }
 }
 
+@media (min-width: 900px){
+  .signupForm__email{
+    height: 44px;
+    padding: 0 14px;
+    font-size: 16px;
+  }
+  .signupForm__btn{
+    height: 44px;
+  }
+}
+
 /* === Signup component (rebuild) === */
 .signupForm{
   display: grid;
@@ -486,6 +497,11 @@ footer .signup .consent,
   gap: 10px;
   align-items: start;
   opacity: 0.85;
+}
+
+.signupForm__btn{
+  min-width: 120px;
+  white-space: nowrap;
 }
 
 .signupForm__check{

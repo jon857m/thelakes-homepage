@@ -784,3 +784,44 @@ footer .signup .consent,
     max-width: 420px;
   }
 }
+
+/* ========= Get Updates: stronger CTA card ========= */
+/* Use higher specificity so it always wins over .signup base rules */
+.section .signup.signup--cta{
+  padding: 34px 28px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+}
+
+/* Make the action area feel more "conversion" */
+.section .signup.signup--cta .signupForm__email{
+  height: 48px;
+  font-size: 15px;
+}
+
+.section .signup.signup--cta .signupForm__btn{
+  padding: 12px 20px;
+  font-size: 15px;
+}
+
+/* Slightly stronger heading so it reads like a CTA */
+.section .signup.signup--cta .signup__copy h3{
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+
+.section .signup.signup--cta .signup__copy p{
+  font-size: 14.5px;
+}
+
+/* Desktop layout: give the form more presence */
+@media (min-width: 901px){
+  .section .signup.signup--cta{
+    display: grid;
+    grid-template-columns: 1fr minmax(560px, 600px);
+    gap: 22px;
+    align-items: center;
+  }
+}

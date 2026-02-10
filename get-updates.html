@@ -49,7 +49,7 @@
           Occasional highlights, seasonal ideas, and launch updates — as we build new tools for the Lake District community.
         </p>
 
-        <div class="signup" id="signup">
+        <div class="signup signup--wide signup--cta" id="signup">
           <div class="signup__copy">
             <h3>Leave your email</h3>
             <p>
@@ -57,21 +57,38 @@
             </p>
           </div>
 
-<form class="signupForm" id="signupForm">
+<form class="signupForm" data-form-id="updates_mid_v1">
   <div class="signupForm__row">
-    <label class="srOnly" for="email">Email address</label>
-    <input class="signupForm__email" id="email" name="email" type="email" placeholder="you@email.com" required />
-    <button class="btn btn--primary signupForm__btn" type="submit" id="signupBtn">Notify me</button>
+    <label class="srOnly" for="email_updates">Email address</label>
+    <input
+      class="signupForm__email"
+      id="email_updates"
+      name="email"
+      type="email"
+      placeholder="you@email.com"
+      autocomplete="email"
+      required
+    />
+    <button class="btn btn--primary signupForm__btn" type="submit">
+      Notify me
+    </button>
   </div>
 
   <label class="signupForm__consent">
     <input class="signupForm__check" type="checkbox" name="consent" required />
-    <span class="signupForm__copy">
-      I agree to receive occasional emails.
-      <em class="consentNote">No spam. Unsubscribe any time.</em>
-    </span>
+    <span class="signupForm__copy">I agree to receive occasional emails.</span>
   </label>
+
+  <p class="formNote formNote--reassure">No spam. Unsubscribe any time.</p>
+
+  <input
+    type="hidden"
+    name="consent_text"
+    value="I agree to receive occasional emails from The Lake District community hub. I can unsubscribe at any time."
+  />
+  <input type="hidden" name="consent_version" value="v1" />
 </form>
+
         </div>
       </div>
     </section>

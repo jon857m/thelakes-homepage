@@ -825,3 +825,26 @@ footer .signup .consent,
     align-items: center;
   }
 }
+
+/* iOS Safari: prevent zoom-on-focus by ensuring form controls are >= 16px.
+   Put this at the VERY END of your main CSS so it wins. */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 900px) {
+
+    /* Your two known email inputs (main + footer) */
+    .signupForm__email,
+    #siteFooter input[type="email"],
+
+    /* Safety net: any text-like controls on mobile iOS */
+    input[type="email"],
+    input[type="text"],
+    input[type="tel"],
+    input[type="search"],
+    input[type="password"],
+    textarea,
+    select {
+      font-size: 16px !important;
+      line-height: 1.2; /* keeps things tidy */
+    }
+  }
+}

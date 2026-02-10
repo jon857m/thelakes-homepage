@@ -90,8 +90,14 @@ function wireSignupForms() {
         (form.getAttribute("data-source") || "").trim() ||
         "unknown_form";
 
-      // Optional offer id (only if a page-specific form requests a guide)
-      const offerId = (form.querySelector('input[name="offer_id"]')?.value || "").trim();
+      // Offer/campaign id:
+      // - URL param ?offer_id=... overrides everything (campaign tracking)
+      // - otherwise default from hidden input on the form
+      // - fallback to "general_signup"
+      const offerId =
+        (new URLSearchParams(window.location.search).get("offer_id") || "").trim() ||
+        (form.querySelector('input[name="offer_id"]')?.value || "").trim() ||
+        "general_signup";
 
       const payload = {
         email,
@@ -102,6 +108,7 @@ function wireSignupForms() {
         consent_text: consentText,
         consent_version: consentVersion
       };
+
 
       try {
         if (btn) {

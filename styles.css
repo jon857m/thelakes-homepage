@@ -13,6 +13,8 @@
   --radius: 18px;
 }
 
+html { overflow-y: scroll; }
+
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{

@@ -230,3 +230,137 @@ document.addEventListener("DOMContentLoaded", async () => {
   // If partial injection introduced stayThumbs on that page, this is harmless (guards stop double-bind)
   wireStayThumbs();
 });
+
+// ---- Live Conditions Strip (Met Office via your /api/conditions Worker) ----
+// Expecting your Worker to return: { ok, place, lat, lon, tempC, summary, windMph, badgeText, badge }
+(async function initConditionsStrip(){
+  const el = document.getElementById("conditionsStrip");
+  if (!el) return;
+
+  // Don’t bother if user is offline
+  if (navigator.onLine === false) {
+    el.textContent = "Offline — conditions unavailable.";
+    return;
+  }
+
+  try {
+      const API_BASE =
+    location.hostname === "127.0.0.1" ||
+    location.hostname === "localhost"
+      ? "https://www.thelakesincumbria.co.uk"
+      : "";
+
+      const res = await fetch(`${API_BASE}/api/conditions`, { cache: "no-store" });
+      const data = await res.json();
+
+    if (!data || !data.ok) throw new Error("Bad conditions response");
+
+    // Sunrise/Sunset from lat/lon (computed locally)
+    const { sunrise, sunset } = calcSunTimes(data.lat, data.lon);
+
+    // Compose the strip text
+    const temp = (data.tempC ?? "–") + "°C";
+    const summary = data.summary || "—";
+    const wind = (data.windMph ?? "–") + "mph";
+
+    // Example: 🌤 6°C · Broken cloud · Wind 9mph · Sunrise 7:28 · Sunset 17:10 🟡 Breezy on ridges
+    const badgeEmoji = badgeToEmoji(data.badge);
+    const badgeText = data.badgeText ? ` ${badgeEmoji} ${data.badgeText}` : "";
+
+    const nbsp = "\u00A0"; // non-breaking space
+
+    const windChunk = `Wind${nbsp}${wind}`;
+    const sunriseChunk = `Sunrise${nbsp}${sunrise}`;
+    const sunsetChunk = `Sunset${nbsp}${sunset}`;
+
+    el.textContent =
+      `🌤 ${temp} · ${summary} · ${windChunk} · ${sunriseChunk} · ${sunsetChunk}` +
+      badgeText;
+
+
+  } catch (e) {
+    el.textContent = "Live conditions unavailable (tap to retry).";
+    el.style.cursor = "pointer";
+    el.addEventListener("click", () => location.reload(), { once: true });
+  }
+
+  function badgeToEmoji(badge){
+    // badge can be "green"|"yellow"|"red" or similar
+    const b = String(badge || "").toLowerCase();
+    if (b.includes("green")) return "🟢";
+    if (b.includes("red")) return "🔴";
+    return "🟡";
+  }
+
+  function calcSunTimes(lat, lon){
+    // Lightweight sunrise/sunset calculation (no external library).
+    // Accuracy is good enough for “golden hour awareness”.
+    // If you want absolute best accuracy later, we can swap to SunCalc.
+
+    const now = new Date();
+    const times = solarTimes(now, lat, lon);
+    return {
+      sunrise: formatLocalTime(times.sunrise),
+      sunset: formatLocalTime(times.sunset),
+    };
+  }
+
+  function formatLocalTime(d){
+    // local device time (user’s iPhone)
+    const hh = d.getHours();
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  // --- Minimal sunrise/sunset (NOAA-ish) ---
+  // Source-free implementation; compact + avoids pulling a lib.
+  function solarTimes(date, lat, lon){
+    // returns Date objects in local time
+    const rad = Math.PI / 180;
+    const day = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(date.getFullYear(), 0, 0)) / 86400000);
+
+    const lngHour = lon / 15;
+
+    function calc(isSunrise){
+      const t = day + ((isSunrise ? 6 : 18) - lngHour) / 24;
+      const M = (0.9856 * t) - 3.289;
+      let L = M + (1.916 * Math.sin(rad * M)) + (0.020 * Math.sin(rad * 2 * M)) + 282.634;
+      L = (L + 360) % 360;
+
+      let RA = (180 / Math.PI) * Math.atan(0.91764 * Math.tan(rad * L));
+      RA = (RA + 360) % 360;
+
+      const Lquadrant  = Math.floor(L / 90) * 90;
+      const RAquadrant = Math.floor(RA / 90) * 90;
+      RA = RA + (Lquadrant - RAquadrant);
+      RA = RA / 15;
+
+      const sinDec = 0.39782 * Math.sin(rad * L);
+      const cosDec = Math.cos(Math.asin(sinDec));
+
+      // civil sunrise/sunset ≈ 90.833°
+      const cosH = (Math.cos(rad * 90.833) - (sinDec * Math.sin(rad * lat))) / (cosDec * Math.cos(rad * lat));
+
+      // Guard polar edge cases (not an issue for Lakes, but safe)
+      if (cosH > 1) return null;  // sun never rises
+      if (cosH < -1) return null; // sun never sets
+
+      let H = isSunrise ? (360 - (180 / Math.PI) * Math.acos(cosH)) : (180 / Math.PI) * Math.acos(cosH);
+      H = H / 15;
+
+      const T = H + RA - (0.06571 * t) - 6.622;
+      let UT = (T - lngHour) % 24;
+      if (UT < 0) UT += 24;
+
+      // Convert UT to local Date
+      const d = new Date(date);
+      const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0));
+      utc.setUTCHours(Math.floor(UT), Math.floor((UT % 1) * 60), 0, 0);
+      return new Date(utc.getTime()); // will display in local time
+    }
+
+    const sunrise = calc(true) || new Date(date);
+    const sunset  = calc(false) || new Date(date);
+    return { sunrise, sunset };
+  }
+})();

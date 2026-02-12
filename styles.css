@@ -850,3 +850,26 @@ footer .signup .consent,
     }
   }
 }
+
+    /* NEW: Hero conditions strip (reuses .pill, just tweaks layout) */
+    .hero .hero__content #conditionsStrip{
+      display: inline-block;
+      margin-top: 10px;
+      margin-bottom: 12px;
+      max-width: 720px; /* keeps it premium on desktop */
+      text-wrap: balance;
+    }
+
+    #conditionsStrip{
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }    
+
+    /* Slightly stronger readability for live conditions on mobile */
+  @media (max-width: 768px) {
+    #conditionsStrip {
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      text-align: left;
+    }
+}

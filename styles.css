@@ -854,15 +854,22 @@ footer .signup .consent,
     /* NEW: Hero conditions strip (reuses .pill, just tweaks layout) */
     .hero .hero__content #conditionsStrip{
       display: inline-block;
-      margin-top: 10px;
-      margin-bottom: 12px;
       max-width: 720px; /* keeps it premium on desktop */
       text-wrap: balance;
+      margin-top: clamp(-20px, -3vw, -8px);
+      margin-bottom: 10px;
     }
+
+    .hero .hero__content { overflow: visible; }
+
 
     #conditionsStrip{
       white-space: normal;
       overflow-wrap: anywhere;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }    
 
     /* Slightly stronger readability for live conditions on mobile */
@@ -905,7 +912,4 @@ footer .signup .consent,
       opacity: 0.7;
     }
 
-    .hero .hero__content #conditionsStrip{
-      margin-top: 0;
-      margin-bottom: 10px;
-}
+ 

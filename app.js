@@ -273,9 +273,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     const sunriseChunk = `Sunrise${nbsp}${sunrise}`;
     const sunsetChunk = `Sunset${nbsp}${sunset}`;
 
-    el.textContent =
-      `🌤 ${temp} · ${summary} · ${windChunk} · ${sunriseChunk} · ${sunsetChunk}` +
-      badgeText;
+    const updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
+    let updatedText = "";
+    if (updatedAt) {
+      const mins = Math.max(0, Math.floor((Date.now() - updatedAt.getTime()) / 60000));
+      updatedText = ` · Updated ${mins}m ago`;
+    }
+
+    el.innerHTML = `
+      <span class="live-badge">
+        <span class="live-dot"></span>
+        LIVE
+      </span>
+      🌤 ${temp} · ${summary} · ${windChunk} · ${sunriseChunk} · ${sunsetChunk}
+      ${badgeText}
+      <span class="updated-text">${updatedText}</span>
+    `;
 
 
   } catch (e) {

@@ -873,3 +873,34 @@ footer .signup .consent,
       text-align: left;
     }
 }
+
+    /* --- LIVE badge --- */
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      margin-right: 10px;
+      opacity: 0.9;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #ff3b30;
+      border-radius: 50%;
+      animation: pulseLive 1.8s infinite;
+    }
+
+    @keyframes pulseLive {
+      0%   { transform: scale(1); opacity: 1; }
+      50%  { transform: scale(1.4); opacity: 0.4; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .updated-text {
+      margin-left: 8px;
+      font-size: 0.9em;
+      opacity: 0.7;
+    }

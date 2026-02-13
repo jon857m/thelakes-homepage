@@ -904,3 +904,8 @@ footer .signup .consent,
       font-size: 0.9em;
       opacity: 0.7;
     }
+
+    .hero .hero__content #conditionsStrip{
+      margin-top: 0;
+      margin-bottom: 10px;
+}

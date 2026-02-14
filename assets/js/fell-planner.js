@@ -1,0 +1,537 @@
+// ========================================
+// Fell Forecast Planner (V2 - with fallback)
+// - Search fells from /assets/data/fells.json (🏔)
+// - If no fell matches: fallback to Open-Meteo Geocoding (📍)
+// - Select date (today/tomorrow/custom)
+// - Fetch hour-by-hour forecast from Open-Meteo (no key)
+// - Persist: ld_fell_v1 + ld_fell_date_v1
+// ========================================
+
+(function () {
+  const LS_FELL = "ld_fell_v1";
+  const LS_DATE = "ld_fell_date_v1";
+
+  // Elements
+  const statusEl = document.getElementById("plannerStatus");
+  const errEl = document.getElementById("plannerError");
+
+  const fellInput = document.getElementById("fellSearch");
+  const clearFellBtn = document.getElementById("clearFellBtn");
+  const fellSuggest = document.getElementById("fellSuggest");
+
+  const btnToday = document.getElementById("btnToday");
+  const btnTomorrow = document.getElementById("btnTomorrow");
+  const datePick = document.getElementById("datePick");
+
+  const selectedFellNote = document.getElementById("selectedFellNote");
+  const selectedDateNote = document.getElementById("selectedDateNote");
+
+  const summaryPill = document.getElementById("summaryPill");
+  const fellPointEl = document.getElementById("fellPoint");
+  const fellElevEl = document.getElementById("fellElev");
+  const bestWindowEl = document.getElementById("bestWindow");
+  const worstHourEl = document.getElementById("worstHour");
+
+  const hourlyWrap = document.getElementById("hourlyWrap");
+
+  if (!fellInput || !fellSuggest || !datePick || !hourlyWrap) return;
+
+  // State
+  let fells = [];
+  let currentFell = null; // {name, lat, lon, elev_m?, source?}
+  let currentDate = null; // YYYY-MM-DD
+
+  // Helpers
+  function setStatus(msg) { if (statusEl) statusEl.textContent = msg; }
+  function showErr(msg) {
+    if (!errEl) return;
+    errEl.style.display = "block";
+    errEl.textContent = msg;
+  }
+  function clearErr() {
+    if (!errEl) return;
+    errEl.style.display = "none";
+    errEl.textContent = "";
+  }
+
+  function isoDate(d) {
+    // YYYY-MM-DD in local time
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function save(key, obj) {
+    try {
+      if (obj === null || obj === undefined) {
+        localStorage.removeItem(key);
+        return;
+      }
+      localStorage.setItem(key, JSON.stringify(obj));
+    } catch (_) {}
+  }
+
+  function load(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function hideSuggest() {
+    fellSuggest.hidden = true;
+    fellSuggest.innerHTML = "";
+  }
+
+  function renderSelected() {
+    if (selectedFellNote) {
+      if (!currentFell) {
+        selectedFellNote.textContent = "Selected fell: —";
+      } else {
+        const tag = currentFell.source === "geocode" ? "📍" : "🏔";
+        selectedFellNote.textContent = `Selected: ${tag} ${currentFell.name}`;
+      }
+    }
+
+    if (selectedDateNote) {
+      selectedDateNote.textContent = currentDate
+        ? `Selected date: ${currentDate}`
+        : "Selected date: —";
+    }
+
+    if (currentFell) {
+      if (fellPointEl) {
+        fellPointEl.textContent =
+          `${Number(currentFell.lat).toFixed(5)}, ${Number(currentFell.lon).toFixed(5)}`;
+      }
+      if (fellElevEl) {
+        fellElevEl.textContent = currentFell.elev_m ? `${currentFell.elev_m} m` : "—";
+      }
+    } else {
+      if (fellPointEl) fellPointEl.textContent = "—";
+      if (fellElevEl) fellElevEl.textContent = "—";
+    }
+  }
+
+  function renderPlaceholderHourly() {
+    hourlyWrap.innerHTML = `<p class="formNote">Select a fell (or place) and date to load hourly detail.</p>`;
+    summaryPill.textContent = "Choose a fell (or place) and date.";
+    bestWindowEl.textContent = "—";
+    worstHourEl.textContent = "—";
+  }
+
+  function scoreHour(h) {
+    // Lower is better: combine precip probability + gusts + visibility penalty
+    const p = h.precipProb ?? 0;
+    const g = h.gustMph ?? 0;
+    const v = h.visKm ?? 30;
+
+    let s = 0;
+    s += p * 1.2;
+    s += Math.max(0, g - 20) * 1.6; // gusts matter
+    if (v < 2) s += 25;
+    else if (v < 5) s += 12;
+    return s;
+  }
+
+  function pickBestWindow(hours) {
+    // Best 3-hour window between 06:00 and 18:00
+    const filtered = hours.filter(h => {
+      const hh = Number(h.hour);
+      return hh >= 6 && hh <= 18;
+    });
+
+    if (filtered.length < 3) return null;
+
+    let best = null;
+    for (let i = 0; i <= filtered.length - 3; i++) {
+      const window = filtered.slice(i, i + 3);
+      const avg = window.reduce((acc, h) => acc + scoreHour(h), 0) / 3;
+      if (!best || avg < best.avg) {
+        best = { start: window[0].time, end: window[2].time, avg };
+      }
+    }
+    return best;
+  }
+
+  function pickWorstHour(hours) {
+    if (!hours.length) return null;
+    let worst = hours[0];
+    let worstScore = scoreHour(worst);
+    for (const h of hours) {
+      const s = scoreHour(h);
+      if (s > worstScore) {
+        worst = h;
+        worstScore = s;
+      }
+    }
+    return worst;
+  }
+
+  function renderHourly(hours) {
+    if (!hours.length) {
+      hourlyWrap.innerHTML = `<p class="formNote">No hourly data for that date.</p>`;
+      return;
+    }
+
+    hourlyWrap.innerHTML = hours.map(h => {
+      const temp = (h.tempC != null) ? `${Math.round(h.tempC)}°C` : "—";
+      const feels = (h.feelsC != null) ? `${Math.round(h.feelsC)}°C` : "—";
+      const gust = (h.gustMph != null) ? `${Math.round(h.gustMph)} mph` : "—";
+      const wind = (h.windMph != null) ? `${Math.round(h.windMph)} mph` : "—";
+      const pp = (h.precipProb != null) ? `${Math.round(h.precipProb)}%` : "—";
+      const rain = (h.rainMm != null) ? `${h.rainMm.toFixed(1)} mm` : "—";
+      const cloud = (h.cloudPct != null) ? `${Math.round(h.cloudPct)}%` : "—";
+      const vis = (h.visKm != null) ? `${h.visKm.toFixed(1)} km` : "—";
+
+      return `
+        <div class="hourRow">
+          <div class="hourRow__time">${h.time}</div>
+          <div class="hourRow__grid">
+            <div><span class="conditionsKey">Temp</span> ${temp}</div>
+            <div><span class="conditionsKey">Feels</span> ${feels}</div>
+            <div><span class="conditionsKey">Wind</span> ${wind}</div>
+            <div><span class="conditionsKey">Gust</span> ${gust}</div>
+            <div><span class="conditionsKey">Precip</span> ${pp}</div>
+            <div><span class="conditionsKey">Rain</span> ${rain}</div>
+            <div><span class="conditionsKey">Cloud</span> ${cloud}</div>
+            <div><span class="conditionsKey">Vis</span> ${vis}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function loadFells() {
+    setStatus("Loading fell index…");
+    const r = await fetch("/assets/data/fells.json", { cache: "no-store" });
+    if (!r.ok) throw new Error("Failed to load fells.json");
+    const data = await r.json();
+    if (!Array.isArray(data)) throw new Error("Bad fells.json format");
+    fells = data;
+    setStatus("Ready.");
+  }
+
+  function matchFells(q) {
+    const s = q.trim().toLowerCase();
+    if (s.length < 2) return [];
+    const out = [];
+
+    for (const f of fells) {
+      const name = String(f.name || "").toLowerCase();
+      const aliases = Array.isArray(f.aliases) ? f.aliases.map(a => String(a).toLowerCase()) : [];
+      const hit = name.includes(s) || aliases.some(a => a.includes(s));
+      if (hit) out.push(f);
+      if (out.length >= 8) break;
+    }
+    return out;
+  }
+
+  function showFellSuggest(results) {
+    fellSuggest.hidden = false;
+    fellSuggest.innerHTML = "";
+
+    results.forEach((f) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "suggestItem";
+      btn.setAttribute("role", "option");
+
+      const sub = f.elev_m ? ` • ${f.elev_m}m` : "";
+      btn.textContent = `🏔 ${f.name}${sub}`;
+
+      btn.addEventListener("click", () => {
+        currentFell = { ...f, source: "fells" };
+        fellInput.value = f.name;
+        hideSuggest();
+        save(LS_FELL, currentFell);
+        renderSelected();
+        maybeLoadForecast();
+      });
+
+      fellSuggest.appendChild(btn);
+    });
+  }
+
+  // ---------- Fallback: Open-Meteo Geocoding ----------
+  let activeGeoReq = 0;
+
+  async function geocodePlaces(q) {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=en&format=json`;
+    const r = await fetch(url, { cache: "no-store" });
+    const data = await r.json().catch(() => null);
+    return (data && Array.isArray(data.results)) ? data.results : [];
+  }
+
+  function showPlaceSuggest(results) {
+    fellSuggest.hidden = false;
+    fellSuggest.innerHTML = "";
+
+    results.forEach((r) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "suggestItem";
+      btn.setAttribute("role", "option");
+
+      const name = r.name || "Unknown";
+      const admin = [r.admin1, r.admin2].filter(Boolean).join(", ");
+      const country = r.country || "";
+      const label = [name, admin, country].filter(Boolean).join(" • ");
+
+      btn.textContent = `📍 ${label}`;
+
+      btn.addEventListener("click", () => {
+        const loc = {
+          name: name,
+          aliases: [],
+          lat: Number(r.latitude),
+          lon: Number(r.longitude),
+          elev_m: null,
+          source: "geocode"
+        };
+
+        currentFell = loc;
+        fellInput.value = label;
+        hideSuggest();
+        save(LS_FELL, loc);
+        renderSelected();
+        maybeLoadForecast();
+      });
+
+      fellSuggest.appendChild(btn);
+    });
+  }
+
+  // ---------- Forecast fetch ----------
+  async function fetchForecast(lat, lon) {
+    // Open-Meteo hourly variables (no key)
+    const url =
+      "https://api.open-meteo.com/v1/forecast"
+      + `?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}`
+      + "&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,cloud_cover,visibility"
+      + "&temperature_unit=celsius&windspeed_unit=mph&precipitation_unit=mm"
+      + "&timezone=Europe%2FLondon"
+      + "&forecast_days=7";
+
+    const r = await fetch(url, { cache: "no-store" });
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !data.hourly || !Array.isArray(data.hourly.time)) {
+      throw new Error("Bad forecast response");
+    }
+    return data;
+  }
+
+  function extractHoursForDate(forecast, dateStr) {
+    const H = forecast.hourly;
+    const out = [];
+
+    for (let i = 0; i < H.time.length; i++) {
+      const t = H.time[i]; // "YYYY-MM-DDTHH:MM"
+      if (!t || !t.startsWith(dateStr)) continue;
+
+      const time = t.slice(11, 16); // HH:MM
+      const hour = t.slice(11, 13);
+
+      out.push({
+        time,
+        hour,
+        tempC: H.temperature_2m?.[i],
+        feelsC: H.apparent_temperature?.[i],
+        precipProb: H.precipitation_probability?.[i],
+        rainMm: H.precipitation?.[i],
+        windMph: H.wind_speed_10m?.[i],
+        gustMph: H.wind_gusts_10m?.[i],
+        cloudPct: H.cloud_cover?.[i],
+        visKm: (H.visibility?.[i] != null) ? (Number(H.visibility[i]) / 1000) : null // meters -> km
+      });
+    }
+    return out;
+  }
+
+  function buildSummary(hours) {
+    if (!hours.length) return { pill: "No hourly data.", best: null, worst: null };
+
+    const avgP = hours.reduce((a, h) => a + (h.precipProb ?? 0), 0) / hours.length;
+    const maxG = Math.max(...hours.map(h => h.gustMph ?? 0));
+    const minVis = Math.min(...hours.map(h => (h.visKm ?? 99)));
+
+    let pill = "Mixed conditions.";
+    if (avgP < 20 && maxG < 30 && minVis > 5) pill = "Looks relatively favourable.";
+    else if (avgP > 55 || maxG > 45 || minVis < 2) pill = "Higher risk conditions likely.";
+    else if (maxG > 35) pill = "Windy on exposed ridges.";
+
+    const best = pickBestWindow(hours);
+    const worst = pickWorstHour(hours);
+
+    return { pill, best, worst };
+  }
+
+  async function maybeLoadForecast() {
+    clearErr();
+
+    if (!currentFell || !currentDate) {
+      renderPlaceholderHourly();
+      return;
+    }
+
+    setStatus(`Loading hourly forecast for ${currentFell.name} on ${currentDate}…`);
+    summaryPill.textContent = "Loading…";
+    hourlyWrap.innerHTML = `<p class="formNote">Loading hour-by-hour…</p>`;
+    bestWindowEl.textContent = "—";
+    worstHourEl.textContent = "—";
+
+    try {
+      const fc = await fetchForecast(currentFell.lat, currentFell.lon);
+      const hours = extractHoursForDate(fc, currentDate);
+
+      renderHourly(hours);
+
+      const s = buildSummary(hours);
+      summaryPill.textContent = s.pill;
+
+      bestWindowEl.textContent = s.best ? `${s.best.start}–${s.best.end}` : "—";
+      worstHourEl.textContent = s.worst ? `${s.worst.time}` : "—";
+
+      setStatus("Loaded.");
+    } catch (_) {
+      showErr("Couldn’t load forecast — please try again.");
+      setStatus("Error loading forecast.");
+      renderPlaceholderHourly();
+    }
+  }
+
+  // ---------- UI events ----------
+  let debounce = null;
+
+  fellInput.addEventListener("input", () => {
+    clearErr();
+    const q = fellInput.value.trim();
+
+    if (debounce) clearTimeout(debounce);
+    if (q.length < 2) {
+      hideSuggest();
+      return;
+    }
+
+    debounce = setTimeout(async () => {
+      // 1) Try local fells.json first
+      const hits = matchFells(q);
+      if (hits.length) {
+        showFellSuggest(hits);
+        setStatus("Pick a fell from the list.");
+        return;
+      }
+
+      // 2) Fallback to Open-Meteo geocoding
+      const reqId = ++activeGeoReq;
+      setStatus("Searching places…");
+
+      try {
+        const places = await geocodePlaces(q);
+        if (reqId !== activeGeoReq) return; // stale
+
+        if (!places.length) {
+          hideSuggest();
+          setStatus("No matches — try another name.");
+          return;
+        }
+
+        showPlaceSuggest(places);
+        setStatus("Pick a place from the list.");
+      } catch (_) {
+        if (reqId !== activeGeoReq) return;
+        hideSuggest();
+        setStatus("Search unavailable — try again.");
+      }
+    }, 180);
+  });
+
+  fellInput.addEventListener("blur", () => setTimeout(hideSuggest, 150));
+
+  clearFellBtn?.addEventListener("click", () => {
+    fellInput.value = "";
+    currentFell = null;
+    save(LS_FELL, null);
+    hideSuggest();
+    renderSelected();
+    renderPlaceholderHourly();
+    setStatus("Cleared selection.");
+  });
+
+  btnToday?.addEventListener("click", () => {
+    const d = new Date();
+    const s = isoDate(d);
+    datePick.value = s;
+    currentDate = s;
+    save(LS_DATE, s);
+    renderSelected();
+    maybeLoadForecast();
+  });
+
+  btnTomorrow?.addEventListener("click", () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const s = isoDate(d);
+    datePick.value = s;
+    currentDate = s;
+    save(LS_DATE, s);
+    renderSelected();
+    maybeLoadForecast();
+  });
+
+  datePick.addEventListener("change", () => {
+    const v = String(datePick.value || "").trim();
+    currentDate = v || null;
+    if (currentDate) save(LS_DATE, currentDate);
+    else save(LS_DATE, null);
+    renderSelected();
+    maybeLoadForecast();
+  });
+
+// ---------- Boot ----------
+(async function init() {
+  try {
+    await loadFells();
+
+    // ----- Default fell -----
+    const savedFell = load(LS_FELL);
+
+    if (savedFell && savedFell.name && savedFell.lat != null && savedFell.lon != null) {
+      currentFell = savedFell;
+      fellInput.value = savedFell.name;
+    } else {
+      // Default: Central Lakes (from fells.json if available)
+      const central = (Array.isArray(fells) ? fells : []).find(f =>
+        String(f?.name || "").toLowerCase() === "central lakes"
+      );
+
+      currentFell = central
+        ? { ...central, source: "fells" }
+        : { name: "Central Lakes", lat: 54.55, lon: -3.15, elev_m: null, source: "preset" };
+
+      fellInput.value = currentFell.name;
+      save(LS_FELL, currentFell);
+    }
+
+    // ----- Default date: ALWAYS tomorrow -----
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const tomorrow = isoDate(d);
+
+    currentDate = tomorrow;
+    datePick.value = tomorrow;
+    save(LS_DATE, tomorrow);
+
+    renderSelected();
+    maybeLoadForecast();
+
+  } catch (_) {
+    showErr("Fell index failed to load. Check /assets/data/fells.json exists.");
+    setStatus("Error.");
+  }
+})();
+})();

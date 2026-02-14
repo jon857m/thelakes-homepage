@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) — keep consistent with homepage -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0PD58CKV9J"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-0PD58CKV9J');
+  </script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lake District Conditions</title>
+  <meta name="description" content="Live Lake District conditions with location search, presets, and optional device location." />
+
+  <link rel="icon" href="/assets/hero.jpg">
+  <link rel="apple-touch-icon" href="/assets/hero.jpg">
+
+  <!-- IMPORTANT: relative path because this page is /conditions/ -->
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+
+<body>
+  <!-- Injected header -->
+  <div id="siteHeader"></div>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero__overlay"></div>
+      <div class="container hero__content">
+        <p class="pill">Live • Location-based • Fast</p>
+        <h1>Lake District Conditions</h1>
+        <p class="subhead">
+          Check current conditions across the Lakes — pick an area, search a place, or use your location.
+        </p>
+
+        <div class="ctaRow">
+          <a class="btn btn--ghost" href="/" aria-label="Back to homepage">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+            <span class="btn__label">Home</span>
+          </a>
+
+          <button class="btn btn--primary btn--icon" id="useMyLocationBtn" type="button" aria-label="Use my location">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2v3"></path>
+              <path d="M12 19v3"></path>
+              <path d="M2 12h3"></path>
+              <path d="M19 12h3"></path>
+              <circle cx="12" cy="12" r="7"></circle>
+              <circle cx="12" cy="12" r="1"></circle>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Small status line under hero copy -->
+        <p class="hero__note" id="conditionsStatus" aria-live="polite">
+          Loading…
+        </p>
+      </div>
+    </section>
+
+    <!-- CONTROLS + RESULTS -->
+    <section class="section">
+      <div class="container">
+
+        <!-- Controls card -->
+        <div class="card conditionsCard">
+          <h2 style="margin-top:0;">Choose a location</h2>
+          <p class="sectionLead" style="margin-bottom: 14px;">
+            Type a place (no API key), use your device location, or pick a region preset.
+          </p>
+
+          <!-- Search row -->
+          <div class="conditionsControls">
+            <label class="srOnly" for="placeSearch">Search for a place</label>
+            <input
+              id="placeSearch"
+              type="search"
+              inputmode="search"
+              autocomplete="off"
+              placeholder="Type a place… (e.g., Keswick, Ambleside, Windermere)"
+            />
+
+            <button class="btn btn--ghost" type="button" id="clearSearchBtn" aria-label="Clear search">
+              Clear
+            </button>
+          </div>
+
+          <!-- Suggestion dropdown -->
+          <div class="suggestBox" id="suggestBox" role="listbox" aria-label="Search results" hidden></div>
+
+          <!-- Presets -->
+          <div class="presetRow" aria-label="Presets">
+            <button class="btn btn--ghost presetBtn" type="button" data-preset="north">North</button>
+            <button class="btn btn--ghost presetBtn" type="button" data-preset="central">Central</button>
+            <button class="btn btn--ghost presetBtn" type="button" data-preset="south">South</button>
+          </div>
+
+          <p class="formNote" id="selectedNote">Selected: —</p>
+        </div>
+
+        <!-- Results card -->
+        <div class="card conditionsCard" style="margin-top: 12px;">
+          <h2 style="margin-top:0;">Now</h2>
+
+          <div class="conditionsNow">
+            <div class="conditionsNow__temp" id="nowTemp">—</div>
+            <div class="conditionsNow__meta">
+              <div class="pill conditionsPill" id="nowSummary">—</div>
+              <div class="conditionsFacts">
+                <div><span class="conditionsKey">Wind</span> <span id="nowWind">—</span></div>
+                <div><span class="conditionsKey">Badge</span> <span id="nowBadge">—</span></div>
+                <div><span class="conditionsKey">Updated</span> <span id="nowUpdated">—</span></div>
+              </div>
+            </div>
+          </div>
+
+          <p class="formNote" id="errorNote" style="display:none;"></p>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Injected footer -->
+  <div id="siteFooter"></div>
+
+  <!-- Site-wide JS (partials injection + apiUrl helper + etc.) -->
+  <script src="../app.js"></script>
+
+  <!-- Conditions page logic -->
+  <script src="../assets/js/conditions-page.js"></script>
+</body>
+</html>

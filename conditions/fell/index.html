@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) — keep consistent -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0PD58CKV9J"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-0PD58CKV9J');
+  </script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fell Planner • Lake District Conditions</title>
+  <meta name="description" content="Select a fell and date to view a detailed hour-by-hour forecast for the Lake District." />
+
+  <link rel="icon" href="/assets/hero.jpg">
+  <link rel="apple-touch-icon" href="/assets/hero.jpg">
+
+  <!-- NOTE: this page is /conditions/fell/ so we go up twice -->
+  <link rel="stylesheet" href="../../styles.css" />
+</head>
+
+<body>
+  <div id="siteHeader"></div>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero__overlay"></div>
+      <div class="container hero__content">
+        <p class="pill">Plan a climb • Hour-by-hour</p>
+        <h1>Fell Forecast Planner</h1>
+        <p class="subhead">
+          Pick a fell and a date to see a detailed hourly forecast. Useful for questions like “Helvellyn tomorrow — what’s it like up top?”
+        </p>
+
+        <div class="ctaRow">
+          <a class="btn btn--ghost" href="/conditions/" aria-label="Back to Snapshot">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+            <span class="btn__label">Snapshot</span>
+          </a>
+
+          <a class="btn btn--ghost" href="/conditions/forecast/" aria-label="Go to Forecast">
+            <span class="btn__label">7-Day</span>
+          </a>
+
+          <a class="btn btn--ghost" href="/conditions/pro/" aria-label="Go to Pro Conditions">
+            <span class="btn__label">Pro</span>
+          </a>
+        </div>
+
+        <p class="hero__note" id="plannerStatus" aria-live="polite">Ready.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+
+        <!-- Controls -->
+        <div class="card conditionsCard">
+          <h2 style="margin-top:0;">Select fell + date</h2>
+          <p class="sectionLead" style="margin-bottom: 14px;">
+            Search fells by name (supports aliases). Example: “Helvellyn”, “Scafell Pike”, “Cat Bells”.
+          </p>
+
+          <!-- Fell search -->
+          <div class="conditionsControls">
+            <label class="srOnly" for="fellSearch">Search for a fell</label>
+            <input
+              id="fellSearch"
+              type="search"
+              inputmode="search"
+              autocomplete="off"
+              placeholder="Search a fell… (e.g., Helvellyn)"
+            />
+            <button class="btn btn--ghost" type="button" id="clearFellBtn">Clear</button>
+          </div>
+
+          <div class="suggestBox" id="fellSuggest" role="listbox" aria-label="Fell search results" hidden></div>
+
+          <!-- Date controls -->
+          <div class="plannerDateRow" style="margin-top: 12px;">
+            <button class="btn btn--ghost" type="button" id="btnToday">Today</button>
+            <button class="btn btn--ghost" type="button" id="btnTomorrow">Tomorrow</button>
+
+            <label class="srOnly" for="datePick">Pick a date</label>
+            <input id="datePick" type="date" />
+          </div>
+
+          <p class="formNote" id="selectedFellNote">Selected fell: —</p>
+          <p class="formNote" id="selectedDateNote">Selected date: —</p>
+        </div>
+
+        <!-- Summary -->
+        <div class="card conditionsCard" style="margin-top: 12px;">
+          <h2 style="margin-top:0;">Summary</h2>
+          <div class="pill conditionsPill" id="summaryPill">Choose a fell and date.</div>
+          <div class="conditionsFacts" style="margin-top: 10px;">
+            <div><span class="conditionsKey">Point</span> <span id="fellPoint">—</span></div>
+            <div><span class="conditionsKey">Elevation</span> <span id="fellElev">—</span></div>
+            <div><span class="conditionsKey">Best window</span> <span id="bestWindow">—</span></div>
+            <div><span class="conditionsKey">Worst hour</span> <span id="worstHour">—</span></div>
+          </div>
+          <p class="formNote" style="margin-top: 12px;">
+            Note: this is an automated forecast for the selected point near the summit. Mountain conditions can change fast.
+          </p>
+          <p class="formNote" id="plannerError" style="display:none;"></p>
+        </div>
+
+        <!-- Hour-by-hour -->
+        <div class="card conditionsCard" style="margin-top: 12px;">
+          <h2 style="margin-top:0;">Hour-by-hour</h2>
+          <div id="hourlyWrap">
+            <p class="formNote">Select a fell and date to load hourly detail.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <!-- site-wide injection -->
+  <script src="../../app.js"></script>
+
+  <!-- fell planner logic -->
+  <script src="../../assets/js/fell-planner.js"></script>
+</body>
+</html>

@@ -912,4 +912,150 @@ footer .signup .consent,
       opacity: 0.7;
     }
 
- 
+ /* ============================
+   /conditions page (minimal)
+   Reuse .card, .btn, input
+   ============================ */
+
+    .conditionsCard{
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      background: rgba(246,242,231,0.045);
+    }
+
+    .conditionsControls{
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    @media (max-width: 480px){
+      .conditionsControls{
+        grid-template-columns: 1fr;
+      }
+      .conditionsControls .btn{
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .suggestBox{
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      background: rgba(25,26,15,0.75);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .suggestItem{
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid rgba(246,242,231,0.08);
+      color: var(--cloud);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .suggestItem:hover{
+      background: rgba(246,242,231,0.05);
+    }
+
+    .suggestItem:last-child{
+      border-bottom: 0;
+    }
+
+    .presetRow{
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .conditionsNow{
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px){
+      .conditionsNow{
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .conditionsNow__temp{
+      font-size: clamp(44px, 6vw, 68px);
+      font-weight: 950;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .conditionsNow__meta{
+      display: grid;
+      gap: 10px;
+    }
+
+    .conditionsPill{
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .conditionsFacts{
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .conditionsKey{
+      color: var(--cloud);
+      opacity: 0.9;
+      margin-right: 6px;
+    }
+
+    /* ============================
+   Fell planner (minimal)
+   ============================ */
+
+    .plannerDateRow{
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .plannerDateRow input[type="date"]{
+      max-width: 220px;
+    }
+
+    .hourRow{
+      border: 1px solid rgba(246,242,231,0.10);
+      border-radius: 16px;
+      padding: 12px;
+      margin-top: 10px;
+      background: rgba(25,26,15,0.35);
+    }
+
+    .hourRow__time{
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .hourRow__grid{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    @media (min-width: 820px){
+      .hourRow__grid{
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }

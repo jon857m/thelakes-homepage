@@ -235,6 +235,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Expecting your Worker to return: { ok, place, lat, lon, tempC, summary, windMph, badgeText, badge }
 (async function initConditionsStrip(){
   const el = document.getElementById("conditionsStrip");
+  if (!el) return;
     // Make the pill act like a CTA
   el.style.cursor = "pointer";
   el.addEventListener("click", () => {
@@ -258,37 +259,57 @@ document.addEventListener("DOMContentLoaded", async () => {
       // ---- Read saved location (set on /conditions) ----
       const STORAGE_KEY = "ld_conditions_location_v1";
 
-      function getSavedLocation() {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) return null;
-          const obj = JSON.parse(raw);
-          if (!obj) return null;
-          const lat = Number(obj.lat);
-          const lon = Number(obj.lon);
-          if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-          return {
-            place: String(obj.place || "").trim(),
-            lat,
-            lon
-          };
-        } catch (_) {
-          return null;
-        }
-      }
+function getSavedLocation() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+
+    const obj = JSON.parse(raw);
+    if (!obj) return null;
+
+    const lat = Number(obj.lat);
+    const lon = Number(obj.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
+    const label = String(obj.place || obj.name || "").trim();
+
+    return {
+      name: String(obj.name || obj.place || "").trim(),
+      place: label,
+      lat,
+      lon
+    };
+  } catch (_) {
+    return null;
+  }
+}
 
       const saved = getSavedLocation();
+      console.log("[conditionsStrip] saved =", saved);
 
       // Build API URL (use saved lat/lon if present)
       const url = new URL(`${API_BASE}/api/conditions`, location.origin);
-      if (saved) {
-        url.searchParams.set("lat", String(saved.lat));
-        url.searchParams.set("lon", String(saved.lon));
-        if (saved.place) url.searchParams.set("place", saved.place);
-      }
+
+      const CENTRAL_DEFAULT = { name: "Central Lakes", lat: 54.55, lon: -3.15 };
+
+      const effective =
+        (saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lon))
+          ? saved
+          : CENTRAL_DEFAULT;
+
+      url.searchParams.set("lat", String(effective.lat));
+      url.searchParams.set("lon", String(effective.lon));
+
+      const chosenPlace = (effective.place || effective.name || "Central Lakes");
+      url.searchParams.set("place", chosenPlace);
 
       const res = await fetch(url.toString(), { cache: "no-store" });
       const data = await res.json();
+      const placeLabel =
+      (effective && (effective.place || effective.name)) ||
+      (data && (data.place || data.name || data.location)) ||
+      "Central Lakes";
+      
 
     if (!data || !data.ok) throw new Error("Bad conditions response");
 
@@ -322,7 +343,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <span class="live-dot"></span>
         LIVE
       </span>
-      🌤 ${temp} · ${summary} · ${windChunk} · ${sunriseChunk} · ${sunsetChunk}
+      ${placeLabel} · 🌤 ${temp} · ${summary} · ${windChunk} · ${sunriseChunk} · ${sunsetChunk}
       ${badgeText}
       <span class="updated-text">${updatedText}</span>
     `;

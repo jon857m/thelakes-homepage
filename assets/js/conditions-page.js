@@ -148,7 +148,14 @@ function saveConditionsLocation({ place, lat, lon }) {
     try {
       const data = await fetchConditions(loc.lat, loc.lon);
       renderNow(data);
-      saveLoc({ name: loc.name, lat: loc.lat, lon: loc.lon });
+      const label = String(loc.name || loc.place || "Custom location").trim();
+        saveLoc({
+        name: label,
+        place: label,
+        lat: loc.lat,
+        lon: loc.lon,
+        mode: loc.mode || "preset"
+        });
       setSelectedNote(loc);
       setStatus(`Showing conditions for ${loc.name}.`);
     } catch (e) {

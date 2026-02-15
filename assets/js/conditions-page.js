@@ -6,8 +6,26 @@
 // - Persist selection in localStorage: ld_location_v1
 // ========================================
 
+const STORAGE_KEY = "ld_conditions_location_v1";
+
+function saveConditionsLocation({ place, lat, lon }) {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        place: String(place || "").trim(),
+        lat: Number(lat),
+        lon: Number(lon),
+        savedAt: new Date().toISOString()
+      })
+    );
+  } catch (e) {
+    // ignore storage errors (private mode etc.)
+  }
+}
+
 (function () {
-  const LS_KEY = "ld_location_v1";
+  const LS_KEY = "ld_conditions_location_v1";
 
   const presets = {
     north:   { name: "North Lakes",   lat: 54.70, lon: -3.00 },

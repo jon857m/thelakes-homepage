@@ -235,6 +235,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Expecting your Worker to return: { ok, place, lat, lon, tempC, summary, windMph, badgeText, badge }
 (async function initConditionsStrip(){
   const el = document.getElementById("conditionsStrip");
+    // Make the pill act like a CTA
+  el.style.cursor = "pointer";
+  el.addEventListener("click", () => {
+    window.location.href = "/conditions/";
+  });
   if (!el) return;
 
   // Don’t bother if user is offline
@@ -250,7 +255,39 @@ document.addEventListener("DOMContentLoaded", async () => {
       ? "https://www.thelakesincumbria.co.uk"
       : "";
 
-      const res = await fetch(`${API_BASE}/api/conditions`, { cache: "no-store" });
+      // ---- Read saved location (set on /conditions) ----
+      const STORAGE_KEY = "ld_conditions_location_v1";
+
+      function getSavedLocation() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return null;
+          const obj = JSON.parse(raw);
+          if (!obj) return null;
+          const lat = Number(obj.lat);
+          const lon = Number(obj.lon);
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+          return {
+            place: String(obj.place || "").trim(),
+            lat,
+            lon
+          };
+        } catch (_) {
+          return null;
+        }
+      }
+
+      const saved = getSavedLocation();
+
+      // Build API URL (use saved lat/lon if present)
+      const url = new URL(`${API_BASE}/api/conditions`, location.origin);
+      if (saved) {
+        url.searchParams.set("lat", String(saved.lat));
+        url.searchParams.set("lon", String(saved.lon));
+        if (saved.place) url.searchParams.set("place", saved.place);
+      }
+
+      const res = await fetch(url.toString(), { cache: "no-store" });
       const data = await res.json();
 
     if (!data || !data.ok) throw new Error("Bad conditions response");

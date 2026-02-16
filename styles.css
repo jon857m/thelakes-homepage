@@ -1426,3 +1426,101 @@ footer .signup .consent,
   flex: 0 0 18px;
   display: block;
 }
+
+.mobileNav__list { list-style: none; margin: 0; padding: 0; }
+.mobileNav__list ul { list-style: none; margin: 0; margin-top: 2px; padding-left: 22px; }
+
+.subToggle {
+  background: transparent;
+  border: 0;
+  padding: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.mobileNav__list ul a {
+  font-size: 0.95em;
+  opacity: 0.9;
+  padding: 10px 10px;
+}
+
+/* Make each top-level item a row with link left + chevron right */
+.mobileNav__list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+
+/* Keep the link looking like a menu item */
+.mobileNav__list > li > a {
+  flex: 1;
+  padding: 14px 10px;
+}
+
+/* Big, obvious tap target */
+.subToggle {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-left: 6px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+}
+
+/* Chevron styling */
+.subToggle .chev {
+  font-size: 22px;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform 160ms ease;
+  opacity: 0.9;
+}
+
+/* Rotate when open */
+.has-submenu.submenu-open > .subToggle .chev {
+  transform: rotate(90deg);
+}
+
+/* Nested list indentation */
+.mobileNav__list ul {
+  width: 100%;
+  padding: 6px 0 10px 18px;
+  margin: 0;
+}
+
+.mobileNav__list li {
+  display: grid;
+  grid-template-columns: 1fr 44px; /* link + chevron */
+  align-items: center;
+}
+
+.mobileNav__list li > a {
+  padding: 14px 10px;
+}
+
+.subToggle {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+
+.mobileNav__list > li {
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+.mobileNav__list > li:last-child {
+  border-bottom: 0;
+}
+
+.subToggle {
+  cursor: pointer;
+}
+
+.mobileNav__list a {
+  cursor: pointer;
+}

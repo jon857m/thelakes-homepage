@@ -15,6 +15,8 @@ function wireMenuToggle() {
   const nav = document.getElementById("mobileNav");
   if (!btn || !nav) return;
 
+  buildMobileNavFromFullTree(); // <-- add this
+
   if (btn.dataset.bound === "1") return;
   btn.dataset.bound = "1";
 
@@ -22,6 +24,68 @@ function wireMenuToggle() {
     const isOpen = nav.classList.toggle("open");
     btn.setAttribute("aria-expanded", String(isOpen));
   });
+}
+
+
+function buildMobileNavFromFullTree() {
+  const source = document.getElementById("siteNavFull");
+  const mobile = document.getElementById("mobileNav");
+  if (!source || !mobile) return;
+
+  // Prevent double-build if header is injected multiple times
+  if (mobile.dataset.built === "1") return;
+  mobile.dataset.built = "1";
+
+  const tree = source.querySelector("ul.navTree");
+  if (!tree) return;
+
+  const clone = tree.cloneNode(true);
+  clone.classList.add("mobileNav__list");
+
+  // Add toggles for any li that has a direct child <ul>
+  clone.querySelectorAll("li").forEach((li) => {
+    const childUl = li.querySelector(":scope > ul");
+    const link = li.querySelector(":scope > a");
+
+    if (!childUl || !link) return;
+
+    childUl.hidden = true;
+    li.classList.add("has-submenu");
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "subToggle";
+    btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-label", `Expand ${link.textContent.trim()}`);
+    btn.innerHTML = '<span class="chev" aria-hidden="true">›</span>';
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const open = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!open));
+      childUl.hidden = open;
+      li.classList.toggle("submenu-open", !open);
+    });
+
+
+  li.insertBefore(btn, childUl);
+
+    // Put toggle between link and submenu
+    li.insertBefore(btn, childUl);
+  });
+
+  // Close drawer on link click
+  clone.addEventListener("click", (e) => {
+    const a = e.target.closest("a");
+    if (!a) return;
+    const nav = document.getElementById("mobileNav");
+    const btn = document.getElementById("menuToggle");
+    nav?.classList.remove("open");
+    btn?.setAttribute("aria-expanded", "false");
+  });
+
+  mobile.appendChild(clone);
 }
 
 // Use same-origin on production, but call the live Worker when running locally

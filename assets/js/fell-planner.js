@@ -257,30 +257,35 @@ function renderHourly(hours) {
     enableDragScroll(scroller);
   }
 
-  // ✅ MARK CURRENT HOUR (Premium polish)
+// ✅ MARK CURRENT HOUR (only when viewing TODAY)
+const todayStr = isoDate(new Date());
+if (currentDate === todayStr) {
   const now = new Date();
   const nowHour = String(now.getHours()).padStart(2, "0");
 
-const currentCol = hourlyWrap.querySelector(`.hourCol[data-hour="${nowHour}"]`);
-if (currentCol) {
-  currentCol.classList.add("isNow");
+  const currentCol = hourlyWrap.querySelector(`.hourCol[data-hour="${nowHour}"]`);
+  if (currentCol) {
+    currentCol.classList.add("isNow");
 
-  // ✅ Auto-scroll to bring "now" into view (center-ish)
-  const scrollerEl = hourlyWrap.querySelector("#hourMatrixScroll");
-  if (scrollerEl) {
-    const left = currentCol.offsetLeft;
-    const colW = currentCol.offsetWidth;
-    const viewW = scrollerEl.clientWidth;
+    // Auto-scroll to bring "now" into view (center-ish)
+    const scrollerEl = hourlyWrap.querySelector("#hourMatrixScroll");
+    if (scrollerEl) {
+      const colRect = currentCol.getBoundingClientRect();
+      const scRect  = scrollerEl.getBoundingClientRect();
 
-    // Center the column (clamped to scroll range)
-    const target = left - (viewW / 2) + (colW / 2);
-    const maxScroll = scrollerEl.scrollWidth - viewW;
-    const clamped = Math.max(0, Math.min(maxScroll, target));
+      const colLeftInsideScroller = colRect.left - scRect.left;
+      const leftGutter = 14; // matches your CSS padding-left on .hourMatrixScroll
+      const targetDelta = colLeftInsideScroller - leftGutter;
 
-    scrollerEl.scrollTo({ left: clamped, behavior: "smooth" });
+      const maxScroll = scrollerEl.scrollWidth - scrollerEl.clientWidth;
+      const next = Math.max(0, Math.min(maxScroll, scrollerEl.scrollLeft + targetDelta));
+
+      scrollerEl.scrollTo({ left: next, behavior: "auto" });
+    }
   }
 }
 }
+
 
 
 
@@ -571,49 +576,27 @@ if (currentCol) {
     maybeLoadForecast();
   });
 
-// ---------- Boot ----------
-(async function init() {
-  try {
-    await loadFells();
+    // ---------- Boot ----------
+    (async function init() {
+      try {
+        await loadFells();
 
-    // ----- Default fell -----
-    const savedFell = load(LS_FELL);
+        // Always start EMPTY (ignore any saved LS_FELL / LS_DATE)
+        currentFell = null;
+        currentDate = null;
 
-    if (savedFell && savedFell.name && savedFell.lat != null && savedFell.lon != null) {
-      currentFell = savedFell;
-      fellInput.value = savedFell.name;
-    } else {
-      // Default: Central Lakes (from fells.json if available)
-      const central = (Array.isArray(fells) ? fells : []).find(f =>
-        String(f?.name || "").toLowerCase() === "central lakes"
-      );
+        fellInput.value = "";
+        datePick.value = "";
 
-      currentFell = central
-        ? { ...central, source: "fells" }
-        : { name: "Central Lakes", lat: 54.55, lon: -3.15, elev_m: null, source: "preset" };
+        renderSelected();
+        renderPlaceholderHourly();
+        setStatus("Pick a fell (or place) and choose a date.");
 
-      fellInput.value = currentFell.name;
-      save(LS_FELL, currentFell);
-    }
-
-    // ----- Default date: ALWAYS tomorrow -----
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    const tomorrow = isoDate(d);
-
-    currentDate = tomorrow;
-    datePick.value = tomorrow;
-    save(LS_DATE, tomorrow);
-
-    renderSelected();
-    maybeLoadForecast();
-
-  } catch (_) {
-    showErr("Fell index failed to load. Check /assets/data/fells.json exists.");
-    setStatus("Error.");
-  }
-})();
-})();
+      } catch (_) {
+        showErr("Fell index failed to load.");
+      }
+    })();
+    })();
 
 function enableDragScroll(container) {
   if (!container) return;

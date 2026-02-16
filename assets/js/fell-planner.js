@@ -172,39 +172,118 @@
     return worst;
   }
 
-  function renderHourly(hours) {
-    if (!hours.length) {
-      hourlyWrap.innerHTML = `<p class="formNote">No hourly data for that date.</p>`;
-      return;
-    }
+  function hourRisk(h) {
+  // Simple, explainable thresholds for R/A/G
+  const pp = Number(h.precipProb ?? 0);
+  const gust = Number(h.gustMph ?? 0);
+  const vis = Number(h.visKm ?? 99);
 
-    hourlyWrap.innerHTML = hours.map(h => {
-      const temp = (h.tempC != null) ? `${Math.round(h.tempC)}°C` : "—";
-      const feels = (h.feelsC != null) ? `${Math.round(h.feelsC)}°C` : "—";
-      const gust = (h.gustMph != null) ? `${Math.round(h.gustMph)} mph` : "—";
-      const wind = (h.windMph != null) ? `${Math.round(h.windMph)} mph` : "—";
-      const pp = (h.precipProb != null) ? `${Math.round(h.precipProb)}%` : "—";
-      const rain = (h.rainMm != null) ? `${h.rainMm.toFixed(1)} mm` : "—";
-      const cloud = (h.cloudPct != null) ? `${Math.round(h.cloudPct)}%` : "—";
-      const vis = (h.visKm != null) ? `${h.visKm.toFixed(1)} km` : "—";
+  // Red = meaningfully risky for most walkers
+  if (pp >= 60 || gust >= 45 || vis <= 2) return { cls: "red", label: "Red" };
 
-      return `
-        <div class="hourRow">
-          <div class="hourRow__time">${h.time}</div>
-          <div class="hourRow__grid">
-            <div><span class="conditionsKey">Temp</span> ${temp}</div>
-            <div><span class="conditionsKey">Feels</span> ${feels}</div>
-            <div><span class="conditionsKey">Wind</span> ${wind}</div>
-            <div><span class="conditionsKey">Gust</span> ${gust}</div>
-            <div><span class="conditionsKey">Precip</span> ${pp}</div>
-            <div><span class="conditionsKey">Rain</span> ${rain}</div>
-            <div><span class="conditionsKey">Cloud</span> ${cloud}</div>
-            <div><span class="conditionsKey">Vis</span> ${vis}</div>
-          </div>
-        </div>
-      `;
-    }).join("");
+  // Amber = caution / “check details”
+  if (pp >= 30 || gust >= 30 || vis <= 5) return { cls: "amber", label: "Amber" };
+
+  // Green = generally OK (still “mountains are mountains”)
+  return { cls: "green", label: "Green" };
+}
+
+function renderHourly(hours) {
+  if (!hours || !hours.length) {
+    hourlyWrap.innerHTML = `<p class="formNote">No hourly data for that date.</p>`;
+    return;
   }
+
+  // Icons
+  const iconTemp = `<svg class="hourIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 5 0Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+  const iconWind = `<svg class="hourIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10a3 3 0 1 0-3-3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h15a3 3 0 1 1-3 3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+  const iconRain = `<svg class="hourIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 0 1 .9-7.9A5 5 0 0 1 18 8.5a3.5 3.5 0 0 1 .5 7H7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+  const iconVis  = `<svg class="hourIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+
+  hourlyWrap.innerHTML = `
+    <div class="hourMatrix">
+
+      <div class="hourMatrixRail" aria-hidden="true">
+        <div class="hourMatrixRailItem">${iconTemp}<span>Temp</span></div>
+        <div class="hourMatrixRailItem isSub"><span>Feels</span></div>
+
+        <div class="hourMatrixRailItem">${iconWind}<span>Wind</span></div>
+        <div class="hourMatrixRailItem isSub"><span>Gust</span></div>
+
+        <div class="hourMatrixRailItem">${iconRain}<span>Precip</span></div>
+        <div class="hourMatrixRailItem">${iconVis}<span>Vis</span></div>
+      </div>
+
+      <div class="hourMatrixScroll" id="hourMatrixScroll">
+        <div class="hourMatrixGrid">
+
+          ${hours.map(h => {
+            const r = hourRisk(h);
+
+            const temp  = (h.tempC != null) ? `${Math.round(h.tempC)}°C` : "—";
+            const feels = (h.feelsC != null) ? `${Math.round(h.feelsC)}°C` : "—";
+            const wind  = (h.windMph != null) ? `${Math.round(h.windMph)} mph` : "—";
+            const gust  = (h.gustMph != null) ? `${Math.round(h.gustMph)} mph` : "—";
+            const pp    = (h.precipProb != null) ? `${Math.round(h.precipProb)}%` : "—";
+            const vis   = (h.visKm != null) ? `${h.visKm.toFixed(1)} km` : "—";
+
+            return `
+              <div class="hourCol hourCol--${r.cls}" data-hour="${h.hour}">
+                <div class="hourColHeader">${h.time}</div>
+
+                <div class="hourColVal">${temp}</div>
+                <div class="hourColVal">${feels}</div>
+
+                <div class="hourColVal">${wind}</div>
+                <div class="hourColVal">${gust}</div>
+
+                <div class="hourColVal">${pp}</div>
+                <div class="hourColVal">${vis}</div>
+
+                <div class="hourColBar" aria-hidden="true"></div>
+              </div>
+            `;
+          }).join("")}
+
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  // Enable desktop drag scroll
+  const scroller = document.getElementById("hourMatrixScroll");
+  if (scroller && typeof enableDragScroll === "function") {
+    enableDragScroll(scroller);
+  }
+
+  // ✅ MARK CURRENT HOUR (Premium polish)
+  const now = new Date();
+  const nowHour = String(now.getHours()).padStart(2, "0");
+
+const currentCol = hourlyWrap.querySelector(`.hourCol[data-hour="${nowHour}"]`);
+if (currentCol) {
+  currentCol.classList.add("isNow");
+
+  // ✅ Auto-scroll to bring "now" into view (center-ish)
+  const scrollerEl = hourlyWrap.querySelector("#hourMatrixScroll");
+  if (scrollerEl) {
+    const left = currentCol.offsetLeft;
+    const colW = currentCol.offsetWidth;
+    const viewW = scrollerEl.clientWidth;
+
+    // Center the column (clamped to scroll range)
+    const target = left - (viewW / 2) + (colW / 2);
+    const maxScroll = scrollerEl.scrollWidth - viewW;
+    const clamped = Math.max(0, Math.min(maxScroll, target));
+
+    scrollerEl.scrollTo({ left: clamped, behavior: "smooth" });
+  }
+}
+}
+
+
+
 
   async function loadFells() {
     setStatus("Loading fell index…");
@@ -535,3 +614,36 @@
   }
 })();
 })();
+
+function enableDragScroll(container) {
+  if (!container) return;
+
+  let isDown = false;
+  let startX = 0;
+  let scrollLeft = 0;
+
+  container.addEventListener("mousedown", (e) => {
+    isDown = true;
+    container.classList.add("isDragging");
+    startX = e.pageX - container.offsetLeft;
+    scrollLeft = container.scrollLeft;
+  });
+
+  window.addEventListener("mouseup", () => {
+    isDown = false;
+    container.classList.remove("isDragging");
+  });
+
+  container.addEventListener("mouseleave", () => {
+    isDown = false;
+    container.classList.remove("isDragging");
+  });
+
+  container.addEventListener("mousemove", (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX) * 1.2; // speed
+    container.scrollLeft = scrollLeft - walk;
+  });
+}

@@ -1063,3 +1063,360 @@ footer .signup .consent,
     .pill-chunk {
   white-space: nowrap;
   }
+
+  /* ================================
+   Fell Planner: Hourly scroller UI
+   (New component CSS — isolated)
+   ================================ */
+
+
+
+/* ================================
+   OLD Hour Card UI (can keep for reference, but unused if matrix is live)
+   ================================ */
+
+.hourCard {
+  flex: 0 0 auto;
+  width: 220px;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+  scroll-snap-align: start;
+  position: relative;
+  overflow: hidden;
+}
+
+.hourCard__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hourRiskBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  opacity: 0.95;
+}
+
+.hourCard__body {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.hourCard__icons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.hourCard__vals {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hourLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.hourLabel {
+  opacity: 0.85;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.hourValue {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Shared icon */
+.hourIcon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.9;
+}
+
+.hourCard--green .hourRiskBar { background: #2fbf71; }
+.hourCard--amber .hourRiskBar { background: #f4b400; }
+.hourCard--red   .hourRiskBar { background: #e84545; }
+
+/* Desktop-friendly horizontal scroll cues (if you still use .hourlyScroller anywhere) */
+.hourlyScroller {
+  cursor: grab;
+  user-select: none;
+  padding-bottom: 14px;
+  mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+}
+.hourlyScroller:active { cursor: grabbing; }
+
+
+
+
+
+
+/* === Hour Matrix: hard alignment lock === */
+.hourMatrix {
+  --headH: 34px;
+  --rowH: 34px;
+  --railW: 130px; /* adjust if needed */
+}
+
+/* Left rail: EXACT same rows as the hour columns */
+.hourMatrixRail {
+  display: grid !important;
+  grid-template-rows: var(--headH) repeat(6, var(--rowH)) !important;
+  align-content: start !important;
+  padding-right: 14px !important;
+  border-right: 1px solid rgba(255,255,255,0.06) !important;
+}
+
+/* spacer cell (matches hour header row) */
+.hourMatrixRail::before {
+  content: "" !important;
+  display: block !important;
+  height: var(--headH) !important;
+}
+
+/* Each label must fully occupy its row */
+.hourMatrixRailItem {
+  height: var(--rowH) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+/* Sub rows (Feels/Gust) – keep same height, just softer + indented */
+.hourMatrixRailItem.isSub {
+  padding-left: 28px !important;
+  opacity: 0.75 !important;
+  font-size: 12px !important;
+}
+
+.hourCol {
+  display: grid !important;
+  grid-template-rows: var(--headH) repeat(6, var(--rowH)) !important;
+}
+
+.hourColHeader {
+  height: var(--headH) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+/* ================================
+   Hour-by-hour MATRIX (FINAL)
+   - fixed row alignment
+   - narrow columns
+   - subtle dividers
+   ================================ */
+
+.hourMatrix {
+  --headH: 34px;
+  --rowH: 34px;
+  --railW: 130px;
+  display: grid;
+  grid-template-columns: var(--railW) 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.hourMatrixRail {
+  display: grid;
+  grid-template-rows: var(--headH) repeat(6, var(--rowH));
+  align-content: start;
+  padding-right: 14px;
+  padding-top: 10px;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.hourMatrixRail::before {
+  content: "";
+  display: block;
+  height: var(--headH);
+}
+
+.hourMatrixRailItem {
+  height: var(--rowH);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  opacity: 0.9;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.hourMatrixRailItem.isSub {
+  padding-left: 28px;
+  opacity: 0.75;
+  font-size: 12px;
+}
+
+.hourMatrixScroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-left: 14px;
+  padding-bottom: 12px;
+  cursor: grab;
+}
+.hourMatrixScroll:active { cursor: grabbing; }
+
+.hourMatrixGrid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 105px; /* ~30% narrower than 150px */
+  gap: 0;
+  min-width: max-content;
+}
+
+.hourCol {
+  display: grid;
+  grid-template-rows: var(--headH) repeat(6, var(--rowH));
+  padding: 10px 12px 12px;
+  position: relative;
+  overflow: hidden;
+  border-left: 1px solid rgba(255,255,255,0.06);
+}
+.hourCol:first-child { border-left: none; }
+
+.hourColHeader {
+  height: var(--headH);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  margin: 0;
+  line-height: 1;
+}
+
+.hourColVal {
+  height: var(--rowH) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.hourColVal:nth-child(3),
+.hourColVal:nth-child(5) {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.hourColVal:not(:last-of-type) {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.hourColBar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 6px;
+  opacity: 0.95;
+}
+
+.hourCol--green .hourColBar::before { background: #2fbf71; }
+.hourCol--amber .hourColBar::before { background: #f4b400; }
+.hourCol--red   .hourColBar::before { background: #e84545; }
+
+.hourMatrixRailItem,
+.hourColVal {
+  align-items: center !important;
+  justify-content: flex-start;  /* label starts left, values can stay centered */
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 1 !important;
+}
+
+/* RAG bar: premium track + inset */
+.hourCol {
+  padding-bottom: 18px; /* creates space so bar isn't glued to the edge */
+}
+
+.hourColBar {
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  height: 6px;
+  border-radius: 999px;
+
+  /* subtle track */
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+/* bar fill */
+.hourColBar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  opacity: 0.95;
+}
+
+.hourColBar::before {
+  box-shadow: 0 0 12px rgba(0,0,0,0.18);
+}
+
+/* Current hour highlight */
+.hourCol.isNow {
+  background: rgba(255,255,255,0.03);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.hourCol.isNow .hourColHeader {
+  opacity: 1;
+}
+
+/* Piece 5: keep the left rail pinned when the page scrolls */
+.hourMatrixRail {
+  position: sticky;
+  left: 0;
+  top: 0;
+  align-self: start;
+  z-index: 2;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+/* Premium: snap to whole hour columns (prevents chopped text at edges) */
+.hourMatrixScroll {
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 14px;  /* match your padding-left */
+  scroll-padding-right: 14px;
+}
+
+.hourCol {
+  scroll-snap-align: start;
+}
+

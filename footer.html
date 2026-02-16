@@ -1,0 +1,87 @@
+<section class="section" id="signup">
+  <div class="container">
+    <div class="signup">
+      <div class="signup__copy">
+        <h3>Get updates</h3>
+        <p>
+          We’re developing new tools and resources around visiting, planning, and discovering the Lake District.
+          Leave your email and we’ll let you know when something launches.
+        </p>
+      </div>
+
+<form class="signupForm" data-form-id="footer_global_v1">
+
+  <div class="signupForm__row">
+    <label class="srOnly" for="email_footer">Email address</label>
+    <input
+      class="signupForm__email"
+      id="email_footer"
+      name="email"
+      type="email"
+      placeholder="you@email.com"
+      autocomplete="email"
+      required
+    />
+    <button class="btn btn--primary signupForm__btn" type="submit">
+      Notify me
+    </button>
+  </div>
+
+  <label class="signupForm__consent">
+    <input
+      class="signupForm__check"
+      type="checkbox"
+      name="consent"
+      required
+    />
+    <span class="signupForm__copy">
+      I agree to receive occasional emails.
+    </span>
+  </label>
+
+  <!-- ✅ Single dynamic line (reassure → verify) -->
+  <p class="formNote formNote--reassure">
+    No spam. Unsubscribe any time.
+  </p>
+
+  <!-- Exact consent text written to Google Sheet -->
+  <input
+    type="hidden"
+    name="consent_text"
+    value="I agree to receive occasional emails from The Lake District community hub. I can unsubscribe at any time."
+  />
+  <input
+    type="hidden"
+    name="consent_version"
+    value="v1"
+  />
+
+</form>
+
+
+        </div>
+      </div>
+    </section>
+
+<footer class="footer" id="contact">
+  <div class="container footer__inner">
+    <div class="footer__left">
+      <div class="footer__brand">The Lake District</div>
+      <div class="footer__small">
+        These assets are owned and managed by <strong>Waypoint Media</strong>.<br/>
+        Business enquiries:
+        <a href="mailto:Jon.Margree@WayPointMedia.co.uk">Jon.Margree@WayPointMedia.co.uk</a>
+      </div>
+    </div>
+
+    <div class="footer__right">
+      <a href="/#metrics">Metrics</a>
+      <a href="/#audience">Audience</a>
+      <a href="/#signup">Get updates</a>
+    </div>
+  </div>
+
+  <div class="container footer__bottom">
+    <span>© <span id="year"></span> Waypoint Media</span>
+  </div>
+</footer>

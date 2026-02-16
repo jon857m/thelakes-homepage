@@ -1524,3 +1524,33 @@ footer .signup .consent,
 .mobileNav__list a {
   cursor: pointer;
 }
+
+/* Smooth submenu reveal */
+.mobileNav__list ul {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: max-height 200ms ease, opacity 160ms ease, transform 160ms ease;
+  will-change: max-height, opacity, transform;
+}
+
+/* Open state */
+.has-submenu.submenu-open > ul {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .mobileNav__list ul {
+    transition: none;
+    transform: none;
+  }
+}
+
+.mobileNav__list ul {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 200ms ease, opacity 160ms ease, transform 160ms ease;
+}

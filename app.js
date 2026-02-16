@@ -49,8 +49,10 @@ function buildMobileNavFromFullTree() {
 
     if (!childUl || !link) return;
 
-    childUl.hidden = true;
     li.classList.add("has-submenu");
+
+    // Start collapsed (but animatable)
+    childUl.style.maxHeight = "0px";
 
     const btn = document.createElement("button");
     btn.type = "button";
@@ -64,8 +66,41 @@ function buildMobileNavFromFullTree() {
       e.stopPropagation();
       const open = btn.getAttribute("aria-expanded") === "true";
       btn.setAttribute("aria-expanded", String(!open));
-      childUl.hidden = open;
-      li.classList.toggle("submenu-open", !open);
+    li.classList.toggle("submenu-open", !open);
+
+    if (!open) {
+      // OPENING
+      li.classList.add("submenu-open");
+
+      // Set to actual height so it animates
+      childUl.style.maxHeight = childUl.scrollHeight + "px";
+
+      // After animation finishes, allow natural height
+      childUl.addEventListener("transitionend", (ev) => {
+        if (ev.propertyName !== "max-height") return;
+        if (li.classList.contains("submenu-open")) {
+          childUl.style.maxHeight = "none";
+        }
+      }, { once: true });
+
+    } else {
+      // CLOSING
+      li.classList.remove("submenu-open");
+
+      // If it's currently 'none', fix it before collapsing
+      if (childUl.style.maxHeight === "none") {
+        childUl.style.maxHeight = childUl.scrollHeight + "px";
+
+        // Next frame collapse to 0 so it animates
+        requestAnimationFrame(() => {
+          childUl.style.maxHeight = "0px";
+        });
+
+      } else {
+        childUl.style.maxHeight = "0px";
+      }
+    }
+
     });
 
 

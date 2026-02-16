@@ -1059,3 +1059,7 @@ footer .signup .consent,
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
     }
+
+    .pill-chunk {
+  white-space: nowrap;
+  }

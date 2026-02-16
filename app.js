@@ -321,15 +321,21 @@ function getSavedLocation() {
     const summary = data.summary || "—";
     const wind = (data.windMph ?? "–") + "mph";
 
-    // Example: 🌤 6°C · Broken cloud · Wind 9mph · Sunrise 7:28 · Sunset 17:10 🟡 Breezy on ridges
-    const badgeEmoji = badgeToEmoji(data.badge);
-    const badgeText = data.badgeText ? ` ${badgeEmoji} ${data.badgeText}` : "";
+ // Badge emoji (map the API badge color to a dot)
+const badgeMap = { green: "🟢", yellow: "🟡", red: "🔴" };
+const badgeEmoji =
+  badgeMap[String(data.badge || "").toLowerCase()] || "⚪️";
+
+// Keep badge phrase together
+const badgeChunk = data.badgeText
+  ? `<span class="pill-chunk">${badgeEmoji}\u00A0${data.badgeText}</span>`
+  : "";
 
     const nbsp = "\u00A0"; // non-breaking space
 
-    const windChunk = `Wind${nbsp}${wind}`;
-    const sunriseChunk = `Sunrise${nbsp}${sunrise}`;
-    const sunsetChunk = `Sunset${nbsp}${sunset}`;
+    const windChunk = `💨${nbsp}${wind}`;
+    const sunriseChunk = `🌅${nbsp}${sunrise}`;
+    const sunsetChunk = `🌇${nbsp}${sunset}`;
 
     const updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     let updatedText = "";
@@ -343,9 +349,17 @@ function getSavedLocation() {
         <span class="live-dot"></span>
         LIVE
       </span>
-      ${placeLabel} · 🌤 ${temp} · ${summary} · ${windChunk} · ${sunriseChunk} · ${sunsetChunk}
-      ${badgeText}
-      <span class="updated-text">${updatedText}</span>
+
+      <span class="pill-chunk">${placeLabel}</span> ·
+      <span class="pill-chunk">🌡️\u00A0${temp}</span> ·
+      <span class="pill-chunk">${summary}</span> ·
+      <span class="pill-chunk">${windChunk}</span> ·
+      <span class="pill-chunk">${sunriseChunk}</span> ·
+      <span class="pill-chunk">${sunsetChunk}</span>
+
+      ${badgeChunk}
+
+      <span class="updated-text pill-chunk">${updatedText}</span>
     `;
 
 

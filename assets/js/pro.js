@@ -1,17 +1,18 @@
 // ========================================
-// Pro (Beta) — today + next 24h (Open-Meteo)
+// Pro — next 48 hours (Open-Meteo)
 // - Blank by default
 // - Search + Use preferences + Use device
-// - Horizontal matrix base (like Fell Planner)
-// - Risk Flags panel above matrix
-// - Collapsible Environmental Data section
+// - Risk Flags panel above matrix (aggregated across 48h)
+// - ALL data stacked in the hourly matrix (dense Pro view)
 //
-// Adds:
-// - Wind direction
-// - Low / Mid / High cloud
-// - Dew point
-// - Snowfall
-// - Solar radiation
+// Rows included per hour:
+// Temp, Feels, Dew, RH
+// Wind (mph + dir), Gust
+// Rain %, Rain mm, Snow mm
+// Cloud Low, Cloud Mid, Cloud High
+// Visibility (km), Solar (W/m²), Pressure (hPa)
+// Freezing level (m), Boundary layer (PBL m)
+//
 // ========================================
 
 (function () {
@@ -117,6 +118,24 @@
     return arrows[i];
   }
 
+  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+  function statMax(arr) {
+    const nums = arr.map(Number).filter(n => Number.isFinite(n));
+    if (!nums.length) return null;
+    return Math.max(...nums);
+  }
+  function statMin(arr) {
+    const nums = arr.map(Number).filter(n => Number.isFinite(n));
+    if (!nums.length) return null;
+    return Math.min(...nums);
+  }
+  function statSum(arr) {
+    const nums = arr.map(Number).filter(n => Number.isFinite(n));
+    if (!nums.length) return 0;
+    return nums.reduce((a, b) => a + b, 0);
+  }
+
   // ----------------------------------------
   // Geocoding
   // ----------------------------------------
@@ -207,7 +226,7 @@
   });
 
   // ----------------------------------------
-  // Pro fetch (Open-Meteo hourly)
+  // Fetch (Open-Meteo)
   // ----------------------------------------
   function isoNowHour() {
     const d = new Date();
@@ -216,7 +235,6 @@
   }
 
   async function fetchPro(lat, lon) {
-    // Expanded hourly set for Pro V1.1
     const HOURLY = [
       "temperature_2m",
       "apparent_temperature",
@@ -236,11 +254,11 @@
       "cloudcover_high",
 
       "visibility",
-      "freezing_level_height",
-      "boundary_layer_height",
-
       "surface_pressure",
-      "shortwave_radiation"
+      "shortwave_radiation",
+
+      "freezing_level_height",
+      "boundary_layer_height"
     ].join(",");
 
     const url =
@@ -256,12 +274,12 @@
     return data;
   }
 
-  function pickNext24h(hourly) {
+  function pickNext48h(hourly) {
     const t = hourly.time || [];
     const now = isoNowHour();
     const startIdx = t.findIndex(x => new Date(x).getTime() >= now.getTime());
     const i0 = Math.max(0, startIdx === -1 ? 0 : startIdx);
-    const i1 = Math.min(t.length, i0 + 24);
+    const i1 = Math.min(t.length, i0 + 48);
 
     function slice(arr) { return Array.isArray(arr) ? arr.slice(i0, i1) : []; }
 
@@ -286,28 +304,16 @@
       cloudHigh: slice(hourly.cloudcover_high),
 
       vis: slice(hourly.visibility),
-      freeze: slice(hourly.freezing_level_height),
-      pbl: slice(hourly.boundary_layer_height),
-
       press: slice(hourly.surface_pressure),
-      solar: slice(hourly.shortwave_radiation)
+      solar: slice(hourly.shortwave_radiation),
+
+      freeze: slice(hourly.freezing_level_height),
+      pbl: slice(hourly.boundary_layer_height)
     };
   }
 
-  function statMax(arr) {
-    const nums = arr.map(Number).filter(n => Number.isFinite(n));
-    if (!nums.length) return null;
-    return Math.max(...nums);
-  }
-
-  function statMin(arr) {
-    const nums = arr.map(Number).filter(n => Number.isFinite(n));
-    if (!nums.length) return null;
-    return Math.min(...nums);
-  }
-
   // ----------------------------------------
-  // Risk flags + Environmental panel
+  // Risk Flags (aggregated across 48h window)
   // ----------------------------------------
   function computeRiskFlags(hours) {
     const flags = [];
@@ -317,12 +323,10 @@
     const maxP = Math.max(...hours.map(h => h.precipProb ?? 0));
     const minVis = Math.min(...hours.map(h => (h.visKm ?? 99)));
     const anySnow = hours.some(h => (h.snowMm ?? 0) >= 0.5);
-
-    // Low cloud / summit clag hint
     const lowCloudLikely = hours.some(h => (h.cloudLow ?? 0) >= 70);
+
     if (lowCloudLikely) flags.push({ tone: "amber", text: "Low cloud likely (clag risk)" });
 
-    // Inversion heuristic (LIKELY, not guaranteed)
     const inversionLikely = hours.some(h => {
       const low = (h.cloudLow ?? 0) >= 70;
       const moist = (h.rh ?? 0) >= 90 || ((h.tempC != null && h.dewC != null) ? ((h.tempC - h.dewC) <= 1.5) : false);
@@ -333,18 +337,14 @@
     });
     if (inversionLikely) flags.push({ tone: "green", text: "Inversion possible (peaks may be above cloud)" });
 
-    // Wind exposure
     if (maxGust >= 45) flags.push({ tone: "red", text: "Strong ridge gusts likely" });
     else if (maxGust >= 30) flags.push({ tone: "amber", text: "Breezy on exposed ridges" });
 
-    // Precip
     if (maxP >= 70) flags.push({ tone: "amber", text: "High rain chance in period" });
 
-    // Visibility
     if (minVis <= 2) flags.push({ tone: "red", text: "Poor visibility risk" });
     else if (minVis <= 5) flags.push({ tone: "amber", text: "Reduced visibility possible" });
 
-    // Snow
     if (anySnow) flags.push({ tone: "amber", text: "Snowfall signal (check freezing level)" });
 
     return flags.slice(0, 6);
@@ -352,9 +352,7 @@
 
   function renderRiskFlags(hours) {
     const flags = computeRiskFlags(hours);
-    if (!flags.length) {
-      return `<p class="formNote">No major flags detected in this period.</p>`;
-    }
+    if (!flags.length) return `<p class="formNote">No major flags detected in this period.</p>`;
     return `
       <div class="riskFlagsBar">
         ${flags.map(f => `<span class="riskFlag riskFlag--${f.tone}">${f.text}</span>`).join("")}
@@ -362,47 +360,15 @@
     `;
   }
 
-  function renderEnvironmental(summary) {
-    // summary = a single representative hour (we use "now" hour if possible, else first)
-    const solar = (summary.solarWm2 != null) ? `${Math.round(summary.solarWm2)} W/m²` : "—";
-    const press = (summary.pressureHpa != null) ? `${Math.round(summary.pressureHpa)} hPa` : "—";
-    const freeze = (summary.freezingM != null) ? `${Math.round(summary.freezingM)} m` : "—";
-    const pbl = (summary.pblM != null) ? `${Math.round(summary.pblM)} m` : "—";
-    const clouds = `
-      Low ${summary.cloudLow != null ? Math.round(summary.cloudLow) + "%" : "—"} ·
-      Mid ${summary.cloudMid != null ? Math.round(summary.cloudMid) + "%" : "—"} ·
-      High ${summary.cloudHigh != null ? Math.round(summary.cloudHigh) + "%" : "—"}
-    `;
-    const dew = (summary.dewC != null) ? `${Math.round(summary.dewC)}°C` : "—";
-
-    return `
-      <div class="conditionsFacts">
-        <div><span class="conditionsKey">Cloud layers</span> <span>${clouds}</span></div>
-        <div><span class="conditionsKey">Dew point</span> <span>${dew}</span></div>
-        <div><span class="conditionsKey">Solar</span> <span>${solar}</span></div>
-        <div><span class="conditionsKey">Pressure</span> <span>${press}</span></div>
-        <div><span class="conditionsKey">Freezing level</span> <span>${freeze}</span></div>
-        <div><span class="conditionsKey">Stable layer (PBL)</span> <span>${pbl}</span></div>
-      </div>
-      <p class="formNote" style="margin-top:10px;">
-        Environmental values are model signals (useful context), not guarantees.
-      </p>
-    `;
-  }
-
   // ----------------------------------------
   // Render
   // ----------------------------------------
   function renderPro(loc, data) {
-    const next = pickNext24h(data.hourly);
+    const next = pickNext48h(data.hourly);
 
-    // Build normalized hour objects for the matrix (24 columns)
     const hours = next.time.map((t, i) => {
       const d = new Date(t);
-      const hh = Number.isNaN(d.getTime())
-        ? String(i).padStart(2, "0")
-        : String(d.getHours()).padStart(2, "0");
-
+      const hh = Number.isNaN(d.getTime()) ? String(i).padStart(2, "0") : String(d.getHours()).padStart(2, "0");
       const label = Number.isNaN(d.getTime())
         ? `${hh}:00`
         : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -410,6 +376,7 @@
       const visKm = (next.vis[i] != null) ? (Number(next.vis[i]) / 1000) : null;
 
       return {
+        idx: i,
         hour: hh,
         time: label,
 
@@ -431,117 +398,138 @@
         cloudHigh: next.cloudHigh[i],
 
         visKm,
-
+        solarWm2: next.solar[i],
         pressureHpa: next.press[i],
         freezingM: next.freeze[i],
-        pblM: next.pbl[i],
-        solarWm2: next.solar[i]
+        pblM: next.pbl[i]
       };
     });
 
-    // Summary
     const maxGust = statMax(next.gust);
     const maxWind = statMax(next.wind);
     const maxPP = statMax(next.pp);
-    const sumRain = next.rain.map(Number).filter(Number.isFinite).reduce((a, b) => a + b, 0);
-    const sumSnow = next.snow.map(Number).filter(Number.isFinite).reduce((a, b) => a + b, 0);
+    const sumRain = statSum(next.rain);
+    const sumSnow = statSum(next.snow);
+    const minVis = statMin(hours.map(h => h.visKm));
 
-    // Pick an hour for the Environmental panel: "now" if present, else first
     const nowHour = String(new Date().getHours()).padStart(2, "0");
-    const envHour = hours.find(h => h.hour === nowHour) || hours[0] || null;
+    const defaultIdx = (() => {
+      const idx = hours.findIndex(h => h.hour === nowHour);
+      return idx >= 0 ? idx : 0;
+    })();
 
-    // Icons (same style as your matrix)
+    // Icons (lightweight; consistent style)
     const iconTemp = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 5 0Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+    const iconDrop = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
     const iconWind = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10a3 3 0 1 0-3-3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h15a3 3 0 1 1-3 3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
-    const iconRain = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 0 1 .9-7.9A5 5 0 0 1 18 8.5a3.5 3.5 0 0 1 .5 7H7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
     const iconCloud = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 0 1 .9-7.9A5 5 0 0 1 18 8.5a3.5 3.5 0 0 1 .5 7H7Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
-    const iconSnow  = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4 6l16 12M20 6L4 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+    const iconEye = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+    const iconSun = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1-1M20 20l-1-1M19 5l1-1M4 20l1-1" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+    const iconGauge = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20a8 8 0 1 1 8-8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 12l6-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+    const iconMountain = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20l7-12 4 7 2-3 5 8H3Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
 
-    // Risk band for column colouring (simple, consistent)
-    function hourRiskPro(pp, gust, lowCloud) {
+    // Column colouring heuristic (keep simple)
+    function hourRiskPro(pp, gust, lowCloud, visKm) {
       const p = Number(pp ?? 0);
       const g = Number(gust ?? 0);
       const lc = Number(lowCloud ?? 0);
+      const v = Number(visKm ?? 99);
 
-      if (p >= 60 || g >= 45) return { cls: "red" };
-      if (p >= 30 || g >= 30 || lc >= 70) return { cls: "amber" };
+      if (p >= 60 || g >= 45 || v <= 2) return { cls: "red" };
+      if (p >= 30 || g >= 30 || lc >= 70 || v <= 5) return { cls: "amber" };
       return { cls: "green" };
     }
 
-    wrap.innerHTML = `
-      <div class="conditionsFacts" style="margin-bottom: 12px;">
-        <div><span class="conditionsKey">Max wind</span> <span>${maxWind != null ? Math.round(maxWind) + " mph" : "—"}</span></div>
-        <div><span class="conditionsKey">Max gust</span> <span>${maxGust != null ? Math.round(maxGust) + " mph" : "—"}</span></div>
-        <div><span class="conditionsKey">Max rain chance</span> <span>${maxPP != null ? Math.round(maxPP) + "%" : "—"}</span></div>
-        <div><span class="conditionsKey">Rain total</span> <span>${Number.isFinite(sumRain) ? sumRain.toFixed(1) + " mm" : "—"}</span></div>
-        <div><span class="conditionsKey">Snow total</span> <span>${Number.isFinite(sumSnow) ? sumSnow.toFixed(1) + " mm" : "—"}</span></div>
-      </div>
+    // Helpers for formatting values in dense mode
+    function fmtC(x) { return (x != null && Number.isFinite(Number(x))) ? `${Math.round(x)}°C` : "—"; }
+    function fmtPct(x) { return (x != null && Number.isFinite(Number(x))) ? `${Math.round(x)}%` : "—"; }
+    function fmtMm(x) { return (x != null && Number.isFinite(Number(x))) ? `${Number(x).toFixed(1)}mm` : "—"; }
+    function fmtMph(x) { return (x != null && Number.isFinite(Number(x))) ? `${Math.round(x)}mph` : "—"; }
+    function fmtKm(x) { return (x != null && Number.isFinite(Number(x))) ? `${Number(x).toFixed(1)}km` : "—"; }
+    function fmtM(x) { return (x != null && Number.isFinite(Number(x))) ? `${Math.round(x)}m` : "—"; }
+    function fmtHpa(x) { return (x != null && Number.isFinite(Number(x))) ? `${Math.round(x)}hPa` : "—"; }
+    function fmtWm2(x) { return (x != null && Number.isFinite(Number(x))) ? `${Math.round(x)}W/m²` : "—"; }
 
-      <div class="card conditionsCard" style="margin-bottom: 12px;">
-        <h3 style="margin:0 0 10px;">Risk Flags</h3>
-        ${renderRiskFlags(hours)}
-      </div>
+wrap.innerHTML = `
+  <div class="hourMatrix hourMatrix--proDense">
 
-      <details class="envDetails" style="margin-bottom: 12px;">
-        <summary>Environmental Data</summary>
-        <div class="envInner">
-          ${envHour ? renderEnvironmental(envHour) : `<p class="formNote">No data available.</p>`}
-        </div>
-      </details>
+    <div class="hourMatrixRail" aria-hidden="true">
+      <div class="hourMatrixRailItem">${iconTemp}<span>Temp</span></div>
+      <div class="hourMatrixRailItem isSub"><span>Feels</span></div>
+      <div class="hourMatrixRailItem isSub"><span>Dew</span></div>
+      <div class="hourMatrixRailItem isSub"><span>RH</span></div>
 
-      <div class="hourMatrix">
+      <div class="hourMatrixRailItem">${iconWind}<span>Wind</span></div>
+      <div class="hourMatrixRailItem isSub"><span>Gust</span></div>
 
-        <div class="hourMatrixRail" aria-hidden="true">
-          <div class="hourMatrixRailItem">${iconTemp}<span>Temp</span></div>
-          <div class="hourMatrixRailItem isSub"><span>Feels</span></div>
+      <div class="hourMatrixRailItem">${iconDrop}<span>Rain %</span></div>
+      <div class="hourMatrixRailItem isSub"><span>Rain mm</span></div>
+      <div class="hourMatrixRailItem isSub"><span>Snow mm</span></div>
 
-          <div class="hourMatrixRailItem">${iconWind}<span>Wind</span></div>
-          <div class="hourMatrixRailItem isSub"><span>Gust</span></div>
+      <div class="hourMatrixRailItem">${iconCloud}<span>Cloud L</span></div>
+      <div class="hourMatrixRailItem isSub"><span>Cloud M</span></div>
+      <div class="hourMatrixRailItem isSub"><span>Cloud H</span></div>
 
-          <div class="hourMatrixRailItem">${iconRain}<span>Rain</span></div>
-          <div class="hourMatrixRailItem">${iconCloud}<span>Low cloud</span></div>
-        </div>
+      <div class="hourMatrixRailItem">${iconEye}<span>Vis</span></div>
+      <div class="hourMatrixRailItem">${iconSun}<span>Solar</span></div>
+      <div class="hourMatrixRailItem">${iconGauge}<span>Press</span></div>
 
-        <div class="hourMatrixScroll" id="proMatrixScroll">
-          <div class="hourMatrixGrid">
-            ${hours.map(h => {
-              const r = hourRiskPro(h.precipProb, h.gustMph, h.cloudLow);
+      <div class="hourMatrixRailItem">${iconMountain}<span>Freeze</span></div>
+      <div class="hourMatrixRailItem isSub"><span>PBL</span></div>
+    </div>
 
-              const temp  = (h.tempC != null) ? `${Math.round(h.tempC)}°C` : "—";
-              const feels = (h.feelsC != null) ? `${Math.round(h.feelsC)}°C` : "—";
+    <div class="hourMatrixScroll" id="proMatrixScroll">
+      <div class="hourMatrixGrid">
+        ${hours.map((h, i) => {
+          const r = hourRiskPro(h.precipProb, h.gustMph, h.cloudLow, h.visKm);
+          const isNow = (i === defaultIdx) ? " isNow" : "";
 
-              const wdir = (h.windDirDeg != null && Number.isFinite(h.windDirDeg))
-                ? `${degToArrow(h.windDirDeg)} ${degToCompass(h.windDirDeg)}`
-                : "—";
-              const wind = (h.windMph != null) ? `${Math.round(h.windMph)} mph` : "—";
-              const windWithDir = (wind !== "—" || wdir !== "—") ? `${wind} • ${wdir}` : "—";
+          const windSpeed = fmtMph(h.windMph);
+          const windArrow = (h.windDirDeg != null && Number.isFinite(h.windDirDeg)) ? degToArrow(h.windDirDeg) : "—";
 
-              const gust  = (h.gustMph != null) ? `${Math.round(h.gustMph)} mph` : "—";
-              const pp    = (h.precipProb != null) ? `${Math.round(h.precipProb)}%` : "—";
-              const lc    = (h.cloudLow != null) ? `${Math.round(h.cloudLow)}%` : "—";
+          return `
+            <div class="hourCol hourCol--${r.cls}${isNow}" data-hour="${h.hour}" data-idx="${i}">
+              <div class="hourColHeader">${h.time}</div>
 
-              return `
-                <div class="hourCol hourCol--${r.cls}" data-hour="${h.hour}">
-                  <div class="hourColHeader">${h.time}</div>
+              <div class="hourColVal">${fmtC(h.tempC)}</div>
+              <div class="hourColVal">${fmtC(h.feelsC)}</div>
+              <div class="hourColVal">${fmtC(h.dewC)}</div>
+              <div class="hourColVal">${fmtPct(h.rh)}</div>
 
-                  <div class="hourColVal">${temp}</div>
-                  <div class="hourColVal">${feels}</div>
-
-                  <div class="hourColVal">${windWithDir}</div>
-                  <div class="hourColVal">${gust}</div>
-
-                  <div class="hourColVal">${pp}</div>
-                  <div class="hourColVal">${lc}</div>
-
-                  <div class="hourColBar" aria-hidden="true"></div>
+              <div class="hourColVal hourColVal--wind">
+                <div class="windStack">
+                  <div class="windSpeed">${windSpeed}</div>
+                  <div class="windArrow">${windArrow}</div>
                 </div>
-              `;
-            }).join("")}
-          </div>
-        </div>
+              </div>
 
+              <div class="hourColVal">${fmtMph(h.gustMph)}</div>
+
+              <div class="hourColVal">${fmtPct(h.precipProb)}</div>
+              <div class="hourColVal">${fmtMm(h.rainMm)}</div>
+              <div class="hourColVal">${fmtMm(h.snowMm)}</div>
+
+              <div class="hourColVal">${fmtPct(h.cloudLow)}</div>
+              <div class="hourColVal">${fmtPct(h.cloudMid)}</div>
+              <div class="hourColVal">${fmtPct(h.cloudHigh)}</div>
+
+              <div class="hourColVal">${fmtKm(h.visKm)}</div>
+              <div class="hourColVal">${fmtWm2(h.solarWm2)}</div>
+              <div class="hourColVal">${fmtHpa(h.pressureHpa)}</div>
+
+              <div class="hourColVal">${fmtM(h.freezingM)}</div>
+              <div class="hourColVal">${fmtM(h.pblM)}</div>
+
+              <div class="hourColBar" aria-hidden="true"></div>
+            </div>
+          `;
+        }).join("")}
       </div>
-    `;
+    </div>
+
+  </div>
+`;
+
 
     // Enable drag-scroll
     const scroller = document.getElementById("proMatrixScroll");
@@ -549,27 +537,23 @@
       window.enableDragScroll(scroller);
     }
 
-    // Highlight "now" and snap into view
-    const currentCol = wrap.querySelector(`.hourCol[data-hour="${nowHour}"]`);
-    if (currentCol) {
-      currentCol.classList.add("isNow");
+    // Snap default column into view
+    const scrollerEl = wrap.querySelector("#proMatrixScroll");
+    const defaultCol = wrap.querySelector(`.hourCol[data-idx="${defaultIdx}"]`);
+    if (scrollerEl && defaultCol) {
+      const colRect = defaultCol.getBoundingClientRect();
+      const scRect  = scrollerEl.getBoundingClientRect();
+      const colLeftInsideScroller = colRect.left - scRect.left;
 
-      const scrollerEl = wrap.querySelector("#proMatrixScroll");
-      if (scrollerEl) {
-        const colRect = currentCol.getBoundingClientRect();
-        const scRect  = scrollerEl.getBoundingClientRect();
-        const colLeftInsideScroller = colRect.left - scRect.left;
+      const leftGutter = 14;
+      const targetDelta = colLeftInsideScroller - leftGutter;
 
-        const leftGutter = 14; // tweak only if your CSS padding changes
-        const targetDelta = colLeftInsideScroller - leftGutter;
-
-        const maxScroll = scrollerEl.scrollWidth - scrollerEl.clientWidth;
-        const nextLeft = Math.max(0, Math.min(maxScroll, scrollerEl.scrollLeft + targetDelta));
-        scrollerEl.scrollTo({ left: nextLeft, behavior: "auto" });
-      }
+      const maxScroll = scrollerEl.scrollWidth - scrollerEl.clientWidth;
+      const nextLeft = clamp(scrollerEl.scrollLeft + targetDelta, 0, maxScroll);
+      scrollerEl.scrollTo({ left: nextLeft, behavior: "auto" });
     }
 
-    setStatus(`Showing Pro (beta) for ${loc.name}.`);
+    setStatus(`Showing Pro for ${loc.name}.`);
   }
 
   async function setLocation(loc) {

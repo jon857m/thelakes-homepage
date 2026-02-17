@@ -1929,3 +1929,87 @@ html, body {
 .envDetails > summary::-webkit-details-marker { display: none; }
 
 .envInner { margin-top: 10px; }
+
+/* Selected hour column (Pro environmental link) */
+.hourCol.isSelected {
+  outline: 2px solid rgba(255,255,255,0.22);
+  outline-offset: -2px;
+}
+
+/* Risk Flags */
+.riskFlagsBar { display:flex; flex-wrap:wrap; gap:8px; }
+.riskFlag {
+  display:inline-flex; align-items:center;
+  padding:8px 10px; border-radius:999px;
+  font-size:13px; line-height:1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.riskFlag--green { border-color: rgba(0,255,140,0.35); }
+.riskFlag--amber { border-color: rgba(255,200,0,0.35); }
+.riskFlag--red   { border-color: rgba(255,70,70,0.35); }
+
+/* Environmental collapsible */
+.envDetails {
+  border-radius:16px;
+  background: rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.10);
+  padding:12px;
+}
+.envDetails > summary {
+  cursor:pointer;
+  list-style:none;
+  font-weight:800;
+  opacity:0.95;
+}
+.envDetails > summary::-webkit-details-marker { display:none; }
+.envInner { margin-top:10px; }
+
+/* Pro dense matrix: slightly tighter rows */
+.hourMatrix--proDense .hourColVal {
+  font-size: 12.5px;
+  line-height: 1.15;
+}
+
+.hourMatrix--proDense .hourMatrixRailItem span {
+  font-size: 12.5px;
+}
+
+/* Pro wind cell: two lines, centred */
+.hourColVal--wind .windStack{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+
+.hourColVal--wind .windArrow{
+  font-size:16px;
+  line-height:1;
+  opacity:0.95;
+}
+
+/* Fix SVG baseline drift in rail items (affects Dew in .isSub) */
+.hourMatrixRailItem .hourIcon {
+  display: block;            /* removes inline baseline quirks */
+}
+
+.hourMatrixRailItem {
+  display: grid;
+  grid-template-columns: 22px 1fr;  /* icon column + label */
+  align-items: center;              /* vertically center both */
+  column-gap: 10px;
+}
+
+/* Sub rows that have no icon: keep label aligned with others */
+.hourMatrixRailItem.isSub:not(:has(.hourIcon)) {
+  grid-template-columns: 22px 1fr;
+}
+
+/* Only sub-rows with an icon (Dew) — align icon to text properly */
+.hourMatrixRailItem.isSub .hourIcon {
+  display: inline-block;
+  vertical-align: middle;
+  transform: translateY(-1px); /* tiny optical correction */
+}

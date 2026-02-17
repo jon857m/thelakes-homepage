@@ -25,7 +25,24 @@
   const inputEl = document.getElementById("proSearch");
   const clearBtn = document.getElementById("proClearBtn");
   const suggestEl = document.getElementById("proSuggest");
+  
+  const presets = {
+    north:   { name: "North Lakes",   lat: 54.70, lon: -3.00 },
+    central: { name: "Central Lakes", lat: 54.55, lon: -3.15 },
+    south:   { name: "South Lakes",   lat: 54.25, lon: -2.95 },
+  };
 
+  const presetBtns = document.querySelectorAll(".presetBtn");
+
+  presetBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-preset");
+      const p = key ? presets[key] : null;
+      if (!p) return;
+      setLocation({ name: p.name, lat: p.lat, lon: p.lon, source: "Preset" });
+    });
+  });
+  
   const btnUsePrefs = document.getElementById("proUsePrefs");
   const btnUseDevice = document.getElementById("proUseDevice");
 

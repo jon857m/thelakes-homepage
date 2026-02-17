@@ -10,6 +10,7 @@
 (function () {
   const LS_FELL = "ld_fell_v1";
   const LS_DATE = "ld_fell_date_v1";
+  const LS_PREFS = "ld_conditions_location_v1";
 
   // Elements
   const statusEl = document.getElementById("plannerStatus");
@@ -33,6 +34,87 @@
   const worstHourEl = document.getElementById("worstHour");
 
   const hourlyWrap = document.getElementById("hourlyWrap");
+
+    // --- Extra location buttons (Preferences / Device / Presets) ---
+  const btnUsePrefs = document.getElementById("plannerUsePrefs");
+  const btnUseDevice = document.getElementById("plannerUseDevice");
+  const presetBtns = document.querySelectorAll(".presetBtn");
+
+  const presets = {
+    north:   { name: "North Lakes",   lat: 54.70, lon: -3.00 },
+    central: { name: "Central Lakes", lat: 54.55, lon: -3.15 },
+    south:   { name: "South Lakes",   lat: 54.25, lon: -2.95 },
+  };
+
+  function setPlaceAsSelection(name, lat, lon, sourceLabel) {
+    const loc = {
+      name: String(name || "Place").trim(),
+      aliases: [],
+      lat: Number(lat),
+      lon: Number(lon),
+      elev_m: null,
+      source: "geocode", // treat as 📍 place (your UI already supports this)
+    };
+
+    currentFell = loc;
+    fellInput.value = loc.name;
+    save(LS_FELL, loc);
+    renderSelected();
+    maybeLoadForecast();
+
+    setStatus(`Selected: 📍 ${loc.name}${sourceLabel ? ` (${sourceLabel})` : ""}`);
+  }
+
+  btnUsePrefs?.addEventListener("click", () => {
+    clearErr();
+    const pref = load(LS_PREFS);
+    const lat = pref ? Number(pref.lat) : NaN;
+    const lon = pref ? Number(pref.lon) : NaN;
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      showErr("No saved preference yet — set it on Conditions / Snapshot first.");
+      return;
+    }
+
+    const label = String(pref.name || pref.place || "My preference").trim();
+    setPlaceAsSelection(label, lat, lon, "Preference");
+  });
+
+  btnUseDevice?.addEventListener("click", () => {
+    clearErr();
+
+    if (!navigator.geolocation) {
+      showErr("Device location isn’t available on this browser.");
+      return;
+    }
+
+    setStatus("Requesting location…");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPlaceAsSelection(
+          "My location",
+          pos.coords.latitude,
+          pos.coords.longitude,
+          "Device"
+        );
+      },
+      () => {
+        showErr("Couldn’t access your location — please allow it or use search/presets.");
+        setStatus("Ready.");
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+    );
+  });
+
+  presetBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-preset");
+      const p = key ? presets[key] : null;
+      if (!p) return;
+      setPlaceAsSelection(p.name, p.lat, p.lon, "Preset");
+    });
+  });
+
 
   if (!fellInput || !fellSuggest || !datePick || !hourlyWrap) return;
 

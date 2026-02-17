@@ -88,8 +88,19 @@
             Search fells by name (supports aliases). Example: “Helvellyn”, “Scafell Pike”, “Cat Bells”.
           </p>
 
+        <div class="forecastActionRow" style="margin-top: 12px;">
+
+
+          <button class="btn btn--ghost presetBtn" type="button" data-preset="north">North</button>
+          <button class="btn btn--ghost presetBtn" type="button" data-preset="central">Central</button>
+          <button class="btn btn--ghost presetBtn" type="button" data-preset="south">South</button>
+
+          <button class="btn btn--ghost" type="button" id="plannerUsePrefs">Use my preferences</button>
+          <button class="btn btn--ghost" type="button" id="plannerUseDevice">Use my location</button>
+        </div>
+
           <!-- Fell search -->
-          <div class="conditionsControls">
+          <div class="conditionsControls" style="margin-top: 12px;">
             <label class="srOnly" for="fellSearch">Search for a fell</label>
             <input
               id="fellSearch"
@@ -112,7 +123,7 @@
             <input id="datePick" type="date" />
           </div>
 
-          <p class="formNote" id="selectedFellNote">Selected fell: —</p>
+          <p class="formNote" style="margin-top: 12px;" id="selectedFellNote">Selected fell: —</p>
           <p class="formNote" id="selectedDateNote">Selected date: —</p>
         </div>
 

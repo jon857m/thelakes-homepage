@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0PD58CKV9J"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-0PD58CKV9J');
+  </script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>7-Day Forecast | Lake District Conditions</title>
+  <meta name="description" content="7-day outlook with clear red/amber/green risk summary. Choose a location, or load your saved preference." />
+
+  <meta property="og:title" content="7-Day Forecast | Lake District Conditions">
+  <meta property="og:description" content="7-day outlook with clear red/amber/green risk summary. Choose a location, or load your saved preference.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.thelakesincumbria.co.uk/conditions/forecast/">
+  <meta property="og:image" content="https://www.thelakesincumbria.co.uk/assets/hero.jpg">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#141414">
+  <link rel="canonical" href="https://www.thelakesincumbria.co.uk/conditions/forecast/" />
+
+  <link rel="icon" href="/assets/hero.jpg">
+  <link rel="apple-touch-icon" href="/assets/hero.jpg">
+
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <div id="siteHeader"></div>
+
+  <main>
+    <section class="hero">
+      <div class="hero__overlay"></div>
+      <div class="container hero__content">
+        <p class="pill">Outlook • 7 days • Simple R/A/G</p>
+        <h1>7-Day Forecast</h1>
+        <p class="subhead">
+          Choose a location to view the 7-day outlook. Designed to be quick, clear, and shareable.
+        </p>
+
+        <div class="ctaRow">
+          <a class="btn btn--ghost" href="/conditions/" aria-label="Back to Snapshot">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+            <span class="btn__label">Snapshot</span>
+          </a>
+
+          <a class="btn btn--ghost" href="/conditions/fell/" aria-label="Go to Fell Planner">
+            <span class="btn__label">Fell Planner</span>
+          </a>
+
+          <a class="btn btn--ghost" href="/conditions/pro/" aria-label="Go to Pro">
+            <span class="btn__label">Pro</span>
+          </a>
+        </div>
+
+        <p class="hero__note" id="forecastStatus" aria-live="polite">Choose a location to begin.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+
+        <!-- Controls -->
+        <div class="card conditionsCard">
+          <h2 style="margin-top:0;">Choose a location</h2>
+          <p class="sectionLead" style="margin-bottom: 14px;">
+            Search anywhere (useful even when you’re not in the Lakes), or load your saved preference.
+          </p>
+
+          <div class="conditionsControls">
+            <label class="srOnly" for="forecastSearch">Search for a place</label>
+            <input
+              id="forecastSearch"
+              type="search"
+              inputmode="search"
+              autocomplete="off"
+              placeholder="Type a place… (e.g., Keswick, Ambleside, London)"
+            />
+            <button class="btn btn--ghost" type="button" id="forecastClearBtn">Clear</button>
+          </div>
+
+          <div class="suggestBox" id="forecastSuggest" role="listbox" aria-label="Search results" hidden></div>
+
+          <div class="forecastActionRow" style="margin-top: 12px;">
+            <button class="btn btn--ghost" type="button" id="btnUsePrefs">Use my preferences</button>
+            <button class="btn btn--ghost" type="button" id="btnUseDevice">Use my location</button>
+          </div>
+
+          <p class="formNote" id="forecastViewing">Viewing: —</p>
+          <p class="formNote" id="forecastSourceNote">Data: Forecast model (Open-Meteo). Live snapshot uses Met Office.</p>
+          <p class="formNote" id="forecastError" style="display:none;"></p>
+        </div>
+
+        <!-- Results -->
+        <div class="card conditionsCard" style="margin-top: 12px;">
+          <h2 style="margin-top:0;">Outlook</h2>
+          <div id="forecastWrap">
+            <p class="formNote">No location selected yet.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="../../app.js"></script>
+  <script src="../../assets/js/forecast.js"></script>
+</body>
+</html>

@@ -1783,3 +1783,149 @@ html, body {
     transform 260ms ease,
     visibility 0s linear 0s;
 }
+
+/* =========================
+   7-Day Forecast (isolated)
+   ========================= */
+
+.forecastActionRow{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.forecastGrid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px){
+  .forecastGrid{ grid-template-columns: 1fr; }
+}
+
+.forecastDay{
+  border: 1px solid var(--border);
+  background: rgba(25,26,15,0.35);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.forecastDay__top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.forecastDay__date{
+  font-weight: 950;
+  letter-spacing: -0.2px;
+}
+
+.forecastKey{ color: var(--muted); font-weight: 800; margin-right: 6px; }
+.forecastVal{ font-weight: 950; }
+.forecastSub{ color: var(--muted); font-weight: 700; margin-left: 6px; opacity: 0.9; }
+
+.forecastDay__temps{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.forecastDay__facts{
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.forecastDay__actions{
+  margin-top: 12px;
+}
+
+.forecastDay__btn{
+  width: 100%;
+  justify-content: center;
+}
+
+/* Subtle R/A/G tint (keeps your palette; doesn’t introduce new loud colours) */
+.forecastDay--green{ outline: 1px solid rgba(0, 255, 140, 0.10); }
+.forecastDay--amber{ outline: 1px solid rgba(255, 200, 80, 0.12); }
+.forecastDay--red{ outline: 1px solid rgba(255, 90, 90, 0.12); }
+
+/* =========================
+   Pro (Beta) (isolated)
+   ========================= */
+
+.proSummary{
+  margin-bottom: 12px;
+}
+
+.proGrid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px){
+  .proGrid{ grid-template-columns: 1fr; }
+}
+
+.proHour{
+  border: 1px solid rgba(246,242,231,0.10);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(25,26,15,0.32);
+}
+
+.proHour__t{
+  font-weight: 950;
+  margin-bottom: 8px;
+}
+
+.proHour__row{
+  margin: 6px 0;
+}
+
+/* Risk Flags */
+.riskFlagsBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.riskFlag {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.riskFlag--green { border-color: rgba(0,255,140,0.35); }
+.riskFlag--amber { border-color: rgba(255,200,0,0.35); }
+.riskFlag--red   { border-color: rgba(255,70,70,0.35); }
+
+/* Environmental collapsible */
+.envDetails {
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.10);
+  padding: 12px;
+}
+
+.envDetails > summary {
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+  opacity: 0.95;
+}
+
+.envDetails > summary::-webkit-details-marker { display: none; }
+
+.envInner { margin-top: 10px; }

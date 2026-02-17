@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0PD58CKV9J"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-0PD58CKV9J');
+  </script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Pro (Beta) | Lake District Conditions</title>
+  <meta name="description" content="Pro conditions (beta): expanded model data for today and the next 24 hours. Choose location or load preference." />
+
+  <link rel="icon" href="/assets/hero.jpg">
+  <link rel="apple-touch-icon" href="/assets/hero.jpg">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <div id="siteHeader"></div>
+
+  <main>
+    <section class="hero">
+      <div class="hero__overlay"></div>
+      <div class="container hero__content">
+        <p class="pill">Pro • Beta • More data</p>
+        <h1>Pro Conditions</h1>
+        <p class="subhead">
+          Today + next 24 hours with extra model variables. Later we’ll add multiple sources (Met Office, alerts, more).
+        </p>
+
+        <div class="ctaRow">
+          <a class="btn btn--ghost" href="/conditions/" aria-label="Back to Snapshot">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+            <span class="btn__label">Snapshot</span>
+          </a>
+
+          <a class="btn btn--ghost" href="/conditions/forecast/" aria-label="Go to 7-Day">
+            <span class="btn__label">7-Day</span>
+          </a>
+
+          <a class="btn btn--ghost" href="/conditions/fell/" aria-label="Go to Fell Planner">
+            <span class="btn__label">Fell Planner</span>
+          </a>
+        </div>
+
+        <p class="hero__note" id="proStatus" aria-live="polite">Choose a location to begin.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+
+        <div class="card conditionsCard">
+          <h2 style="margin-top:0;">Choose a location</h2>
+
+          <div class="conditionsControls">
+            <label class="srOnly" for="proSearch">Search for a place</label>
+            <input id="proSearch" type="search" inputmode="search" autocomplete="off"
+              placeholder="Type a place… (e.g., Keswick, Ambleside, London)" />
+            <button class="btn btn--ghost" type="button" id="proClearBtn">Clear</button>
+          </div>
+
+          <div class="suggestBox" id="proSuggest" role="listbox" aria-label="Search results" hidden></div>
+
+          <div class="forecastActionRow" style="margin-top: 12px;">
+            <button class="btn btn--ghost" type="button" id="proUsePrefs">Use my preferences</button>
+            <button class="btn btn--ghost" type="button" id="proUseDevice">Use my location</button>
+          </div>
+
+          <p class="formNote" id="proViewing">Viewing: —</p>
+          <p class="formNote" id="proError" style="display:none;"></p>
+        </div>
+
+        <div class="card conditionsCard" style="margin-top: 12px;">
+          <h2 style="margin-top:0;">Today + next 24h</h2>
+          <div id="proWrap">
+            <p class="formNote">No location selected yet.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="../../app.js"></script>
+  <script src="../../assets/js/pro.js"></script>
+</body>
+</html>

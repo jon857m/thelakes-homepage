@@ -15,19 +15,49 @@ function wireMenuToggle() {
   const nav = document.getElementById("mobileNav");
   if (!btn || !nav) return;
 
-  buildMobileNavFromFullTree(); // <-- add this
+  // Build once (but keep it visually "closed" by default)
+  buildMobileNavFromFullTree();
 
   if (btn.dataset.bound === "1") return;
   btn.dataset.bound = "1";
 
+  function openMenu() {
+    // Ensure it starts from the "closed" state
+    nav.classList.remove("open");
+
+    // Force the browser to apply the closed styles first
+    // (this prevents the 1-frame flash)
+    void nav.offsetHeight;
+
+    // Next frame: open (so the transition can run)
+    requestAnimationFrame(() => {
+      nav.classList.add("open");
+      btn.classList.add("is-open");
+      btn.setAttribute("aria-expanded", "true");
+    });
+  }
+
+  function closeMenu() {
+    nav.classList.remove("open");
+    btn.classList.remove("is-open");
+    btn.setAttribute("aria-expanded", "false");
+  }
+
   btn.addEventListener("click", () => {
-    const isOpen = nav.classList.toggle("open");
-    const btn = document.getElementById("menuToggle");
-    btn.classList.toggle("is-open");
-    btn.setAttribute("aria-expanded", String(isOpen));
+    const isOpen = nav.classList.contains("open");
+    if (isOpen) closeMenu();
+    else openMenu();
+  });
+
+  // Optional: close when tapping outside the drawer (nice "app" feel)
+  document.addEventListener("click", (e) => {
+    if (!nav.classList.contains("open")) return;
+    const clickedInsideMenu = nav.contains(e.target);
+    const clickedBurger = btn.contains(e.target);
+    if (clickedInsideMenu || clickedBurger) return;
+    closeMenu();
   });
 }
-
 
 function buildMobileNavFromFullTree() {
   const source = document.getElementById("siteNavFull");
@@ -48,7 +78,6 @@ function buildMobileNavFromFullTree() {
   clone.querySelectorAll("li").forEach((li) => {
     const childUl = li.querySelector(":scope > ul");
     const link = li.querySelector(":scope > a");
-
     if (!childUl || !link) return;
 
     li.classList.add("has-submenu");
@@ -56,60 +85,53 @@ function buildMobileNavFromFullTree() {
     // Start collapsed (but animatable)
     childUl.style.maxHeight = "0px";
 
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "subToggle";
-    btn.setAttribute("aria-expanded", "false");
-    btn.setAttribute("aria-label", `Expand ${link.textContent.trim()}`);
-    btn.innerHTML = '<span class="chev" aria-hidden="true">›</span>';
+    const tbtn = document.createElement("button");
+    tbtn.type = "button";
+    tbtn.className = "subToggle";
+    tbtn.setAttribute("aria-expanded", "false");
+    tbtn.setAttribute("aria-label", `Expand ${link.textContent.trim()}`);
+    tbtn.innerHTML = '<span class="chev" aria-hidden="true">›</span>';
 
-    btn.addEventListener("click", (e) => {
+    tbtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const open = btn.getAttribute("aria-expanded") === "true";
-      btn.setAttribute("aria-expanded", String(!open));
-    li.classList.toggle("submenu-open", !open);
 
-    if (!open) {
-      // OPENING
-      li.classList.add("submenu-open");
+      const open = tbtn.getAttribute("aria-expanded") === "true";
+      tbtn.setAttribute("aria-expanded", String(!open));
+      li.classList.toggle("submenu-open", !open);
 
-      // Set to actual height so it animates
-      childUl.style.maxHeight = childUl.scrollHeight + "px";
-
-      // After animation finishes, allow natural height
-      childUl.addEventListener("transitionend", (ev) => {
-        if (ev.propertyName !== "max-height") return;
-        if (li.classList.contains("submenu-open")) {
-          childUl.style.maxHeight = "none";
-        }
-      }, { once: true });
-
-    } else {
-      // CLOSING
-      li.classList.remove("submenu-open");
-
-      // If it's currently 'none', fix it before collapsing
-      if (childUl.style.maxHeight === "none") {
+      if (!open) {
+        // OPENING
+        li.classList.add("submenu-open");
         childUl.style.maxHeight = childUl.scrollHeight + "px";
 
-        // Next frame collapse to 0 so it animates
-        requestAnimationFrame(() => {
-          childUl.style.maxHeight = "0px";
-        });
-
+        childUl.addEventListener(
+          "transitionend",
+          (ev) => {
+            if (ev.propertyName !== "max-height") return;
+            if (li.classList.contains("submenu-open")) {
+              childUl.style.maxHeight = "none";
+            }
+          },
+          { once: true }
+        );
       } else {
-        childUl.style.maxHeight = "0px";
-      }
-    }
+        // CLOSING
+        li.classList.remove("submenu-open");
 
+        if (childUl.style.maxHeight === "none") {
+          childUl.style.maxHeight = childUl.scrollHeight + "px";
+          requestAnimationFrame(() => {
+            childUl.style.maxHeight = "0px";
+          });
+        } else {
+          childUl.style.maxHeight = "0px";
+        }
+      }
     });
 
-
-  li.insertBefore(btn, childUl);
-
     // Put toggle between link and submenu
-    li.insertBefore(btn, childUl);
+    li.insertBefore(tbtn, childUl);
   });
 
   // Close drawer on link click
@@ -119,6 +141,7 @@ function buildMobileNavFromFullTree() {
     const nav = document.getElementById("mobileNav");
     const btn = document.getElementById("menuToggle");
     nav?.classList.remove("open");
+    btn?.classList.remove("is-open");
     btn?.setAttribute("aria-expanded", "false");
   });
 

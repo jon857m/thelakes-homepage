@@ -1709,3 +1709,69 @@ html, body {
   margin: 0;
   padding: 0;
 }
+
+/* Base: menu exists, but is visually closed */
+#mobileNav {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 180ms ease, transform 180ms ease, visibility 0s linear 180ms;
+  will-change: opacity, transform;
+}
+
+/* Open state */
+#mobileNav.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+/* Mobile drawer animation (prevents initial flash) */
+#mobileNav {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 180ms ease, transform 180ms ease, visibility 0s linear 180ms;
+  will-change: opacity, transform;
+}
+
+#mobileNav.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+/* MOBILE NAV: always in the DOM, animate opacity/transform */
+#mobileNav {
+  display: block !important;            /* kills any display:none */
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  visibility: hidden;
+
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    visibility 0s linear 220ms;
+  will-change: opacity, transform;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+#mobileNav.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
+
+  transition:
+    opacity 260ms ease,
+    transform 260ms ease,
+    visibility 0s linear 0s;
+}

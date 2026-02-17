@@ -1554,3 +1554,26 @@ footer .signup .consent,
   max-height: 0;
   transition: max-height 200ms ease, opacity 160ms ease, transform 160ms ease;
 }
+
+/* Submenu UL: remove Safari “slither” when collapsed, but still allow opening */
+.mobileNav__list li > ul {
+  display: block;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Only force height 0 when it is collapsed (your JS sets max-height: 0px inline) */
+.mobileNav__list li > ul[style*="max-height: 0"] {
+  height: 0 !important;
+}
+
+/* When it's opening/open, allow normal height */
+.mobileNav__list li > ul:not([style*="max-height: 0"]) {
+  height: auto !important;
+}
+
+.mobileNav__list li > ul li > a {
+  padding-left: 28px;   /* adjust to taste (24–32px works well) */
+}

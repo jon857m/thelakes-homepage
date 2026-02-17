@@ -417,26 +417,62 @@ function getSavedLocation() {
     // Sunrise/Sunset from lat/lon (computed locally)
     const { sunrise, sunset } = calcSunTimes(data.lat, data.lon);
 
+    // --- Tiny inline SVG icon helpers (premium, consistent) ---
+    function iconSvg(name) {
+      const common = `class="pillIcon" viewBox="0 0 24 24" aria-hidden="true"`;
+      const stroke = `fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"`;
+
+      switch (name) {
+        case "thermo":
+          return `<svg ${common}><path ${stroke} d="M14 14.76V5a2 2 0 1 0-4 0v9.76a4 4 0 1 0 4 0Z"/></svg>`;
+        case "wind":
+          return `<svg ${common}>
+            <path ${stroke} d="M3 8h10a3 3 0 1 0-3-3"/>
+            <path ${stroke} d="M4 12h14a3 3 0 1 1-3 3"/>
+            <path ${stroke} d="M3 16h9"/>
+          </svg>`;
+        case "sunrise":
+          return `<svg ${common}>
+            <path ${stroke} d="M12 2v4"/>
+            <path ${stroke} d="M4.93 7.07 7.76 9.9"/>
+            <path ${stroke} d="M19.07 7.07 16.24 9.9"/>
+            <path ${stroke} d="M4 18h16"/>
+            <path ${stroke} d="M8 18a4 4 0 0 1 8 0"/>
+          </svg>`;
+        case "sunset":
+          return `<svg ${common}>
+            <path ${stroke} d="M12 2v4"/>
+            <path ${stroke} d="M4.93 7.07 7.76 9.9"/>
+            <path ${stroke} d="M19.07 7.07 16.24 9.9"/>
+            <path ${stroke} d="M4 18h16"/>
+            <path ${stroke} d="M8 18a4 4 0 0 1 8 0"/>
+            <path ${stroke} d="M12 22v-4"/>
+          </svg>`;
+        default:
+          return "";
+      }
+    }
+
+
     // Compose the strip text
     const temp = (data.tempC ?? "–") + "°C";
     const summary = data.summary || "—";
     const wind = (data.windMph ?? "–") + "mph";
 
- // Badge emoji (map the API badge color to a dot)
-const badgeMap = { green: "🟢", yellow: "🟡", red: "🔴" };
-const badgeEmoji =
-  badgeMap[String(data.badge || "").toLowerCase()] || "⚪️";
+    // Badge emoji (map the API badge color to a dot)
+  const badgeColor = String(data.badge || "").toLowerCase();
 
-// Keep badge phrase together
-const badgeChunk = data.badgeText
-  ? `<span class="pill-chunk">${badgeEmoji}\u00A0${data.badgeText}</span>`
-  : "";
+  const badgeChunk = data.badgeText
+    ? `<span class="pill-chunk">
+          <span class="riskDot riskDot--${badgeColor}"></span>
+          ${data.badgeText}
+      </span>`
+    : "";
 
-    const nbsp = "\u00A0"; // non-breaking space
-
-    const windChunk = `💨${nbsp}${wind}`;
-    const sunriseChunk = `🌅${nbsp}${sunrise}`;
-    const sunsetChunk = `🌇${nbsp}${sunset}`;
+    // Build chunks (replace emoji with SVG icons)
+    const windChunk = `${iconSvg("wind")}\u00A0${wind}`;
+    const sunriseChunk = `${iconSvg("sunrise")}\u00A0${sunrise}`;
+    const sunsetChunk = `${iconSvg("sunset")}\u00A0${sunset}`;
 
     const updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     let updatedText = "";
@@ -452,7 +488,7 @@ const badgeChunk = data.badgeText
       </span>
 
       <span class="pill-chunk">${placeLabel}</span> ·
-      <span class="pill-chunk">🌡️\u00A0${temp}</span> ·
+      <span class="pill-chunk">${iconSvg("thermo")}\u00A0${temp}</span> ·
       <span class="pill-chunk">${summary}</span> ·
       <span class="pill-chunk">${windChunk}</span> ·
       <span class="pill-chunk">${sunriseChunk}</span> ·

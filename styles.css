@@ -863,14 +863,24 @@ footer .signup .consent,
     .hero .hero__content { overflow: visible; }
 
 
-    #conditionsStrip{
+    #conditionsStrip {
       white-space: normal;
       overflow-wrap: anywhere;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.16);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }    
+
+      background: rgba(18, 22, 28, 0.42);   /* slightly lighter */
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 16px;                  /* less “blob” */
+
+      box-shadow:
+        0 4px 14px rgba(0,0,0,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+
+      padding: 8px 18px;                    /* slightly slimmer */
+    }
+   
 
     /* Slightly stronger readability for live conditions on mobile */
   @media (max-width: 768px) {
@@ -893,9 +903,9 @@ footer .signup .consent,
     }
 
     .live-dot {
-      width: 8px;
-      height: 8px;
-      background: #ff3b30;
+      width: 6px;
+      height: 6px;
+      background: #ff4d4d;
       border-radius: 50%;
       animation: pulseLive 1.8s infinite;
     }
@@ -1640,4 +1650,53 @@ footer .signup .consent,
 
 .menu-toggle.is-open .burger__line:nth-child(3) {
   transform: translateY(-6px) rotate(-45deg);
+}
+
+#conditionsStrip .pillIcon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  opacity: 0.95;
+}
+
+#conditionsStrip .riskDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+  position: relative;
+}
+
+/* Green */
+#conditionsStrip .riskDot--green {
+  background: #2ecc71;
+  box-shadow:
+    0 0 6px rgba(46, 204, 113, 0.6),
+    inset 0 1px 1px rgba(255,255,255,0.4);
+}
+
+/* Yellow */
+#conditionsStrip .riskDot--yellow {
+  background: #f1c40f;
+  box-shadow:
+    0 0 6px rgba(241, 196, 15, 0.6),
+    inset 0 1px 1px rgba(255,255,255,0.4);
+}
+
+/* Red */
+#conditionsStrip .riskDot--red {
+  background: #e74c3c;
+  box-shadow:
+    0 0 6px rgba(231, 76, 60, 0.6),
+    inset 0 1px 1px rgba(255,255,255,0.4);
+}
+
+/* Fallback */
+#conditionsStrip .riskDot-- {
+  background: #ccc;
+  box-shadow:
+    0 0 6px rgba(231, 76, 60, 0.6),
+    inset 0 1px 1px rgba(255,255,255,0.4);
 }

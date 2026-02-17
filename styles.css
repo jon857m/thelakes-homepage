@@ -1610,7 +1610,7 @@ footer .signup .consent,
 .menu-toggle .burger {
   position: relative;
   width: 20px;
-  height: 14px; /* defines spacing rhythm */
+  height: 16px; /* defines spacing rhythm */
   display: block;
 }
 
@@ -1618,7 +1618,7 @@ footer .signup .consent,
   position: absolute;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 1.8px;
   border-radius: 2px;
   background: currentColor;
 

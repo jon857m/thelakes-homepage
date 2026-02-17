@@ -22,6 +22,8 @@ function wireMenuToggle() {
 
   btn.addEventListener("click", () => {
     const isOpen = nav.classList.toggle("open");
+    const btn = document.getElementById("menuToggle");
+    btn.classList.toggle("is-open");
     btn.setAttribute("aria-expanded", String(isOpen));
   });
 }

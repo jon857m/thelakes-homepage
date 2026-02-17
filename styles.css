@@ -1577,3 +1577,67 @@ footer .signup .consent,
 .mobileNav__list li > ul li > a {
   padding-left: 28px;   /* adjust to taste (24–32px works well) */
 }
+
+/* ===== Premium burger button ===== */
+.menu-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: #fff;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  transition: background 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+
+.menu-toggle:hover {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.16);
+}
+
+.menu-toggle:active {
+  transform: scale(0.98);
+}
+
+/* The 3 lines */
+.menu-toggle .burger {
+  position: relative;
+  width: 20px;
+  height: 14px; /* defines spacing rhythm */
+  display: block;
+}
+
+.menu-toggle .burger__line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+
+  transition: transform 180ms ease, opacity 140ms ease;
+}
+
+.menu-toggle .burger__line:nth-child(1) { top: 0; }
+.menu-toggle .burger__line:nth-child(2) { top: 6px; }
+.menu-toggle .burger__line:nth-child(3) { top: 12px; }
+
+/* Open state -> morph into X */
+.menu-toggle.is-open .burger__line:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.menu-toggle.is-open .burger__line:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle.is-open .burger__line:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}

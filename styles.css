@@ -2013,3 +2013,17 @@ html, body {
   vertical-align: middle;
   transform: translateY(-1px); /* tiny optical correction */
 }
+
+/* Hero nav: active state (scoped so it won't affect other buttons) */
+.heroNav .btn.btn--active {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.25);
+}
+
+.heroNav .btn.btn--active .btn__label {
+  opacity: 1;
+}
+
+.heroNav .btn.btn--active {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset;
+}

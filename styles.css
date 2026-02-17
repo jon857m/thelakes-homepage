@@ -1438,7 +1438,7 @@ footer .signup .consent,
 }
 
 .mobileNav__list { list-style: none; margin: 0; padding: 0; }
-.mobileNav__list ul { list-style: none; margin: 0; margin-top: 2px; padding-left: 22px; }
+.mobileNav__list ul { list-style: none; margin: 0; margin-top: 2px; padding-left: 0px; }
 
 .subToggle {
   background: transparent;
@@ -1453,6 +1453,14 @@ footer .signup .consent,
   font-size: 0.95em;
   opacity: 0.9;
   padding: 10px 10px;
+}
+
+.mobileNav__list ul li > a {
+  padding-left: 1.25rem;
+}
+
+.mobileNav__list .subToggle {
+  margin-right: 4px;
 }
 
 /* Make each top-level item a row with link left + chevron right */
@@ -1505,7 +1513,7 @@ footer .signup .consent,
 
 .mobileNav__list li {
   display: grid;
-  grid-template-columns: 1fr 44px; /* link + chevron */
+  grid-template-columns: 1fr auto; /* link + chevron */
   align-items: center;
 }
 

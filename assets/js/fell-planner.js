@@ -15,7 +15,7 @@
 
   // Per-page feature flags (the “tidy off mechanism” you asked for)
   const ENABLE_FELL_SEARCH = true; // 🏔 fells.json name+aliases
-  const ENABLE_GEO_SEARCH  = true; // 📍 Open-Meteo geocoding fallback
+  const ENABLE_GEO_SEARCH  = false; // 📍 Open-Meteo geocoding fallback
 
   // Elements
   const statusEl = document.getElementById("plannerStatus");

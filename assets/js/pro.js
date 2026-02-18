@@ -154,6 +154,66 @@
   }
 
   // ----------------------------------------
+  // Fell data (from /assets/data/fells.json)
+  // ----------------------------------------
+  let fellsCache = null;
+  let fellsLoading = null;
+
+  function norm(s) {
+    return String(s || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[’'"]/g, "")
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .replace(/\s+/g, " ");
+  }
+
+  async function loadFells() {
+    if (Array.isArray(fellsCache)) return fellsCache;
+    if (fellsLoading) return fellsLoading;
+
+    fellsLoading = fetch("/assets/data/fells.json", { cache: "force-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!Array.isArray(data)) return [];
+        fellsCache = data.map((f) => {
+          const names = [f.name].concat(Array.isArray(f.aliases) ? f.aliases : []);
+          return { ...f, _search: norm(names.join(" ")) };
+        });
+        return fellsCache;
+      })
+      .catch(() => {
+        fellsCache = [];
+        return [];
+      })
+      .finally(() => {
+        fellsLoading = null;
+      });
+
+    return fellsLoading;
+  }
+
+  function matchFells(query, limit = 6) {
+    const q = norm(query);
+    if (!q || !Array.isArray(fellsCache) || !fellsCache.length) return [];
+
+    const out = [];
+    for (const f of fellsCache) {
+      if (!f || !f._search) continue;
+      const idx = f._search.indexOf(q);
+      if (idx === -1) continue;
+
+      const nameIdx = norm(f.name).indexOf(q);
+      const score = nameIdx !== -1 ? 0 : 1;
+      out.push({ f, score, idx });
+    }
+
+    out.sort((a, b) => (a.score - b.score) || (a.idx - b.idx));
+    return out.slice(0, limit).map((x) => x.f);
+  }
+
+
+  // ----------------------------------------
   // Geocoding
   // ----------------------------------------
   let debounceTimer = null;
@@ -166,11 +226,38 @@
     return (data && Array.isArray(data.results)) ? data.results : [];
   }
 
-  function showSuggest(results) {
+  function showSuggestMixed(fells, places) {
     suggestEl.hidden = false;
     suggestEl.innerHTML = "";
 
-    results.forEach((r) => {
+    // Fells first
+    (fells || []).forEach((f) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "suggestItem";
+      btn.setAttribute("role", "option");
+
+      const elevTxt =
+        (f.elev_m != null && f.elev_m !== "") ? ` • ${Math.round(Number(f.elev_m))}m` : "";
+
+      btn.textContent = `🏔 ${f.name}${elevTxt}`;
+
+      btn.addEventListener("click", () => {
+        hideSuggest();
+        inputEl.value = f.name;
+        setLocation({
+          name: f.name,
+          lat: Number(f.lat),
+          lon: Number(f.lon),
+          source: "Fell"
+        });
+      });
+
+      suggestEl.appendChild(btn);
+    });
+
+    // Then places
+    (places || []).forEach((r) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "suggestItem";
@@ -198,6 +285,7 @@
     });
   }
 
+
   inputEl.addEventListener("input", () => {
     const q = inputEl.value.trim();
     clearErr();
@@ -214,16 +302,21 @@
       setStatus("Searching…");
 
       try {
-        const results = await geocode(q);
+        await loadFells();
         if (reqId !== activeReq) return;
 
-        if (!results.length) {
+        const fellMatches = matchFells(q, 6);
+
+        const places = await geocode(q);
+        if (reqId !== activeReq) return;
+
+        if (!fellMatches.length && !places.length) {
           hideSuggest();
           setStatus("No matches — try a different place.");
           return;
         }
 
-        showSuggest(results);
+        showSuggestMixed(fellMatches, places);
         setStatus("Pick a match from the list.");
       } catch (_) {
         if (reqId !== activeReq) return;

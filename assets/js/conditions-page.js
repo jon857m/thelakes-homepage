@@ -11,7 +11,9 @@ const STORAGE_KEY = "ld_conditions_location_v1";
 // Toggle this per-page:
 // false = GeoCode only (base locality weather)
 // true  = Fell JSON + GeoCode fallback
-const ENABLE_FELL_SEARCH = false;
+  // Per-page feature flags (the “tidy off mechanism” you asked for)
+const ENABLE_FELL_SEARCH = false; // 🏔 fells.json name+aliases
+const ENABLE_GEO_SEARCH  = true; // 📍 Open-Meteo geocoding fallback
 
 function saveConditionsLocation({ place, lat, lon }) {
   try {
@@ -338,11 +340,17 @@ function saveConditionsLocation({ place, lat, lon }) {
     }
 
     debounceTimer = setTimeout(async () => {
-      const reqId = ++activeReq;
-      setStatus("Searching…");
+const reqId = ++activeReq;
+setStatus("Searching…");
 
-      try {
-        let fellMatches = [];
+if (!ENABLE_FELL_SEARCH && !ENABLE_GEO_SEARCH) {
+  hideSuggest();
+  setStatus("Search is disabled on this page.");
+  return;
+}
+
+try {
+  let fellMatches = [];
 
         if (ENABLE_FELL_SEARCH) {
           await loadFells();
@@ -350,8 +358,12 @@ function saveConditionsLocation({ place, lat, lon }) {
           fellMatches = matchFells(q, 6);
         }
 
-        const placeResults = await geocode(q);
-        if (reqId !== activeReq) return;
+let placeResults = [];
+
+if (ENABLE_GEO_SEARCH) {
+  placeResults = await geocode(q);
+  if (reqId !== activeReq) return;
+}
 
         if (!fellMatches.length && !placeResults.length) {
           hideSuggest();

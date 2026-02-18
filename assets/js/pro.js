@@ -12,6 +12,10 @@
 (function () {
   const LS_PREFS = "ld_conditions_location_v1";
 
+      // Per-page feature flags (the “tidy off mechanism” you asked for)
+  const ENABLE_FELL_SEARCH = true; // 🏔 fells.json name+aliases
+  const ENABLE_GEO_SEARCH  = true; // 📍 Open-Meteo geocoding fallback
+
   const statusEl = document.getElementById("proStatus");
   const errEl = document.getElementById("proError");
   const viewingEl = document.getElementById("proViewing");
@@ -336,18 +340,32 @@
       const reqId = ++activeReq;
       setStatus("Searching…");
 
+      if (!ENABLE_FELL_SEARCH && !ENABLE_GEO_SEARCH) {
+      hideSuggest();
+      setStatus("Search is disabled on this page.");
+      return;
+    }
+
       try {
+let fellMatches = [];
+
+      if (ENABLE_FELL_SEARCH) {
         await loadFells();
         if (reqId !== activeReq) return;
 
-        const fellMatches = matchFells(q, 6);
+        fellMatches = matchFells(q, 6);
+      }
 
-        const places = await geocode(q);
-        if (reqId !== activeReq) return;
+let places = [];
+
+        if (ENABLE_GEO_SEARCH) {
+          places = await geocode(q);
+          if (reqId !== activeReq) return;
+        }
 
         if (!fellMatches.length && !places.length) {
           hideSuggest();
-          setStatus("No matches — try a different place.");
+          setStatus("No matches — try a different search.");
           return;
         }
 

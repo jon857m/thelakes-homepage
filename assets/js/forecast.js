@@ -11,6 +11,10 @@
   const LS_PREFS = "ld_conditions_location_v1";     // existing saved preference from Snapshot
   const LS_VIEW  = "ld_forecast_view_v1";           // optional last-viewed for this page (we do NOT auto-load)
 
+    // Per-page feature flags (the “tidy off mechanism” you asked for)
+  const ENABLE_FELL_SEARCH = false; // 🏔 fells.json name+aliases
+  const ENABLE_GEO_SEARCH  = true; // 📍 Open-Meteo geocoding fallback
+
   const statusEl = document.getElementById("forecastStatus");
   const errEl = document.getElementById("forecastError");
   const viewingEl = document.getElementById("forecastViewing");
@@ -310,24 +314,38 @@
     }
 
     debounceTimer = setTimeout(async () => {
-      const reqId = ++activeReq;
-      setStatus("Searching…");
+    const reqId = ++activeReq;
+    setStatus("Searching…");
+
+    if (!ENABLE_FELL_SEARCH && !ENABLE_GEO_SEARCH) {
+      hideSuggest();
+      setStatus("Search is disabled on this page.");
+      return;
+    }
+
 
       try {
-        // 1) Ensure fells loaded, then try match
-        await loadFells();
-        if (reqId !== activeReq) return;
+    let fellMatches = [];
 
-        const fellMatches = matchFells(q, 6);
+    if (ENABLE_FELL_SEARCH) {
+      await loadFells();
+      if (reqId !== activeReq) return;
+
+      fellMatches = matchFells(q, 6);
+    }
 
         // 2) Always ALSO fetch geocode (so user can still pick “Keswick” etc),
         // but if fell match exists, show them first for UX consistency.
-        const placeResults = await geocode(q);
-        if (reqId !== activeReq) return;
+        let placeResults = [];
+
+    if (ENABLE_GEO_SEARCH) {
+      placeResults = await geocode(q);
+      if (reqId !== activeReq) return;
+    }
 
         if (!fellMatches.length && !placeResults.length) {
           hideSuggest();
-          setStatus("No matches — try a different place or fell.");
+          setStatus("No matches — try a different search.");
           return;
         }
 

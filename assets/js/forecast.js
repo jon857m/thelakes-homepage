@@ -559,3 +559,4 @@
   setViewing(null);
   setStatus("Choose a location to begin.");
 })();
+

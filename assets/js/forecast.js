@@ -12,7 +12,7 @@
   const LS_VIEW  = "ld_forecast_view_v1";           // optional last-viewed for this page (we do NOT auto-load)
 
     // Per-page feature flags (the “tidy off mechanism” you asked for)
-  const ENABLE_FELL_SEARCH = false; // 🏔 fells.json name+aliases
+  const ENABLE_FELL_SEARCH = false; // 🏔 fells.json name+aliases test
   const ENABLE_GEO_SEARCH  = true; // 📍 Open-Meteo geocoding fallback
 
   const statusEl = document.getElementById("forecastStatus");

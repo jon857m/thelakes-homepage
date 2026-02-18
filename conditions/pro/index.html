@@ -12,7 +12,17 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Pro (Beta) | Lake District Conditions</title>
-  <meta name="description" content="Pro conditions (beta): expanded model data for today and the next 24 hours. Choose location or load preference." />
+  <meta name="description" content="Pro conditions (beta): expanded model data for today and the next 48 hours. Choose location or load preference." />
+
+  <meta property="og:title" content="Pro (Beta) | Lake District Conditions">
+  <meta property="og:description" content="Expanded model data for today and the next 48 hours. Choose a location or load your saved preference.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.thelakesincumbria.co.uk/conditions/pro/">
+  <meta property="og:image" content="https://www.thelakesincumbria.co.uk/assets/hero.jpg">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#141414">
+  <link rel="canonical" href="https://www.thelakesincumbria.co.uk/conditions/pro/" />
 
   <link rel="icon" href="/assets/hero.jpg">
   <link rel="apple-touch-icon" href="/assets/hero.jpg">
@@ -33,23 +43,21 @@
         </p>
 
         <div class="ctaRow heroNav">
-
-        <a class="btn btn--ghost" href="/conditions/">
+          <a class="btn btn--ghost" href="/conditions/">
             <span class="btn__label">Snapshot</span>
-        </a>
+          </a>
 
-        <a class="btn btn--ghost" href="/conditions/forecast/">
+          <a class="btn btn--ghost" href="/conditions/forecast/">
             <span class="btn__label">7-Day</span>
-        </a>
+          </a>
 
-        <a class="btn btn--ghost" href="/conditions/fell/">
+          <a class="btn btn--ghost" href="/conditions/fell/">
             <span class="btn__label">Fell Planner</span>
-        </a>
+          </a>
 
-        <a class="btn btn--ghost btn--active" href="/conditions/pro/">
+          <a class="btn btn--ghost btn--active" href="/conditions/pro/">
             <span class="btn__label">Pro</span>
-        </a>
-
+          </a>
         </div>
 
         <p class="hero__note" id="proStatus" aria-live="polite">Choose a location to begin.</p>
@@ -59,18 +67,26 @@
     <section class="section">
       <div class="container">
 
+        <!-- Controls (MATCHES Forecast structure) -->
         <div class="card conditionsCard">
           <h2 style="margin-top:0;">Choose a location</h2>
+          <p class="sectionLead" style="margin-bottom: 14px;">
+            Search anywhere (useful even when you’re not in the Lakes), or load your saved preference.
+          </p>
 
           <div class="conditionsControls">
             <label class="srOnly" for="proSearch">Search for a place</label>
-            <input id="proSearch" type="search" inputmode="search" autocomplete="off"
-              placeholder="Type a place… (e.g., Keswick, Ambleside, London)" />
+            <input
+              id="proSearch"
+              type="search"
+              inputmode="search"
+              autocomplete="off"
+              placeholder="Type a place… (e.g., Keswick, Ambleside, London)"
+            />
             <button class="btn btn--ghost" type="button" id="proClearBtn">Clear</button>
           </div>
 
           <div class="suggestBox" id="proSuggest" role="listbox" aria-label="Search results" hidden></div>
-
 
           <div class="presetRow" aria-label="Presets" style="margin-top: 12px;">
             <button class="btn btn--ghost presetBtn" type="button" data-preset="north">North</button>
@@ -79,13 +95,14 @@
 
             <button class="btn btn--ghost" type="button" id="proUsePrefs">Use my preferences</button>
             <button class="btn btn--ghost" type="button" id="proUseDevice">Use my location</button>
-
           </div>
 
-          <p class="formNote" id="proViewing">Viewing: —</p>
+          <p class="formNote" style="margin-top: 12px;" id="proViewing">Viewing: —</p>
+          <p class="formNote" id="forecastSourceNote">Data: Forecast model (Open-Meteo). Live snapshot uses Met Office.</p>
           <p class="formNote" id="proError" style="display:none;"></p>
         </div>
 
+        <!-- Results -->
         <div class="card conditionsCard" style="margin-top: 12px;">
           <h2 style="margin-top:0;">Next 48 hours</h2>
           <div id="proWrap">

@@ -1,18 +1,12 @@
 // ========================================
 // Pro — next 48 hours (Open-Meteo)
+// STRUCTURE UPDATE:
+// - Choose Location box now matches Forecast page structure
+// - setViewing() now matches Forecast behavior (Viewing + optional meta line)
+// - Fell-first search using /assets/data/fells.json (name + aliases)
+// - Fallback to Open-Meteo Geocoding for non-fell places
+// - Shows picked meta (lat/lon/elev) when a fell is selected
 // - Blank by default
-// - Search + Use preferences + Use device
-// - Risk Flags panel above matrix (aggregated across 48h)
-// - ALL data stacked in the hourly matrix (dense Pro view)
-//
-// Rows included per hour:
-// Temp, Feels, Dew, RH
-// Wind (mph + dir), Gust
-// Rain %, Rain mm, Snow mm
-// Cloud Low, Cloud Mid, Cloud High
-// Visibility (km), Solar (W/m²), Pressure (hPa)
-// Freezing level (m), Boundary layer (PBL m)
-//
 // ========================================
 
 (function () {
@@ -25,7 +19,7 @@
   const inputEl = document.getElementById("proSearch");
   const clearBtn = document.getElementById("proClearBtn");
   const suggestEl = document.getElementById("proSuggest");
-  
+
   const presets = {
     north:   { name: "North Lakes",   lat: 54.70, lon: -3.00 },
     central: { name: "Central Lakes", lat: 54.55, lon: -3.15 },
@@ -33,24 +27,14 @@
   };
 
   const presetBtns = document.querySelectorAll(".presetBtn");
-
-  presetBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const key = btn.getAttribute("data-preset");
-      const p = key ? presets[key] : null;
-      if (!p) return;
-      setLocation({ name: p.name, lat: p.lat, lon: p.lon, source: "Preset" });
-    });
-  });
-  
   const btnUsePrefs = document.getElementById("proUsePrefs");
   const btnUseDevice = document.getElementById("proUseDevice");
-
   const wrap = document.getElementById("proWrap");
 
   if (!inputEl || !suggestEl || !wrap) return;
 
   function setStatus(msg) { if (statusEl) statusEl.textContent = msg; }
+
   function showErr(msg) {
     if (!errEl) return;
     errEl.style.display = "block";
@@ -60,12 +44,6 @@
     if (!errEl) return;
     errEl.style.display = "none";
     errEl.textContent = "";
-  }
-
-  function setViewing(loc) {
-    if (!viewingEl) return;
-    if (!loc) viewingEl.textContent = "Viewing: —";
-    else viewingEl.textContent = `Viewing: ${loc.name} (${loc.source || "—"})`;
   }
 
   function load(key) {
@@ -79,6 +57,49 @@
   function hideSuggest() {
     suggestEl.hidden = true;
     suggestEl.innerHTML = "";
+  }
+
+  function ensurePickedMetaEl() {
+    // Inject a second line under “Viewing” using existing .formNote style
+    let el = document.getElementById("proPickedMeta");
+    if (el) return el;
+
+    if (!viewingEl || !viewingEl.parentNode) return null;
+    viewingEl.insertAdjacentHTML(
+      "afterend",
+      `<p class="formNote" id="proPickedMeta" style="margin-top:6px;">&nbsp;</p>`
+    );
+    return document.getElementById("proPickedMeta");
+  }
+
+  // Matches Forecast behavior: Viewing + optional meta line
+  function setViewing(loc) {
+    if (!viewingEl) return;
+
+    if (!loc) {
+      viewingEl.textContent = "Viewing: —";
+      const meta = ensurePickedMetaEl();
+      if (meta) meta.innerHTML = "&nbsp;";
+      return;
+    }
+
+    const src = loc.source ? ` (${loc.source})` : "";
+    viewingEl.textContent = `Viewing: ${loc.name}${src}`;
+
+    const meta = ensurePickedMetaEl();
+    if (!meta) return;
+
+    const lat = Number(loc.lat);
+    const lon = Number(loc.lon);
+    const elev = (loc.elev_m == null || loc.elev_m === "") ? null : Number(loc.elev_m);
+
+    // Only show detailed meta for fells (and any other loc that has elev)
+    if (Number.isFinite(lat) && Number.isFinite(lon) && (loc.source === "Fell" || Number.isFinite(elev))) {
+      const elevTxt = Number.isFinite(elev) ? ` • elev ${Math.round(elev)}m` : "";
+      meta.textContent = `Lat ${lat.toFixed(4)} • Lon ${lon.toFixed(4)}${elevTxt}`;
+    } else {
+      meta.innerHTML = "&nbsp;";
+    }
   }
 
   // ----------------------------------------
@@ -134,7 +155,6 @@
     const i = Math.round(((deg % 360) / 45)) % 8;
     return arrows[i];
   }
-
   function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 
   function statMax(arr) {
@@ -152,6 +172,18 @@
     if (!nums.length) return 0;
     return nums.reduce((a, b) => a + b, 0);
   }
+
+  // ----------------------------------------
+  // Preset buttons (unchanged)
+  // ----------------------------------------
+  presetBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-preset");
+      const p = key ? presets[key] : null;
+      if (!p) return;
+      setLocation({ name: p.name, lat: p.lat, lon: p.lon, elev_m: null, source: "Preset" });
+    });
+  });
 
   // ----------------------------------------
   // Fell data (from /assets/data/fells.json)
@@ -204,7 +236,7 @@
       if (idx === -1) continue;
 
       const nameIdx = norm(f.name).indexOf(q);
-      const score = nameIdx !== -1 ? 0 : 1;
+      const score = nameIdx !== -1 ? 0 : 1; // prefer name match
       out.push({ f, score, idx });
     }
 
@@ -212,9 +244,8 @@
     return out.slice(0, limit).map((x) => x.f);
   }
 
-
   // ----------------------------------------
-  // Geocoding
+  // Geocoding (Open-Meteo)
   // ----------------------------------------
   let debounceTimer = null;
   let activeReq = 0;
@@ -230,7 +261,7 @@
     suggestEl.hidden = false;
     suggestEl.innerHTML = "";
 
-    // Fells first
+    // Fells first (🏔)
     (fells || []).forEach((f) => {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -249,6 +280,7 @@
           name: f.name,
           lat: Number(f.lat),
           lon: Number(f.lon),
+          elev_m: (f.elev_m == null ? null : Number(f.elev_m)),
           source: "Fell"
         });
       });
@@ -256,7 +288,7 @@
       suggestEl.appendChild(btn);
     });
 
-    // Then places
+    // Then places (📍)
     (places || []).forEach((r) => {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -277,6 +309,7 @@
           name: label,
           lat: Number(r.latitude),
           lon: Number(r.longitude),
+          elev_m: null,
           source: "Search"
         });
       });
@@ -285,7 +318,9 @@
     });
   }
 
-
+  // ----------------------------------------
+  // Search input (fell-first, then geocode)
+  // ----------------------------------------
   inputEl.addEventListener("input", () => {
     const q = inputEl.value.trim();
     clearErr();
@@ -332,6 +367,7 @@
     inputEl.value = "";
     hideSuggest();
     clearErr();
+    setViewing(null);
     setStatus("Cleared. Choose a location to begin.");
   });
 
@@ -515,20 +551,13 @@
       };
     });
 
-    const maxGust = statMax(next.gust);
-    const maxWind = statMax(next.wind);
-    const maxPP = statMax(next.pp);
-    const sumRain = statSum(next.rain);
-    const sumSnow = statSum(next.snow);
-    const minVis = statMin(hours.map(h => h.visKm));
-
     const nowHour = String(new Date().getHours()).padStart(2, "0");
     const defaultIdx = (() => {
       const idx = hours.findIndex(h => h.hour === nowHour);
       return idx >= 0 ? idx : 0;
     })();
 
-    // Icons (lightweight; consistent style)
+    // Icons (keep your existing set)
     const iconTemp = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 5 0Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
     const iconDrop = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
     const iconWind = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10a3 3 0 1 0-3-3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h15a3 3 0 1 1-3 3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
@@ -560,86 +589,86 @@
     function fmtHpa(x) { return (x != null && Number.isFinite(Number(x))) ? `${Math.round(x)}hPa` : "—"; }
     function fmtWm2(x) { return (x != null && Number.isFinite(Number(x))) ? `${Math.round(x)}W/m²` : "—"; }
 
-wrap.innerHTML = `
-  <div class="hourMatrix hourMatrix--proDense">
+    wrap.innerHTML = `
+      ${renderRiskFlags(hours)}
+      <div class="hourMatrix hourMatrix--proDense">
 
-    <div class="hourMatrixRail" aria-hidden="true">
-      <div class="hourMatrixRailItem">${iconTemp}<span>Temp</span></div>
-      <div class="hourMatrixRailItem isSub"><span>Feels</span></div>
-      <div class="hourMatrixRailItem isSub"><span>Dew</span></div>
-      <div class="hourMatrixRailItem isSub"><span>RH</span></div>
+        <div class="hourMatrixRail" aria-hidden="true">
+          <div class="hourMatrixRailItem">${iconTemp}<span>Temp</span></div>
+          <div class="hourMatrixRailItem isSub"><span>Feels</span></div>
+          <div class="hourMatrixRailItem isSub"><span>Dew</span></div>
+          <div class="hourMatrixRailItem isSub"><span>RH</span></div>
 
-      <div class="hourMatrixRailItem">${iconWind}<span>Wind</span></div>
-      <div class="hourMatrixRailItem isSub"><span>Gust</span></div>
+          <div class="hourMatrixRailItem">${iconWind}<span>Wind</span></div>
+          <div class="hourMatrixRailItem isSub"><span>Gust</span></div>
 
-      <div class="hourMatrixRailItem">${iconDrop}<span>Rain %</span></div>
-      <div class="hourMatrixRailItem isSub"><span>Rain mm</span></div>
-      <div class="hourMatrixRailItem isSub"><span>Snow mm</span></div>
+          <div class="hourMatrixRailItem">${iconDrop}<span>Rain %</span></div>
+          <div class="hourMatrixRailItem isSub"><span>Rain mm</span></div>
+          <div class="hourMatrixRailItem isSub"><span>Snow mm</span></div>
 
-      <div class="hourMatrixRailItem">${iconCloud}<span>Cloud L</span></div>
-      <div class="hourMatrixRailItem isSub"><span>Cloud M</span></div>
-      <div class="hourMatrixRailItem isSub"><span>Cloud H</span></div>
+          <div class="hourMatrixRailItem">${iconCloud}<span>Cloud L</span></div>
+          <div class="hourMatrixRailItem isSub"><span>Cloud M</span></div>
+          <div class="hourMatrixRailItem isSub"><span>Cloud H</span></div>
 
-      <div class="hourMatrixRailItem">${iconEye}<span>Vis</span></div>
-      <div class="hourMatrixRailItem">${iconSun}<span>Solar</span></div>
-      <div class="hourMatrixRailItem">${iconGauge}<span>Press</span></div>
+          <div class="hourMatrixRailItem">${iconEye}<span>Vis</span></div>
+          <div class="hourMatrixRailItem">${iconSun}<span>Solar</span></div>
+          <div class="hourMatrixRailItem">${iconGauge}<span>Press</span></div>
 
-      <div class="hourMatrixRailItem">${iconMountain}<span>Freeze</span></div>
-      <div class="hourMatrixRailItem isSub"><span>PBL</span></div>
-    </div>
+          <div class="hourMatrixRailItem">${iconMountain}<span>Freeze</span></div>
+          <div class="hourMatrixRailItem isSub"><span>PBL</span></div>
+        </div>
 
-    <div class="hourMatrixScroll" id="proMatrixScroll">
-      <div class="hourMatrixGrid">
-        ${hours.map((h, i) => {
-          const r = hourRiskPro(h.precipProb, h.gustMph, h.cloudLow, h.visKm);
-          const isNow = (i === defaultIdx) ? " isNow" : "";
+        <div class="hourMatrixScroll" id="proMatrixScroll">
+          <div class="hourMatrixGrid">
+            ${hours.map((h, i) => {
+              const r = hourRiskPro(h.precipProb, h.gustMph, h.cloudLow, h.visKm);
+              const isNow = (i === defaultIdx) ? " isNow" : "";
 
-          const windSpeed = fmtMph(h.windMph);
-          const windArrow = (h.windDirDeg != null && Number.isFinite(h.windDirDeg)) ? degToArrow(h.windDirDeg) : "—";
+              const windSpeed = fmtMph(h.windMph);
+              const windArrow = (h.windDirDeg != null && Number.isFinite(h.windDirDeg)) ? degToArrow(h.windDirDeg) : "—";
 
-          return `
-            <div class="hourCol hourCol--${r.cls}${isNow}" data-hour="${h.hour}" data-idx="${i}">
-              <div class="hourColHeader">${h.time}</div>
+              return `
+                <div class="hourCol hourCol--${r.cls}${isNow}" data-hour="${h.hour}" data-idx="${i}">
+                  <div class="hourColHeader">${h.time}</div>
 
-              <div class="hourColVal">${fmtC(h.tempC)}</div>
-              <div class="hourColVal">${fmtC(h.feelsC)}</div>
-              <div class="hourColVal">${fmtC(h.dewC)}</div>
-              <div class="hourColVal">${fmtPct(h.rh)}</div>
+                  <div class="hourColVal">${fmtC(h.tempC)}</div>
+                  <div class="hourColVal">${fmtC(h.feelsC)}</div>
+                  <div class="hourColVal">${fmtC(h.dewC)}</div>
+                  <div class="hourColVal">${fmtPct(h.rh)}</div>
 
-              <div class="hourColVal hourColVal--wind">
-                <div class="windStack">
-                  <div class="windSpeed">${windSpeed}</div>
-                  <div class="windArrow">${windArrow}</div>
+                  <div class="hourColVal hourColVal--wind">
+                    <div class="windStack">
+                      <div class="windSpeed">${windSpeed}</div>
+                      <div class="windArrow">${windArrow}</div>
+                    </div>
+                  </div>
+
+                  <div class="hourColVal">${fmtMph(h.gustMph)}</div>
+
+                  <div class="hourColVal">${fmtPct(h.precipProb)}</div>
+                  <div class="hourColVal">${fmtMm(h.rainMm)}</div>
+                  <div class="hourColVal">${fmtMm(h.snowMm)}</div>
+
+                  <div class="hourColVal">${fmtPct(h.cloudLow)}</div>
+                  <div class="hourColVal">${fmtPct(h.cloudMid)}</div>
+                  <div class="hourColVal">${fmtPct(h.cloudHigh)}</div>
+
+                  <div class="hourColVal">${fmtKm(h.visKm)}</div>
+                  <div class="hourColVal">${fmtWm2(h.solarWm2)}</div>
+                  <div class="hourColVal">${fmtHpa(h.pressureHpa)}</div>
+
+                  <div class="hourColVal">${fmtM(h.freezingM)}</div>
+                  <div class="hourColVal">${fmtM(h.pblM)}</div>
+
+                  <div class="hourColBar" aria-hidden="true"></div>
                 </div>
-              </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
 
-              <div class="hourColVal">${fmtMph(h.gustMph)}</div>
-
-              <div class="hourColVal">${fmtPct(h.precipProb)}</div>
-              <div class="hourColVal">${fmtMm(h.rainMm)}</div>
-              <div class="hourColVal">${fmtMm(h.snowMm)}</div>
-
-              <div class="hourColVal">${fmtPct(h.cloudLow)}</div>
-              <div class="hourColVal">${fmtPct(h.cloudMid)}</div>
-              <div class="hourColVal">${fmtPct(h.cloudHigh)}</div>
-
-              <div class="hourColVal">${fmtKm(h.visKm)}</div>
-              <div class="hourColVal">${fmtWm2(h.solarWm2)}</div>
-              <div class="hourColVal">${fmtHpa(h.pressureHpa)}</div>
-
-              <div class="hourColVal">${fmtM(h.freezingM)}</div>
-              <div class="hourColVal">${fmtM(h.pblM)}</div>
-
-              <div class="hourColBar" aria-hidden="true"></div>
-            </div>
-          `;
-        }).join("")}
       </div>
-    </div>
-
-  </div>
-`;
-
+    `;
 
     // Enable drag-scroll
     const scroller = document.getElementById("proMatrixScroll");
@@ -655,7 +684,7 @@ wrap.innerHTML = `
       const scRect  = scrollerEl.getBoundingClientRect();
       const colLeftInsideScroller = colRect.left - scRect.left;
 
-      const leftGutter = 14;
+      const leftGutter = 14; // matches your CSS padding-left on .hourMatrixScroll
       const targetDelta = colLeftInsideScroller - leftGutter;
 
       const maxScroll = scrollerEl.scrollWidth - scrollerEl.clientWidth;
@@ -687,30 +716,39 @@ wrap.innerHTML = `
     }
   }
 
+  // ----------------------------------------
+  // Buttons (unchanged behavior)
+  // ----------------------------------------
   btnUsePrefs?.addEventListener("click", () => {
     clearErr();
     const pref = load(LS_PREFS);
+
     if (!pref || !Number.isFinite(pref.lat) || !Number.isFinite(pref.lon)) {
       showErr("No saved preference yet — go to Snapshot, choose a location, then try again.");
       return;
     }
+
     const label = String(pref.name || pref.place || "Saved preference").trim();
-    setLocation({ name: label, lat: Number(pref.lat), lon: Number(pref.lon), source: "Preference" });
+    setLocation({ name: label, lat: Number(pref.lat), lon: Number(pref.lon), elev_m: null, source: "Preference" });
   });
 
   btnUseDevice?.addEventListener("click", () => {
     clearErr();
+
     if (!navigator.geolocation) {
       showErr("Device location isn’t available on this browser.");
       return;
     }
+
     setStatus("Requesting location…");
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({
           name: "My location",
           lat: Number(pos.coords.latitude),
           lon: Number(pos.coords.longitude),
+          elev_m: null,
           source: "Device"
         });
       },
@@ -722,6 +760,7 @@ wrap.innerHTML = `
     );
   });
 
+  // Blank by default
   setViewing(null);
   setStatus("Choose a location to begin.");
 })();

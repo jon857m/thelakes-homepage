@@ -1,12 +1,17 @@
 // ========================================
 // /conditions full page — Option 2 (search)
-// - Open-Meteo Geocoding (no key)
-// - Optional "Use my location"
-// - Presets North/Central/South
-// - Persist selection in localStorage: ld_location_v1
+// UPGRADE:
+// - Fell-first search (from /assets/data/fells.json) + GeoCode fallback
+// - Feature flag to disable fell search cleanly
+// - Keeps all existing functionality
 // ========================================
 
 const STORAGE_KEY = "ld_conditions_location_v1";
+
+// Toggle this per-page:
+// false = GeoCode only (base locality weather)
+// true  = Fell JSON + GeoCode fallback
+const ENABLE_FELL_SEARCH = false;
 
 function saveConditionsLocation({ place, lat, lon }) {
   try {
@@ -148,16 +153,22 @@ function saveConditionsLocation({ place, lat, lon }) {
     try {
       const data = await fetchConditions(loc.lat, loc.lon);
       renderNow(data);
+
       const label = String(loc.name || loc.place || "Custom location").trim();
-        saveLoc({
+
+      // Keep your existing storage shape, but also persist elev_m if present
+      saveLoc({
         name: label,
         place: label,
         lat: loc.lat,
         lon: loc.lon,
-        mode: loc.mode || "preset"
-        });
-      setSelectedNote(loc);
-      setStatus(`Showing conditions for ${loc.name}.`);
+        elev_m: (loc.elev_m == null ? null : Number(loc.elev_m)),
+        mode: loc.mode || "preset",
+        source: loc.source || loc.mode || "preset"
+      });
+
+      setSelectedNote({ ...loc, name: label });
+      setStatus(`Showing conditions for ${label}.`);
     } catch (e) {
       showError("Live conditions unavailable — please try again.");
       setStatus("Couldn’t load conditions.");
@@ -165,7 +176,7 @@ function saveConditionsLocation({ place, lat, lon }) {
   }
 
   // ---------------------------
-  // Open-Meteo Geocoding search
+  // Suggest UI helpers
   // ---------------------------
   let debounceTimer = null;
   let activeReq = 0;
@@ -175,29 +186,134 @@ function saveConditionsLocation({ place, lat, lon }) {
     suggestBox.innerHTML = "";
   }
 
-  function showSuggest(results) {
+  // ---------------------------
+  // Fell data (from /assets/data/fells.json)
+  // ---------------------------
+  let fellsCache = null;
+  let fellsLoading = null;
+
+  function norm(s) {
+    return String(s || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[’'"]/g, "")
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .replace(/\s+/g, " ");
+  }
+
+  async function loadFells() {
+    if (!ENABLE_FELL_SEARCH) return [];
+    if (Array.isArray(fellsCache)) return fellsCache;
+    if (fellsLoading) return fellsLoading;
+
+    fellsLoading = fetch("/assets/data/fells.json", { cache: "force-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!Array.isArray(data)) return [];
+        fellsCache = data.map((f) => {
+          const names = [f.name].concat(Array.isArray(f.aliases) ? f.aliases : []);
+          return { ...f, _search: norm(names.join(" ")) };
+        });
+        return fellsCache;
+      })
+      .catch(() => {
+        fellsCache = [];
+        return [];
+      })
+      .finally(() => {
+        fellsLoading = null;
+      });
+
+    return fellsLoading;
+  }
+
+  function matchFells(query, limit = 6) {
+    if (!ENABLE_FELL_SEARCH) return [];
+    const q = norm(query);
+    if (!q || !Array.isArray(fellsCache) || !fellsCache.length) return [];
+
+    const out = [];
+    for (const f of fellsCache) {
+      if (!f || !f._search) continue;
+      const idx = f._search.indexOf(q);
+      if (idx === -1) continue;
+
+      const nameIdx = norm(f.name).indexOf(q);
+      const score = (nameIdx !== -1) ? 0 : 1;
+      out.push({ f, score, idx });
+    }
+
+    out.sort((a, b) => (a.score - b.score) || (a.idx - b.idx));
+    return out.slice(0, limit).map((x) => x.f);
+  }
+
+  // ---------------------------
+  // GeoCoding (Open-Meteo)
+  // ---------------------------
+  async function geocode(name) {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=6&language=en&format=json`;
+    const r = await fetch(url, { cache: "no-store" });
+    const data = await r.json().catch(() => null);
+    return (data && Array.isArray(data.results)) ? data.results : [];
+  }
+
+  function showSuggestFellsAndPlaces(fells, places) {
     suggestBox.hidden = false;
     suggestBox.innerHTML = "";
 
-    results.forEach((r, idx) => {
+    // Fells first (🏔)
+    (fells || []).forEach((f) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "suggestItem";
       btn.setAttribute("role", "option");
-      btn.setAttribute("data-idx", String(idx));
+
+      const elevTxt =
+        (f.elev_m != null && f.elev_m !== "")
+          ? ` • ${Math.round(Number(f.elev_m))}m`
+          : "";
+
+      btn.textContent = `🏔 ${f.name}${elevTxt}`;
+
+      btn.addEventListener("click", () => {
+        const loc = {
+          name: f.name,
+          lat: Number(f.lat),
+          lon: Number(f.lon),
+          elev_m: (f.elev_m == null ? null : Number(f.elev_m)),
+          source: "Fell",
+          mode: "fell"
+        };
+        inputEl.value = f.name;
+        hideSuggest();
+        setLocationAndLoad(loc);
+      });
+
+      suggestBox.appendChild(btn);
+    });
+
+    // Then places (📍)
+    (places || []).forEach((r) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "suggestItem";
+      btn.setAttribute("role", "option");
 
       const name = r.name || "Unknown";
       const admin = [r.admin1, r.admin2].filter(Boolean).join(", ");
       const country = r.country || "";
       const label = [name, admin, country].filter(Boolean).join(" • ");
 
-      btn.textContent = label;
+      btn.textContent = `📍 ${label}`;
 
       btn.addEventListener("click", () => {
         const loc = {
-          name,
+          name: label,
           lat: Number(r.latitude),
           lon: Number(r.longitude),
+          elev_m: null,
+          source: "Search",
+          mode: "search"
         };
         inputEl.value = label;
         hideSuggest();
@@ -208,13 +324,9 @@ function saveConditionsLocation({ place, lat, lon }) {
     });
   }
 
-  async function geocode(name) {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=6&language=en&format=json`;
-    const r = await fetch(url, { cache: "no-store" });
-    const data = await r.json().catch(() => null);
-    return (data && Array.isArray(data.results)) ? data.results : [];
-  }
-
+  // ---------------------------
+  // Search input (fell-first, then geocode)
+  // ---------------------------
   inputEl.addEventListener("input", () => {
     const q = inputEl.value.trim();
     clearError();
@@ -230,16 +342,24 @@ function saveConditionsLocation({ place, lat, lon }) {
       setStatus("Searching…");
 
       try {
-        const results = await geocode(q);
-        if (reqId !== activeReq) return; // ignore stale responses
+        let fellMatches = [];
 
-        if (!results.length) {
+        if (ENABLE_FELL_SEARCH) {
+          await loadFells();
+          if (reqId !== activeReq) return;
+          fellMatches = matchFells(q, 6);
+        }
+
+        const placeResults = await geocode(q);
+        if (reqId !== activeReq) return;
+
+        if (!fellMatches.length && !placeResults.length) {
           hideSuggest();
           setStatus("No matches — try a different place.");
           return;
         }
 
-        showSuggest(results);
+        showSuggestFellsAndPlaces(fellMatches, placeResults);
         setStatus("Pick a match from the list.");
       } catch (_) {
         if (reqId !== activeReq) return;
@@ -250,7 +370,6 @@ function saveConditionsLocation({ place, lat, lon }) {
   });
 
   inputEl.addEventListener("blur", () => {
-    // Give clicks on suggestions time to register
     setTimeout(() => hideSuggest(), 150);
   });
 
@@ -270,7 +389,7 @@ function saveConditionsLocation({ place, lat, lon }) {
       if (!key || !presets[key]) return;
       hideSuggest();
       inputEl.value = "";
-      setLocationAndLoad(presets[key]);
+      setLocationAndLoad({ ...presets[key], source: "Preset", mode: "preset" });
     });
   });
 
@@ -292,7 +411,7 @@ function saveConditionsLocation({ place, lat, lon }) {
       (pos) => {
         const lat = Number(pos.coords.latitude.toFixed(5));
         const lon = Number(pos.coords.longitude.toFixed(5));
-        const loc = { name: "My location", lat, lon };
+        const loc = { name: "My location", lat, lon, elev_m: null, source: "Device", mode: "device" };
         inputEl.value = "";
         setLocationAndLoad(loc);
       },
@@ -321,6 +440,6 @@ function saveConditionsLocation({ place, lat, lon }) {
 
     // Default to Central
     setSelectedNote(presets.central);
-    setLocationAndLoad(presets.central, { announce: false });
+    setLocationAndLoad({ ...presets.central, source: "Preset", mode: "preset" }, { announce: false });
   });
 })();

@@ -1,16 +1,21 @@
 // ========================================
-// Fell Forecast Planner (V2 - with fallback)
-// - Search fells from /assets/data/fells.json (🏔)
-// - If no fell matches: fallback to Open-Meteo Geocoding (📍)
+// Fell Forecast Planner (V2 - with toggles)
+// - Fell search from /assets/data/fells.json (🏔) (toggleable)
+// - Geo search fallback via Open-Meteo geocoding (📍) (toggleable)
+// - Presets / Preferences / Device remain available regardless
 // - Select date (today/tomorrow/custom)
 // - Fetch hour-by-hour forecast from Open-Meteo (no key)
-// - Persist: ld_fell_v1 + ld_fell_date_v1
+// - Persist: ld_fell_v1 + ld_fell_date_v1 (but boot starts EMPTY by design)
 // ========================================
 
 (function () {
   const LS_FELL = "ld_fell_v1";
   const LS_DATE = "ld_fell_date_v1";
   const LS_PREFS = "ld_conditions_location_v1";
+
+  // Per-page feature flags (the “tidy off mechanism” you asked for)
+  const ENABLE_FELL_SEARCH = true; // 🏔 fells.json name+aliases
+  const ENABLE_GEO_SEARCH  = false; // 📍 Open-Meteo geocoding fallback
 
   // Elements
   const statusEl = document.getElementById("plannerStatus");
@@ -35,7 +40,7 @@
 
   const hourlyWrap = document.getElementById("hourlyWrap");
 
-    // --- Extra location buttons (Preferences / Device / Presets) ---
+  // Extra location buttons (Preferences / Device / Presets)
   const btnUsePrefs = document.getElementById("plannerUsePrefs");
   const btnUseDevice = document.getElementById("plannerUseDevice");
   const presetBtns = document.querySelectorAll(".presetBtn");
@@ -45,76 +50,6 @@
     central: { name: "Central Lakes", lat: 54.55, lon: -3.15 },
     south:   { name: "South Lakes",   lat: 54.25, lon: -2.95 },
   };
-
-  function setPlaceAsSelection(name, lat, lon, sourceLabel) {
-    const loc = {
-      name: String(name || "Place").trim(),
-      aliases: [],
-      lat: Number(lat),
-      lon: Number(lon),
-      elev_m: null,
-      source: "geocode", // treat as 📍 place (your UI already supports this)
-    };
-
-    currentFell = loc;
-    fellInput.value = loc.name;
-    save(LS_FELL, loc);
-    renderSelected();
-    maybeLoadForecast();
-
-    setStatus(`Selected: 📍 ${loc.name}${sourceLabel ? ` (${sourceLabel})` : ""}`);
-  }
-
-  btnUsePrefs?.addEventListener("click", () => {
-    clearErr();
-    const pref = load(LS_PREFS);
-    const lat = pref ? Number(pref.lat) : NaN;
-    const lon = pref ? Number(pref.lon) : NaN;
-
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      showErr("No saved preference yet — set it on Conditions / Snapshot first.");
-      return;
-    }
-
-    const label = String(pref.name || pref.place || "My preference").trim();
-    setPlaceAsSelection(label, lat, lon, "Preference");
-  });
-
-  btnUseDevice?.addEventListener("click", () => {
-    clearErr();
-
-    if (!navigator.geolocation) {
-      showErr("Device location isn’t available on this browser.");
-      return;
-    }
-
-    setStatus("Requesting location…");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setPlaceAsSelection(
-          "My location",
-          pos.coords.latitude,
-          pos.coords.longitude,
-          "Device"
-        );
-      },
-      () => {
-        showErr("Couldn’t access your location — please allow it or use search/presets.");
-        setStatus("Ready.");
-      },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-    );
-  });
-
-  presetBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const key = btn.getAttribute("data-preset");
-      const p = key ? presets[key] : null;
-      if (!p) return;
-      setPlaceAsSelection(p.name, p.lat, p.lon, "Preset");
-    });
-  });
-
 
   if (!fellInput || !fellSuggest || !datePick || !hourlyWrap) return;
 
@@ -137,7 +72,6 @@
   }
 
   function isoDate(d) {
-    // YYYY-MM-DD in local time
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
@@ -206,22 +140,95 @@
     worstHourEl.textContent = "—";
   }
 
+  // --------------------------------------------------
+  // Selection helper for Preset/Prefs/Device (always allowed)
+  // --------------------------------------------------
+  function setPlaceAsSelection(name, lat, lon, sourceLabel) {
+    const loc = {
+      name: String(name || "Place").trim(),
+      aliases: [],
+      lat: Number(lat),
+      lon: Number(lon),
+      elev_m: null,
+      source: "geocode", // treat as 📍 place
+    };
+
+    currentFell = loc;
+    fellInput.value = loc.name;
+    save(LS_FELL, loc);
+    renderSelected();
+    maybeLoadForecast();
+
+    setStatus(`Selected: 📍 ${loc.name}${sourceLabel ? ` (${sourceLabel})` : ""}`);
+  }
+
+  btnUsePrefs?.addEventListener("click", () => {
+    clearErr();
+    const pref = load(LS_PREFS);
+    const lat = pref ? Number(pref.lat) : NaN;
+    const lon = pref ? Number(pref.lon) : NaN;
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      showErr("No saved preference yet — set it on Conditions / Snapshot first.");
+      return;
+    }
+
+    const label = String(pref.name || pref.place || "My preference").trim();
+    setPlaceAsSelection(label, lat, lon, "Preference");
+  });
+
+  btnUseDevice?.addEventListener("click", () => {
+    clearErr();
+
+    if (!navigator.geolocation) {
+      showErr("Device location isn’t available on this browser.");
+      return;
+    }
+
+    setStatus("Requesting location…");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPlaceAsSelection(
+          "My location",
+          pos.coords.latitude,
+          pos.coords.longitude,
+          "Device"
+        );
+      },
+      () => {
+        showErr("Couldn’t access your location — please allow it or use search/presets.");
+        setStatus("Ready.");
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+    );
+  });
+
+  presetBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-preset");
+      const p = key ? presets[key] : null;
+      if (!p) return;
+      setPlaceAsSelection(p.name, p.lat, p.lon, "Preset");
+    });
+  });
+
+  // --------------------------------------------------
+  // Scoring + Summary (unchanged)
+  // --------------------------------------------------
   function scoreHour(h) {
-    // Lower is better: combine precip probability + gusts + visibility penalty
     const p = h.precipProb ?? 0;
     const g = h.gustMph ?? 0;
     const v = h.visKm ?? 30;
 
     let s = 0;
     s += p * 1.2;
-    s += Math.max(0, g - 20) * 1.6; // gusts matter
+    s += Math.max(0, g - 20) * 1.6;
     if (v < 2) s += 25;
     else if (v < 5) s += 12;
     return s;
   }
 
   function pickBestWindow(hours) {
-    // Best 3-hour window between 06:00 and 18:00
     const filtered = hours.filter(h => {
       const hh = Number(h.hour);
       return hh >= 6 && hh <= 18;
@@ -255,124 +262,119 @@
   }
 
   function hourRisk(h) {
-  // Simple, explainable thresholds for R/A/G
-  const pp = Number(h.precipProb ?? 0);
-  const gust = Number(h.gustMph ?? 0);
-  const vis = Number(h.visKm ?? 99);
+    const pp = Number(h.precipProb ?? 0);
+    const gust = Number(h.gustMph ?? 0);
+    const vis = Number(h.visKm ?? 99);
 
-  // Red = meaningfully risky for most walkers
-  if (pp >= 60 || gust >= 45 || vis <= 2) return { cls: "red", label: "Red" };
-
-  // Amber = caution / “check details”
-  if (pp >= 30 || gust >= 30 || vis <= 5) return { cls: "amber", label: "Amber" };
-
-  // Green = generally OK (still “mountains are mountains”)
-  return { cls: "green", label: "Green" };
-}
-
-function renderHourly(hours) {
-  if (!hours || !hours.length) {
-    hourlyWrap.innerHTML = `<p class="formNote">No hourly data for that date.</p>`;
-    return;
+    if (pp >= 60 || gust >= 45 || vis <= 2) return { cls: "red", label: "Red" };
+    if (pp >= 30 || gust >= 30 || vis <= 5) return { cls: "amber", label: "Amber" };
+    return { cls: "green", label: "Green" };
   }
 
-  // Icons
-  const iconTemp = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 5 0Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
-  const iconWind = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10a3 3 0 1 0-3-3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h15a3 3 0 1 1-3 3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
-  const iconRain = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 0 1 .9-7.9A5 5 0 0 1 18 8.5a3.5 3.5 0 0 1 .5 7H7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
-  const iconVis  = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+  function renderHourly(hours) {
+    if (!hours || !hours.length) {
+      hourlyWrap.innerHTML = `<p class="formNote">No hourly data for that date.</p>`;
+      return;
+    }
 
-  hourlyWrap.innerHTML = `
-    <div class="hourMatrix">
+    const iconTemp = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 5 0Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+    const iconWind = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10a3 3 0 1 0-3-3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h15a3 3 0 1 1-3 3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+    const iconRain = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 0 1 .9-7.9A5 5 0 0 1 18 8.5a3.5 3.5 0 0 1 .5 7H7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+    const iconVis  = `<svg class="hourIcon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
 
-      <div class="hourMatrixRail" aria-hidden="true">
-        <div class="hourMatrixRailItem">${iconTemp}<span>Temp</span></div>
-        <div class="hourMatrixRailItem isSub"><span>Feels</span></div>
+    hourlyWrap.innerHTML = `
+      <div class="hourMatrix">
 
-        <div class="hourMatrixRailItem">${iconWind}<span>Wind</span></div>
-        <div class="hourMatrixRailItem isSub"><span>Gust</span></div>
+        <div class="hourMatrixRail" aria-hidden="true">
+          <div class="hourMatrixRailItem">${iconTemp}<span>Temp</span></div>
+          <div class="hourMatrixRailItem isSub"><span>Feels</span></div>
 
-        <div class="hourMatrixRailItem">${iconRain}<span>Precip</span></div>
-        <div class="hourMatrixRailItem">${iconVis}<span>Vis</span></div>
-      </div>
+          <div class="hourMatrixRailItem">${iconWind}<span>Wind</span></div>
+          <div class="hourMatrixRailItem isSub"><span>Gust</span></div>
 
-      <div class="hourMatrixScroll" id="hourMatrixScroll">
-        <div class="hourMatrixGrid">
-
-          ${hours.map(h => {
-            const r = hourRisk(h);
-
-            const temp  = (h.tempC != null) ? `${Math.round(h.tempC)}°C` : "—";
-            const feels = (h.feelsC != null) ? `${Math.round(h.feelsC)}°C` : "—";
-            const wind  = (h.windMph != null) ? `${Math.round(h.windMph)} mph` : "—";
-            const gust  = (h.gustMph != null) ? `${Math.round(h.gustMph)} mph` : "—";
-            const pp    = (h.precipProb != null) ? `${Math.round(h.precipProb)}%` : "—";
-            const vis   = (h.visKm != null) ? `${h.visKm.toFixed(1)} km` : "—";
-
-            return `
-              <div class="hourCol hourCol--${r.cls}" data-hour="${h.hour}">
-                <div class="hourColHeader">${h.time}</div>
-
-                <div class="hourColVal">${temp}</div>
-                <div class="hourColVal">${feels}</div>
-
-                <div class="hourColVal">${wind}</div>
-                <div class="hourColVal">${gust}</div>
-
-                <div class="hourColVal">${pp}</div>
-                <div class="hourColVal">${vis}</div>
-
-                <div class="hourColBar" aria-hidden="true"></div>
-              </div>
-            `;
-          }).join("")}
-
+          <div class="hourMatrixRailItem">${iconRain}<span>Precip</span></div>
+          <div class="hourMatrixRailItem">${iconVis}<span>Vis</span></div>
         </div>
+
+        <div class="hourMatrixScroll" id="hourMatrixScroll">
+          <div class="hourMatrixGrid">
+
+            ${hours.map(h => {
+              const r = hourRisk(h);
+
+              const temp  = (h.tempC != null) ? `${Math.round(h.tempC)}°C` : "—";
+              const feels = (h.feelsC != null) ? `${Math.round(h.feelsC)}°C` : "—";
+              const wind  = (h.windMph != null) ? `${Math.round(h.windMph)} mph` : "—";
+              const gust  = (h.gustMph != null) ? `${Math.round(h.gustMph)} mph` : "—";
+              const pp    = (h.precipProb != null) ? `${Math.round(h.precipProb)}%` : "—";
+              const vis   = (h.visKm != null) ? `${h.visKm.toFixed(1)} km` : "—";
+
+              return `
+                <div class="hourCol hourCol--${r.cls}" data-hour="${h.hour}">
+                  <div class="hourColHeader">${h.time}</div>
+
+                  <div class="hourColVal">${temp}</div>
+                  <div class="hourColVal">${feels}</div>
+
+                  <div class="hourColVal">${wind}</div>
+                  <div class="hourColVal">${gust}</div>
+
+                  <div class="hourColVal">${pp}</div>
+                  <div class="hourColVal">${vis}</div>
+
+                  <div class="hourColBar" aria-hidden="true"></div>
+                </div>
+              `;
+            }).join("")}
+
+          </div>
+        </div>
+
       </div>
+    `;
 
-    </div>
-  `;
+    const scroller = document.getElementById("hourMatrixScroll");
+    if (scroller && typeof enableDragScroll === "function") {
+      enableDragScroll(scroller);
+    }
 
-  // Enable desktop drag scroll
-  const scroller = document.getElementById("hourMatrixScroll");
-  if (scroller && typeof enableDragScroll === "function") {
-    enableDragScroll(scroller);
-  }
+    // Highlight + scroll-to-now ONLY when viewing TODAY
+    const todayStr = isoDate(new Date());
+    if (currentDate === todayStr) {
+      const now = new Date();
+      const nowHour = String(now.getHours()).padStart(2, "0");
 
-// ✅ MARK CURRENT HOUR (only when viewing TODAY)
-const todayStr = isoDate(new Date());
-if (currentDate === todayStr) {
-  const now = new Date();
-  const nowHour = String(now.getHours()).padStart(2, "0");
+      const currentCol = hourlyWrap.querySelector(`.hourCol[data-hour="${nowHour}"]`);
+      if (currentCol) {
+        currentCol.classList.add("isNow");
 
-  const currentCol = hourlyWrap.querySelector(`.hourCol[data-hour="${nowHour}"]`);
-  if (currentCol) {
-    currentCol.classList.add("isNow");
+        const scrollerEl = hourlyWrap.querySelector("#hourMatrixScroll");
+        if (scrollerEl) {
+          const colRect = currentCol.getBoundingClientRect();
+          const scRect  = scrollerEl.getBoundingClientRect();
 
-    // Auto-scroll to bring "now" into view (center-ish)
-    const scrollerEl = hourlyWrap.querySelector("#hourMatrixScroll");
-    if (scrollerEl) {
-      const colRect = currentCol.getBoundingClientRect();
-      const scRect  = scrollerEl.getBoundingClientRect();
+          const colLeftInsideScroller = colRect.left - scRect.left;
+          const leftGutter = 14;
+          const targetDelta = colLeftInsideScroller - leftGutter;
 
-      const colLeftInsideScroller = colRect.left - scRect.left;
-      const leftGutter = 14; // matches your CSS padding-left on .hourMatrixScroll
-      const targetDelta = colLeftInsideScroller - leftGutter;
+          const maxScroll = scrollerEl.scrollWidth - scrollerEl.clientWidth;
+          const next = Math.max(0, Math.min(maxScroll, scrollerEl.scrollLeft + targetDelta));
 
-      const maxScroll = scrollerEl.scrollWidth - scrollerEl.clientWidth;
-      const next = Math.max(0, Math.min(maxScroll, scrollerEl.scrollLeft + targetDelta));
-
-      scrollerEl.scrollTo({ left: next, behavior: "auto" });
+          scrollerEl.scrollTo({ left: next, behavior: "auto" });
+        }
+      }
     }
   }
-}
-}
 
-
-
-
-
+  // --------------------------------------------------
+  // Fell index load (toggleable)
+  // --------------------------------------------------
   async function loadFells() {
+    if (!ENABLE_FELL_SEARCH) {
+      fells = [];
+      return;
+    }
+
     setStatus("Loading fell index…");
     const r = await fetch("/assets/data/fells.json", { cache: "no-store" });
     if (!r.ok) throw new Error("Failed to load fells.json");
@@ -383,6 +385,8 @@ if (currentDate === todayStr) {
   }
 
   function matchFells(q) {
+    if (!ENABLE_FELL_SEARCH) return [];
+
     const s = q.trim().toLowerCase();
     if (s.length < 2) return [];
     const out = [];
@@ -423,7 +427,9 @@ if (currentDate === todayStr) {
     });
   }
 
-  // ---------- Fallback: Open-Meteo Geocoding ----------
+  // --------------------------------------------------
+  // Geo fallback (toggleable)
+  // --------------------------------------------------
   let activeGeoReq = 0;
 
   async function geocodePlaces(q) {
@@ -472,9 +478,10 @@ if (currentDate === todayStr) {
     });
   }
 
-  // ---------- Forecast fetch ----------
+  // --------------------------------------------------
+  // Forecast fetch (unchanged)
+  // --------------------------------------------------
   async function fetchForecast(lat, lon) {
-    // Open-Meteo hourly variables (no key)
     const url =
       "https://api.open-meteo.com/v1/forecast"
       + `?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}`
@@ -496,10 +503,10 @@ if (currentDate === todayStr) {
     const out = [];
 
     for (let i = 0; i < H.time.length; i++) {
-      const t = H.time[i]; // "YYYY-MM-DDTHH:MM"
+      const t = H.time[i];
       if (!t || !t.startsWith(dateStr)) continue;
 
-      const time = t.slice(11, 16); // HH:MM
+      const time = t.slice(11, 16);
       const hour = t.slice(11, 13);
 
       out.push({
@@ -512,7 +519,7 @@ if (currentDate === todayStr) {
         windMph: H.wind_speed_10m?.[i],
         gustMph: H.wind_gusts_10m?.[i],
         cloudPct: H.cloud_cover?.[i],
-        visKm: (H.visibility?.[i] != null) ? (Number(H.visibility[i]) / 1000) : null // meters -> km
+        visKm: (H.visibility?.[i] != null) ? (Number(H.visibility[i]) / 1000) : null
       });
     }
     return out;
@@ -570,7 +577,9 @@ if (currentDate === todayStr) {
     }
   }
 
-  // ---------- UI events ----------
+  // --------------------------------------------------
+  // UI events (search respects toggles)
+  // --------------------------------------------------
   let debounce = null;
 
   fellInput.addEventListener("input", () => {
@@ -584,21 +593,37 @@ if (currentDate === todayStr) {
     }
 
     debounce = setTimeout(async () => {
-      // 1) Try local fells.json first
-      const hits = matchFells(q);
-      if (hits.length) {
-        showFellSuggest(hits);
-        setStatus("Pick a fell from the list.");
+
+      // If both search modes are off, don’t do anything noisy.
+      if (!ENABLE_FELL_SEARCH && !ENABLE_GEO_SEARCH) {
+        hideSuggest();
+        setStatus("Search is disabled on this page.");
         return;
       }
 
-      // 2) Fallback to Open-Meteo geocoding
+      // 1) Try fells.json first (if enabled)
+      if (ENABLE_FELL_SEARCH) {
+        const hits = matchFells(q);
+        if (hits.length) {
+          showFellSuggest(hits);
+          setStatus("Pick a fell from the list.");
+          return;
+        }
+      }
+
+      // 2) Fallback to geocoding (if enabled)
+      if (!ENABLE_GEO_SEARCH) {
+        hideSuggest();
+        setStatus("No fell matches (place search is disabled).");
+        return;
+      }
+
       const reqId = ++activeGeoReq;
       setStatus("Searching places…");
 
       try {
         const places = await geocodePlaces(q);
-        if (reqId !== activeGeoReq) return; // stale
+        if (reqId !== activeGeoReq) return;
 
         if (!places.length) {
           hideSuggest();
@@ -658,28 +683,40 @@ if (currentDate === todayStr) {
     maybeLoadForecast();
   });
 
-    // ---------- Boot ----------
-    (async function init() {
-      try {
+  // --------------------------------------------------
+  // Boot (still starts EMPTY by design)
+  // --------------------------------------------------
+  (async function init() {
+    try {
+      if (ENABLE_FELL_SEARCH) {
         await loadFells();
-
-        // Always start EMPTY (ignore any saved LS_FELL / LS_DATE)
-        currentFell = null;
-        currentDate = null;
-
-        fellInput.value = "";
-        datePick.value = "";
-
-        renderSelected();
-        renderPlaceholderHourly();
-        setStatus("Pick a fell (or place) and choose a date.");
-
-      } catch (_) {
-        showErr("Fell index failed to load.");
+      } else {
+        setStatus("Ready.");
       }
-    })();
-    })();
 
+      // Always start EMPTY (ignore any saved LS_FELL / LS_DATE)
+      currentFell = null;
+      currentDate = null;
+
+      fellInput.value = "";
+      datePick.value = "";
+
+      renderSelected();
+      renderPlaceholderHourly();
+
+      // Helpful copy based on toggles
+      if (ENABLE_FELL_SEARCH && ENABLE_GEO_SEARCH) setStatus("Pick a fell (or place) and choose a date.");
+      else if (ENABLE_FELL_SEARCH && !ENABLE_GEO_SEARCH) setStatus("Pick a fell and choose a date. (Place search disabled)");
+      else if (!ENABLE_FELL_SEARCH && ENABLE_GEO_SEARCH) setStatus("Pick a place and choose a date. (Fell search disabled)");
+      else setStatus("Choose a date, then use presets / device / preference. (Search disabled)");
+
+    } catch (_) {
+      showErr("Fell index failed to load.");
+    }
+  })();
+})();
+
+// Drag-to-scroll helper (unchanged)
 function enableDragScroll(container) {
   if (!container) return;
 
@@ -708,7 +745,7 @@ function enableDragScroll(container) {
     if (!isDown) return;
     e.preventDefault();
     const x = e.pageX - container.offsetLeft;
-    const walk = (x - startX) * 1.2; // speed
+    const walk = (x - startX) * 1.2;
     container.scrollLeft = scrollLeft - walk;
   });
 }

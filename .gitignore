@@ -5,3 +5,8 @@
 
 # OS junk
 .DS_Store
+
+
+# Utilities
+tools/.venv/
+

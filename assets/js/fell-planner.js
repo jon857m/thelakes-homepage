@@ -376,7 +376,7 @@
     }
 
     setStatus("Loading fell index…");
-    const r = await fetch("/assets/data/fells.json", { cache: "no-store" });
+    const r = await fetch("/assets/data/fells_master.json", { cache: "no-store" });
     if (!r.ok) throw new Error("Failed to load fells.json");
     const data = await r.json();
     if (!Array.isArray(data)) throw new Error("Bad fells.json format");

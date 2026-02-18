@@ -208,7 +208,7 @@ function saveConditionsLocation({ place, lat, lon }) {
     if (Array.isArray(fellsCache)) return fellsCache;
     if (fellsLoading) return fellsLoading;
 
-    fellsLoading = fetch("/assets/data/fells.json", { cache: "force-cache" })
+    fellsLoading = fetch("/assets/data/fells_master.json", { cache: "force-cache" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!Array.isArray(data)) return [];

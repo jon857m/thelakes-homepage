@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fuel Prices (Test)</title>
+  <link rel="stylesheet" href="/assets/css/styles.css"><!-- keep your normal css path -->
+</head>
+<body>
+
+  <main class="pageWrap">
+    <section class="card">
+      <h1 class="h2">Fuel Prices (Test)</h1>
+
+      <div class="formRow">
+        <button id="btnMyLoc" class="btn">Use my location</button>
+
+        <select id="fuelType" class="select">
+          <option value="unleaded">Unleaded</option>
+          <option value="diesel">Diesel</option>
+          <option value="super_unleaded">Super Unleaded</option>
+          <option value="super_diesel">Super Diesel</option>
+        </select>
+
+        <select id="radiusKm" class="select">
+          <option value="5">5 km</option>
+          <option value="10" selected>10 km</option>
+          <option value="20">20 km</option>
+          <option value="30">30 km</option>
+        </select>
+
+        <button id="btnSearch" class="btn btn--primary" disabled>Search</button>
+      </div>
+
+      <p id="status" class="formNote">Step 1: tap “Use my location”.</p>
+    </section>
+
+    <section class="grid2">
+      <div class="card">
+        <h2 class="h3">Cheapest</h2>
+        <div id="listPrice"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="h3">Nearest</h2>
+        <div id="listDist"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/fuel/fuel.js"></script>
+</body>
+</html>

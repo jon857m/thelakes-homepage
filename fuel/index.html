@@ -1,53 +1,156 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fuel Prices (Test)</title>
-  <link rel="stylesheet" href="/assets/css/styles.css"><!-- keep your normal css path -->
-</head>
-<body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0c0f" />
+    <title>FuelPilot</title>
 
-  <main class="pageWrap">
-    <section class="card">
-      <h1 class="h2">Fuel Prices (Test)</h1>
+    <!-- Leaflet -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
 
-      <div class="formRow">
-        <button id="btnMyLoc" class="btn">Use my location</button>
+    <!-- Leaflet MarkerCluster -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
+    />
 
-        <select id="fuelType" class="select">
-          <option value="unleaded">Unleaded</option>
-          <option value="diesel">Diesel</option>
-          <option value="super_unleaded">Super Unleaded</option>
-          <option value="super_diesel">Super Diesel</option>
-        </select>
+    <!-- FuelPilot styles -->
+    <link rel="stylesheet" href="./fuelpilot.css" />
+  </head>
 
-        <select id="radiusKm" class="select">
-          <option value="5">5 km</option>
-          <option value="10" selected>10 km</option>
-          <option value="20">20 km</option>
-          <option value="30">30 km</option>
-        </select>
+  <body>
+    <div class="fp-app" id="fpApp">
+      <!-- Host-aware Lakes header injection target (only used on thelakesincumbria.co.uk) -->
+      <div id="fpSiteHeader" class="fp-site-header"></div>
 
-        <button id="btnSearch" class="btn btn--primary" disabled>Search</button>
+      <!-- Map -->
+      <main class="fp-map-wrap" aria-label="FuelPilot map">
+        <div id="fpMap" class="fp-map"></div>
+
+        <!-- Floating control card -->
+        <section class="fp-controls" aria-label="FuelPilot controls">
+          <div class="fp-controls__top">
+            <div class="fp-title">
+              <div class="fp-title__name">FuelPilot</div>
+              <div class="fp-title__sub" id="fpStatus">Ready</div>
+            </div>
+            <button class="fp-icon-btn" id="fpHelpBtn" type="button" aria-label="Help">
+              ?
+            </button>
+          </div>
+
+          <div class="fp-controls__grid">
+            <label class="fp-field">
+              <span class="fp-field__label">Region</span>
+              <select id="fpRegionSelect" class="fp-select">
+                <option value="restore">Restore last view</option>
+                <option value="lakes">Lakes (wide)</option>
+                <option value="north">North Lakes</option>
+                <option value="central" selected>Central Lakes</option>
+                <option value="south">South Lakes</option>
+              </select>
+            </label>
+
+            <label class="fp-field">
+              <span class="fp-field__label">Fuel</span>
+              <select id="fpFuelSelect" class="fp-select">
+                <option value="E10" selected>E10</option>
+                <option value="E5">E5</option>
+                <option value="DIESEL">Diesel</option>
+              </select>
+            </label>
+
+            <button id="fpMyLocationBtn" class="fp-btn fp-btn--primary" type="button">
+              My Location
+            </button>
+
+            <button id="fpRefreshBtn" class="fp-btn" type="button">
+              Search here
+            </button>
+          </div>
+
+          <div class="fp-controls__row">
+            <button id="fpSortBtn" class="fp-chip" type="button" aria-label="Toggle sort">
+              Sort: <span id="fpSortLabel">Price</span>
+            </button>
+
+            <div class="fp-pill" title="Branding">
+              FuelPilot <span class="fp-pill__dot">•</span> Powered by WayPoint Media
+            </div>
+          </div>
+        </section>
+
+        <!-- "Search this area" prompt (shows when map moved) -->
+        <button id="fpSearchAreaBtn" class="fp-fab" type="button">
+          Search this area
+        </button>
+      </main>
+
+      <!-- Results: bottom sheet (mobile) / side panel (desktop) -->
+      <aside class="fp-drawer" id="fpDrawer" aria-label="Stations list">
+        <div class="fp-drawer__handle" id="fpDrawerHandle" aria-hidden="true"></div>
+
+        <header class="fp-drawer__header">
+          <div>
+            <div class="fp-drawer__title">Stations</div>
+            <div class="fp-drawer__meta" id="fpCountLine">0 results</div>
+          </div>
+
+          <button id="fpCloseDrawerBtn" class="fp-icon-btn" type="button" aria-label="Close list">
+            ✕
+          </button>
+        </header>
+
+        <div class="fp-selected" id="fpSelectedCard" hidden>
+          <!-- Filled by JS -->
+        </div>
+
+        <div class="fp-list" id="fpList" role="list"></div>
+      </aside>
+
+      <!-- Help modal -->
+      <div class="fp-modal" id="fpModal" hidden>
+        <div class="fp-modal__backdrop" id="fpModalBackdrop"></div>
+        <div class="fp-modal__panel" role="dialog" aria-modal="true" aria-label="FuelPilot help">
+          <div class="fp-modal__title">How FuelPilot works</div>
+          <div class="fp-modal__text">
+            <p>
+              Move the map and tap <strong>Search this area</strong> to refresh results.
+              Tap a marker or a station in the list to see details.
+            </p>
+            <p>
+              Colours are <strong>local quintiles</strong> (cheapest 20% = dark green, most expensive 20% = red).
+            </p>
+            <p>
+              Use <strong>Directions</strong> to open Google Maps.
+            </p>
+          </div>
+          <button class="fp-btn fp-btn--primary" id="fpModalCloseBtn" type="button">Got it</button>
+        </div>
       </div>
+    </div>
 
-      <p id="status" class="formNote">Step 1: tap “Use my location”.</p>
-    </section>
+    <!-- Leaflet JS -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
 
-    <section class="grid2">
-      <div class="card">
-        <h2 class="h3">Cheapest</h2>
-        <div id="listPrice"></div>
-      </div>
+    <!-- Leaflet MarkerCluster -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-      <div class="card">
-        <h2 class="h3">Nearest</h2>
-        <div id="listDist"></div>
-      </div>
-    </section>
-  </main>
-
-  <script src="/fuel/fuel.js"></script>
-</body>
+    <!-- FuelPilot app -->
+    <script src="./fuelpilot.js"></script>
+  </body>
 </html>

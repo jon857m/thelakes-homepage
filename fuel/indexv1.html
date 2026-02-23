@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Fuel Finder — Lake District</title>
+  <meta name="description" content="Find nearby fuel prices fast — cheapest and closest options on a full-screen map." />
+
+  <!-- Keep your standard site CSS -->
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    /* Minimal page-specific layout (reuse your existing CSS as much as possible) */
+    html, body { height: 100%; }
+    body { margin: 0; }
+
+    /* Fullscreen map behind everything */
+    #fuelMap {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* Ensure header/footer sit above map (your injected header likely already does) */
+    .site-header, header, .header { position: relative; z-index: 5; }
+
+    /* Floating controls card */
+    .fuelControls {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      top: 84px; /* adjust if your header height differs */
+      z-index: 4;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .fuelCard {
+      background: rgba(255,255,255,0.94);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+      padding: 12px;
+      backdrop-filter: blur(6px);
+    }
+
+    .fuelRow { display: flex; gap: 8px; flex-wrap: wrap; }
+    .fuelRow + .fuelRow { margin-top: 10px; }
+
+    .fuelChip {
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+    .fuelChip.active { border-color: rgba(0,0,0,0.35); font-weight: 600; }
+
+    .fuelMainBtn {
+      flex: 1;
+      min-width: 150px;
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .fuelSelect {
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 15px;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    /* Price badge marker */
+    .priceBadge {
+      background: #111;
+      color: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      border: 2px solid rgba(255,255,255,0.7);
+      white-space: nowrap;
+    }
+
+    .fuelStatus {
+      margin-top: 8px;
+      font-size: 13px;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Your site header/footer injection typically happens via your existing JS include.
+       If your site uses a shared header injection script, keep it consistent here. -->
+  <div id="fuelMap" aria-label="Fuel map"></div>
+
+  <div class="fuelControls" role="region" aria-label="Fuel controls">
+    <div class="fuelCard">
+      <div class="fuelRow" aria-label="Region presets">
+        <button class="fuelChip" data-region="north">North Lakes</button>
+        <button class="fuelChip active" data-region="lakes">Lake District</button>
+        <button class="fuelChip" data-region="central">Central Lakes</button>
+        <button class="fuelChip" data-region="south">South Lakes</button>
+      </div>
+
+      <div class="fuelRow" aria-label="Actions">
+        <button id="btnMyLocation" class="fuelMainBtn">My Location</button>
+        <button id="btnMyPref" class="fuelMainBtn">My Preference</button>
+      </div>
+
+      <div class="fuelRow" aria-label="Fuel type">
+        <select id="fuelType" class="fuelSelect">
+          <option value="E10">E10 (Petrol)</option>
+          <option value="B7">Diesel (B7)</option>
+        </select>
+      </div>
+
+      <div id="fuelStatus" class="fuelStatus">Loading…</div>
+      <div class="fuelStatus" style="opacity:.7">Distances are straight-line (approx), not driving distance.</div>
+    </div>
+  </div>
+
+  <!-- Leaflet -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script src="/fuel/fuel.js"></script>
+</body>
+</html>

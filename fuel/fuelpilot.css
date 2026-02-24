@@ -308,18 +308,60 @@
   height: calc(100% - 120px);
 }
 
+/* List row accent bar (ties to marker colour) */
+/* List row (with premium accent rail) */
 .fp-row {
+  position: relative;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px;
+
+  /* IMPORTANT: left padding includes room for the rail */
+  padding: 10px 10px 10px 22px;
+
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.16);
   cursor: pointer;
   margin-bottom: 10px;
   transition: transform 140ms ease-out, background 140ms ease-out;
+}
+
+/* Premium accent rail */
+.fp-row::before {
+  content: "";
+  position: absolute;
+
+  left: 10px;
+  top: 12px;
+  bottom: 12px;
+
+  width: 4px;
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.18); /* fallback */
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.14),
+    0 6px 14px rgba(0,0,0,0.18);
+}
+
+/* Tie accent rail to quintiles */
+.fp-row.fp-q0::before { background: rgba(0, 160, 95, 0.85); }
+.fp-row.fp-q1::before { background: rgba(60, 170, 110, 0.85); }
+.fp-row.fp-q2::before { background: rgba(200, 170, 40, 0.85); }
+.fp-row.fp-q3::before { background: rgba(220, 120, 40, 0.85); }
+.fp-row.fp-q4::before { background: rgba(200, 60, 60, 0.85); }
+.fp-row.fp-missing::before { background: rgba(180, 190, 205, 0.7); }
+
+.fp-row:hover {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.fp-row:active {
+  transform: scale(0.99);
 }
 
 .fp-row:hover {
@@ -656,6 +698,17 @@
 .fp-dot.fp-q2 { background: rgba(240, 200, 60, 0.9); }
 .fp-dot.fp-q3 { background: rgba(255, 150, 60, 0.9); }
 .fp-dot.fp-q4 { background: rgba(255, 80, 80, 0.9); }
+
+/* Prevent marker quintile classes tinting the LIST rows */
+.fp-row.fp-q0,
+.fp-row.fp-q1,
+.fp-row.fp-q2,
+.fp-row.fp-q3,
+.fp-row.fp-q4 {
+  background: rgba(0, 0, 0, 0.16); /* same as your normal fp-row */
+  border-color: rgba(255, 255, 255, 0.08);
+  color: inherit;
+}
 
 /* Desktop: tuck it neatly under the controls */
 @media (min-width: 920px) {

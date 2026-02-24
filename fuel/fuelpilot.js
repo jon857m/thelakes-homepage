@@ -497,52 +497,64 @@
     `;
   }
 
-  function renderList() {
-    const sortMode = readLS(LS.sort, "price");
-    const fuel = readLS(LS.fuel, "E10");
+function renderList() {
+  const sortMode = readLS(LS.sort, "price");
+  const fuel = readLS(LS.fuel, "E10");
 
-    const sorted = stations.slice();
-    if (sortMode === "distance") {
-      sorted.sort((a, b) => (distanceMilesFromOrigin(a) || 1e9) - (distanceMilesFromOrigin(b) || 1e9));
-    } else {
-      sorted.sort((a, b) => ((a._priceNum == null ? 1e9 : a._priceNum) - (b._priceNum == null ? 1e9 : b._priceNum)));
-    }
+  // Quintile cut points from the latest search (set in applyResults)
+  const cuts = window.__FP_CUTS || null;
 
-    els.list.innerHTML = sorted.map((st) => {
-      const name = stationName(st);
-      const addr = stationAddress(st);
-      const hasPrice = st._priceNum != null && isFinite(st._priceNum);
-      const p = hasPrice ? formatPrice(st._priceNum) : "No price";
-      const fuelLabel = hasPrice ? `(${fuel})` : "";
-      const dir = stationDirectionsUrl(st);
-      const dist = distanceLabel(st);
-
-      return `
-        <div class="fp-row" role="listitem" data-id="${escapeHtml(st._id)}">
-          <div class="fp-row__left">
-            <div class="fp-row__price">${escapeHtml(p)} ${fuelLabel ? `<span class="fp-mini" style="opacity:.75">${escapeHtml(fuelLabel)}</span>` : ""}</div>
-            <div class="fp-row__meta">${escapeHtml(name)} — ${escapeHtml(addr)}</div>
-          </div>
-          <div class="fp-row__right">
-            <span class="fp-mini">${escapeHtml(dist)}</span>
-            <a class="fp-link-btn" href="${dir}" target="_blank" rel="noopener" aria-label="Directions">
-              ↗
-            </a>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    const rows = els.list.querySelectorAll(".fp-row");
-    for (let i = 0; i < rows.length; i++) {
-      rows[i].addEventListener("click", (e) => {
-        const link = e.target.closest("a");
-        if (link) return;
-        const id = rows[i].getAttribute("data-id");
-        if (id) selectStation(id, { openDrawer: true, pan: true });
-      });
-    }
+  const sorted = stations.slice();
+  if (sortMode === "distance") {
+    sorted.sort((a, b) => (distanceMilesFromOrigin(a) || 1e9) - (distanceMilesFromOrigin(b) || 1e9));
+  } else {
+    sorted.sort((a, b) => ((a._priceNum == null ? 1e9 : a._priceNum) - (b._priceNum == null ? 1e9 : b._priceNum)));
   }
+
+  els.list.innerHTML = sorted.map((st) => {
+    const name = stationName(st);
+    const addr = stationAddress(st);
+    const hasPrice = st._priceNum != null && isFinite(st._priceNum);
+
+    const p = hasPrice ? formatPrice(st._priceNum) : "No price";
+    const fuelLabel = hasPrice ? `(${fuel})` : "";
+
+    const dir = stationDirectionsUrl(st);
+    const dist = distanceLabel(st);
+
+    // ✅ Visual link class for list accent bar:
+    // priced = fp-q0..fp-q4, missing = fp-missing
+    const rowClass = hasPrice ? quintileClass(st._priceNum, cuts) : "fp-missing";
+
+    return `
+      <div class="fp-row ${rowClass}" role="listitem" data-id="${escapeHtml(st._id)}">
+        <div class="fp-row__left">
+          <div class="fp-row__price">
+            ${escapeHtml(p)}
+            ${fuelLabel ? `<span class="fp-mini" style="opacity:.75">${escapeHtml(fuelLabel)}</span>` : ""}
+          </div>
+          <div class="fp-row__meta">${escapeHtml(name)} — ${escapeHtml(addr)}</div>
+        </div>
+        <div class="fp-row__right">
+          <span class="fp-mini">${escapeHtml(dist)}</span>
+          <a class="fp-link-btn" href="${dir}" target="_blank" rel="noopener" aria-label="Directions">
+            ↗
+          </a>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const rows = els.list.querySelectorAll(".fp-row");
+  for (let i = 0; i < rows.length; i++) {
+    rows[i].addEventListener("click", (e) => {
+      const link = e.target.closest("a");
+      if (link) return;
+      const id = rows[i].getAttribute("data-id");
+      if (id) selectStation(id, { openDrawer: true, pan: true });
+    });
+  }
+}
 
   function selectStation(id, opts) {
     const st = stations.find((s) => s._id === id);
@@ -583,6 +595,7 @@
 
     const withPrices = stations.filter((s) => s._priceNum != null);
     const cuts = computeQuintiles(withPrices).cuts;
+    window.__FP_CUTS = cuts;
 
     clearMarkers();
 

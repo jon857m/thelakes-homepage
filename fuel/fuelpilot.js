@@ -368,12 +368,14 @@
 
     // ✅ Missing / no-price path
     if (priceNum == null || !isFinite(priceNum)) {
-      const html = `<div class="fp-miss" data-mid="${escapeHtml(st._id)}" aria-label="No price"></div>`;
-      const icon = L.divIcon({ html, className: "", iconSize: [1, 1] });
-      const m = L.marker([lat, lng], { icon });
-      m.on("click", () => selectStation(st._id, { openDrawer: true, pan: true }));
-      return m;
-    }
+    const html = `
+        <div class="fp-flag fp-flag--missing" data-mid="${escapeHtml(st._id)}">—</div>
+    `;
+    const icon = L.divIcon({ html, className: "", iconSize: [1, 1] });
+    const m = L.marker([lat, lng], { icon });
+    m.on("click", () => selectStation(st._id, { openDrawer: true, pan: true }));
+    return m;
+}
 
     // ✅ Existing priced marker path (unchanged)
     const qClass = quintileClass(priceNum, cuts);

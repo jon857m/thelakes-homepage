@@ -1,12 +1,9 @@
-/* FuelPilot UI v1.1 (clean baseline)
+/* FuelPilot UI v1.2 (baseline + includeMissing)
    - Map-first Leaflet + MarkerCluster
-   - Host-aware header injection
    - Presets + My Location + Fuel dropdown (remembered)
-   - Quintile-colour price flags
-   - Bottom sheet / drawer list
-   - Sort Price/Distance (remembered)
-   - Directions deep links everywhere
-   - "Search this area" uses near-box (viewport)
+   - Quintile-colour price flags (unchanged)
+   - Missing stations supported via includeMissing=1
+   - Prices only toggle (persisted)
 */
 
 (() => {
@@ -18,9 +15,10 @@
 
   const LS = {
     fuel: "fp_fuel",
-    sort: "fp_sort",   // "price" | "distance"
+    sort: "fp_sort",           // "price" | "distance"
     region: "fp_region",
-    map: "fp_map"      // {lat,lng,zoom}
+    map: "fp_map",             // {lat,lng,zoom}
+    pricesOnly: "fp_prices_only" // "1" (prices only) | "0" (include no-price)
   };
 
   const PRESETS = {
@@ -43,6 +41,7 @@
     refreshBtn: $("fpRefreshBtn"),
     sortBtn: $("fpSortBtn"),
     sortLabel: $("fpSortLabel"),
+    pricesOnlyBtn: $("fpPricesOnlyBtn"),
     searchAreaBtn: $("fpSearchAreaBtn"),
     drawer: $("fpDrawer"),
     drawerHandle: $("fpDrawerHandle"),
@@ -53,7 +52,7 @@
     helpBtn: $("fpHelpBtn"),
     modal: $("fpModal"),
     modalBackdrop: $("fpModalBackdrop"),
-    modalClose: $("fpModalCloseBtn"),   
+    modalClose: $("fpModalCloseBtn"),
     legendBtn: $("fpLegendBtn"),
     legend: $("fpLegend"),
   };
@@ -94,7 +93,25 @@
   }
 
   // -----------------------------
-  // Host-aware header injection
+  // Prices-only toggle (persisted)
+  // -----------------------------
+  function getPricesOnly() {
+    // default ON
+    return readLS(LS.pricesOnly, "1") !== "0";
+  }
+
+  function setPricesOnly(v) {
+    writeLS(LS.pricesOnly, v ? "1" : "0");
+    refreshPricesOnlyLabel();
+  }
+
+  function refreshPricesOnlyLabel() {
+    if (!els.pricesOnlyBtn) return;
+    els.pricesOnlyBtn.textContent = getPricesOnly() ? "Prices only" : "Include no-price";
+  }
+
+  // -----------------------------
+  // Host-aware header injection (kept)
   // -----------------------------
   async function injectLakesHeaderIfNeeded() {
     const host = window.location.hostname || "";
@@ -209,8 +226,20 @@
     return `${API_BASE.replace(/\/+$/, "")}${path}?${qs.toString()}`;
   }
 
+  function shortUrl(u) {
+    try {
+      const url = new URL(u, window.location.origin);
+      return url.origin === window.location.origin
+        ? url.pathname + url.search
+        : url.origin + url.pathname;
+    } catch (e) {
+      return String(u);
+    }
+  }
+
   async function fetchNear({ lat, lng, fuel, radiusMiles, limit }) {
     const sortMode = readLS(LS.sort, "price");
+    const includeMissing = getPricesOnly() ? "0" : "1";
 
     const url = apiUrl("/api/fuel/near", {
       lat: String(lat),
@@ -218,7 +247,8 @@
       fuel: String(fuel),
       radiusMiles: String(radiusMiles),
       limit: String(limit),
-      sort: String(sortMode)
+      sort: String(sortMode),
+      includeMissing
     });
 
     setStatus(`Fetching… ${shortUrl(url)}`);
@@ -237,6 +267,7 @@
 
   async function fetchNearBox({ bounds, fuel, limit }) {
     const sortMode = readLS(LS.sort, "price");
+    const includeMissing = getPricesOnly() ? "0" : "1";
 
     const url = apiUrl("/api/fuel/near-box", {
       minLat: String(bounds.getSouthWest().lat),
@@ -245,7 +276,8 @@
       maxLng: String(bounds.getNorthEast().lng),
       fuel: String(fuel),
       limit: String(limit),
-      sort: String(sortMode)
+      sort: String(sortMode),
+      includeMissing
     });
 
     setStatus(`Searching area… ${shortUrl(url)}`);
@@ -262,22 +294,14 @@
     return data;
   }
 
-  function shortUrl(u) {
-    try {
-      const url = new URL(u, window.location.origin);
-      return url.origin === window.location.origin
-        ? url.pathname + url.search
-        : url.origin + url.pathname;
-    } catch (e) {
-      return String(u);
-    }
-  }
-
   // -----------------------------
   // Quintiles + marker rendering
   // -----------------------------
   function getNumericPrice(st) {
-    const candidates = [st.price, st.price_pence, st.fuelPrice, st.pricePence];
+    // Worker cards use st.price (number or null)
+    if (typeof st.price === "number" && isFinite(st.price)) return st.price;
+
+    const candidates = [st.price_pence, st.fuelPrice, st.pricePence];
     for (let i = 0; i < candidates.length; i++) {
       const c = candidates[i];
       if (typeof c === "number" && isFinite(c)) return c;
@@ -341,11 +365,20 @@
     if (!isFinite(lat) || !isFinite(lng)) return null;
 
     const priceNum = st._priceNum;
+
+    // ✅ Missing / no-price path
+    if (priceNum == null || !isFinite(priceNum)) {
+      const html = `<div class="fp-miss" data-mid="${escapeHtml(st._id)}" aria-label="No price"></div>`;
+      const icon = L.divIcon({ html, className: "", iconSize: [1, 1] });
+      const m = L.marker([lat, lng], { icon });
+      m.on("click", () => selectStation(st._id, { openDrawer: true, pan: true }));
+      return m;
+    }
+
+    // ✅ Existing priced marker path (unchanged)
     const qClass = quintileClass(priceNum, cuts);
     const priceText = formatPrice(priceNum);
-
     const html = `<div class="fp-flag ${qClass}" data-mid="${escapeHtml(st._id)}">${escapeHtml(priceText)}</div>`;
-
     const icon = L.divIcon({ html, className: "", iconSize: [1, 1] });
 
     const m = L.marker([lat, lng], { icon });
@@ -391,6 +424,9 @@
       }
     }
 
+    // Worker cards provide addressShort
+    if (st.addressShort) parts.push(String(st.addressShort));
+
     if (st.town) parts.push(st.town);
     if (st.postcode) parts.push(st.postcode);
 
@@ -399,7 +435,7 @@
   }
 
   function stationBadges(st) {
-    const arr = st.amenities || st.services || st.facilities || [];
+    const arr = st.badges || st.amenities || st.services || st.facilities || [];
     if (!Array.isArray(arr)) return [];
     return arr.map((x) => String(x).trim()).filter(Boolean).slice(0, 6);
   }
@@ -423,7 +459,8 @@
   }
 
   function renderSelectedCard(st) {
-    const priceText = formatPrice(st._priceNum);
+    const hasPrice = st._priceNum != null && isFinite(st._priceNum);
+    const priceText = hasPrice ? formatPrice(st._priceNum) : "—";
     const name = stationName(st);
     const addr = stationAddress(st);
     const badges = stationBadges(st);
@@ -438,6 +475,8 @@
         <div class="fp-card__name">${escapeHtml(name)}</div>
         <div class="fp-card__addr">${escapeHtml(addr)}</div>
 
+        ${!hasPrice ? `<div class="fp-card__trust">No recent price reported for this station.</div>` : ""}
+
         ${badges.length ? `
           <div class="fp-badges">
             ${badges.map((b) => `<span class="fp-badge">${escapeHtml(b)}</span>`).join("")}
@@ -451,7 +490,7 @@
           <span class="fp-mini">${escapeHtml(distanceLabel(st))}</span>
         </div>
 
-        ${lastUpdated ? `<div class="fp-card__trust">Updated: ${escapeHtml(String(lastUpdated))}</div>` : ""}
+        ${hasPrice && lastUpdated ? `<div class="fp-card__trust">Updated: ${escapeHtml(String(lastUpdated))}</div>` : ""}
       </div>
     `;
   }
@@ -470,7 +509,8 @@
     els.list.innerHTML = sorted.map((st) => {
       const name = stationName(st);
       const addr = stationAddress(st);
-      const p = formatPrice(st._priceNum);
+      const hasPrice = st._priceNum != null && isFinite(st._priceNum);
+      const p = hasPrice ? formatPrice(st._priceNum) : "No price";
       const dir = stationDirectionsUrl(st);
       const dist = distanceLabel(st);
 
@@ -535,7 +575,7 @@
     });
   }
 
-  async function applyResults(data, reason) {
+  async function applyResults(data) {
     stations = normalizeStations(data);
 
     const withPrices = stations.filter((s) => s._priceNum != null);
@@ -558,20 +598,20 @@
     mapDirty = false;
     updateSearchAreaButton();
 
-    if (els.countLine) els.countLine.textContent = `${stations.length} results • ${markerCount} mapped`;
-    setStatus(`Showing ${stations.length} stations`);
+    const pricedCount = withPrices.length;
+    const missingCount = stations.length - pricedCount;
+    if (els.countLine) {
+      els.countLine.textContent = `${stations.length} shown • ${pricedCount} priced • ${missingCount} no-price`;
+    }
+
+    setStatus(`Showing ${stations.length} stations (${getPricesOnly() ? "priced only" : "incl. no-price"})`);
 
     renderList();
     openDrawer();
 
-    const sortMode = readLS(LS.sort, "price");
+    // Auto-pick first station (prefer priced)
     if (stations.length) {
-      let pick = stations[0];
-      if (sortMode === "price") {
-        pick = stations.slice().sort((a, b) => ((a._priceNum == null ? 1e9 : a._priceNum) - (b._priceNum == null ? 1e9 : b._priceNum)))[0];
-      } else {
-        pick = stations.slice().sort((a, b) => (distanceMilesFromOrigin(a) || 1e9) - (distanceMilesFromOrigin(b) || 1e9))[0];
-      }
+      let pick = stations.find(s => s._priceNum != null) || stations[0];
       if (pick && pick._id) selectStation(pick._id, { openDrawer: false, pan: false });
     } else {
       if (els.selectedCard) els.selectedCard.hidden = true;
@@ -590,7 +630,7 @@
     const limit = presetConfig && presetConfig.limit ? presetConfig.limit : 200;
 
     const data = await fetchNear({ lat: center.lat, lng: center.lng, fuel, radiusMiles, limit });
-    await applyResults(data, "near");
+    await applyResults(data);
   }
 
   async function runSearchAreaViewport() {
@@ -601,7 +641,7 @@
 
     const bounds = map.getBounds();
     const data = await fetchNearBox({ bounds, fuel, limit: 350 });
-    await applyResults(data, "near-box");
+    await applyResults(data);
   }
 
   // -----------------------------
@@ -617,11 +657,7 @@
     const next = current === "price" ? "distance" : "price";
     writeLS(LS.sort, next);
     refreshSortLabel();
-
-    // Re-render list only (no refetch needed)
     renderList();
-
-    // Also update the map pins highlight state stays
     if (activeMarkerId) setActiveFlag(activeMarkerId);
   }
 
@@ -703,21 +739,25 @@
     writeLS(LS.sort, savedSort);
     refreshSortLabel();
 
+    // default ON if not present
+    if (localStorage.getItem(LS.pricesOnly) == null) writeLS(LS.pricesOnly, "1");
+    refreshPricesOnlyLabel();
+
     const savedRegion = readLS(LS.region, "central");
     if (els.regionSelect) {
       els.regionSelect.value = (savedRegion && PRESETS[savedRegion]) ? savedRegion : "central";
     }
 
     els.legendBtn?.addEventListener("click", () => {
-    if (!els.legend) return;
-    els.legend.hidden = !els.legend.hidden;
+      if (!els.legend) return;
+      els.legend.hidden = !els.legend.hidden;
     });
 
     document.addEventListener("click", (e) => {
-    if (!els.legend || els.legend.hidden) return;
-    const insideLegend = e.target.closest("#fpLegend");
-    const onBtn = e.target.closest("#fpLegendBtn");
-    if (!insideLegend && !onBtn) els.legend.hidden = true;
+      if (!els.legend || els.legend.hidden) return;
+      const insideLegend = e.target.closest("#fpLegend");
+      const onBtn = e.target.closest("#fpLegendBtn");
+      if (!insideLegend && !onBtn) els.legend.hidden = true;
     });
 
     initMap();
@@ -763,6 +803,24 @@
 
     if (els.sortBtn) els.sortBtn.addEventListener("click", toggleSort);
 
+    // ✅ Toggle: Prices only <-> Include no-price, then refetch immediately
+    if (els.pricesOnlyBtn) {
+      els.pricesOnlyBtn.addEventListener("click", async () => {
+        setPricesOnly(!getPricesOnly());
+
+        // Refetch immediately (same behaviour as hitting Refresh)
+        const c = map.getCenter();
+        const regionKey = readLS(LS.region, "central");
+        const preset = PRESETS[regionKey] || PRESETS.central;
+        try {
+          await runSearchPresetOrRefresh({ lat: c.lat, lng: c.lng }, preset);
+        } catch (err) {
+          console.error(err);
+          setStatus(`Error: ${err.message || "Search failed"}`);
+        }
+      });
+    }
+
     if (els.helpBtn) els.helpBtn.addEventListener("click", openModal);
     if (els.modalBackdrop) els.modalBackdrop.addEventListener("click", closeModal);
     if (els.modalClose) els.modalClose.addEventListener("click", closeModal);
@@ -773,7 +831,7 @@
 
     setStatus(`Ready • API: ${shortUrl(API_BASE)}`);
 
-    // Initial search uses the current region preset settings
+    // Initial search
     const regionKey = readLS(LS.region, "central");
     const preset = PRESETS[regionKey] || PRESETS.central;
 

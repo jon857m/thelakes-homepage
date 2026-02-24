@@ -392,7 +392,6 @@
 
 .fp-brand-dot { opacity: 0.6; padding: 0 6px; }
 
-/* Leaflet marker "price flag" */
 /* Leaflet marker "price flag" — premium tag */
 .fp-flag {
   position: relative;
@@ -436,20 +435,60 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.35);
 }
 
-
-
 /* active */
 .fp-flag.is-active {
   transform: translate(-50%, -50%) scale(1.08);
 }
 
-/* Quintile colouring (accent bar) */
 /* Quintile background tint (subtle) */
 .fp-q0 { background: rgba(220, 255, 235, 0.95); border-color: rgba(0, 160, 95, 0.60) }
 .fp-q1 { background: rgba(235, 255, 240, 0.95); border-color: rgba(60, 170, 110, 0.60) }
 .fp-q2 { background: rgba(255, 250, 220, 0.95); border-color: rgba(200, 170, 40, 0.60) }
 .fp-q3 { background: rgba(255, 235, 220, 0.95); border-color: rgba(220, 120, 40, 0.60) }
 .fp-q4 { background: rgba(255, 225, 225, 0.95); border-color: rgba(200, 60, 60, 0.60) }
+
+/* NEW: shared marker selection highlight (works for flags + missing dots) */
+.fp-marker.is-active {
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.45),
+    0 0 0 2px rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+/* NEW: Missing-price marker (neutral, quieter than priced flags) */
+.fp-miss {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+
+  background: rgba(16, 18, 24, 0.75);
+  border: 2px solid rgba(245, 247, 252, 0.50);
+
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.40);
+
+  transform: translate(-50%, -50%);
+  transition: transform 140ms ease-out;
+  will-change: transform;
+}
+
+/* subtle pointer for missing marker */
+.fp-miss::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 8px;
+  height: 8px;
+  transform: translateX(-50%) rotate(45deg);
+  background: rgba(16, 18, 24, 0.75);
+  border-right: 1px solid rgba(245, 247, 252, 0.35);
+  border-bottom: 1px solid rgba(245, 247, 252, 0.35);
+}
 
 /* Modal */
 .fp-modal {
@@ -586,7 +625,6 @@
   }
 }
 
-
 .fp-legend__panel::before {
   content: "";
   position: absolute;
@@ -638,4 +676,30 @@
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* Missing-price marker (neutral, premium, clickable) */
+.fp-miss {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+
+  background: rgba(16, 18, 24, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.40);
+
+  transform: translate(-50%, -50%);
+}
+
+.fp-miss::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
 }

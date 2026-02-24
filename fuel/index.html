@@ -24,110 +24,116 @@
     <div class="fp-site-header" id="fpSiteHeader"></div>
 
     <div class="fp-map-wrap">
-  <div id="fpMap" class="fp-map" aria-label="FuelPilot map"></div>
+      <div id="fpMap" class="fp-map" aria-label="FuelPilot map"></div>
 
-  <!-- UI Stack: Controls + Floating "Search this area" -->
-  <div class="fp-ui-stack">
-    <section class="fp-controls" aria-label="Fuel controls">
-      <div class="fp-controls__top">
-        <div>
-          <div class="fp-title__name">FuelPilot</div>
-          <div class="fp-title__sub" id="fpStatus">Loading…</div>
-        </div>
+      <!-- UI Stack: Controls + Floating "Search this area" -->
+      <div class="fp-ui-stack">
+        <section class="fp-controls" aria-label="Fuel controls">
+          <div class="fp-controls__top">
+            <div>
+              <div class="fp-title__name">FuelPilot</div>
+              <div class="fp-title__sub" id="fpStatus">Loading…</div>
+            </div>
 
-        <div style="display:flex; gap:10px; align-items:center;">
-          <button class="fp-icon-btn" id="fpLegendBtn" type="button" aria-label="Price bands">≡</button>
-          <button class="fp-icon-btn" id="fpHelpBtn" type="button" aria-label="Help">?</button>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button class="fp-icon-btn" id="fpLegendBtn" type="button" aria-label="Price bands">≡</button>
+              <button class="fp-icon-btn" id="fpHelpBtn" type="button" aria-label="Help">?</button>
+            </div>
+          </div>
+
+          <div class="fp-controls__grid">
+            <div>
+              <label class="fp-field__label" for="fpRegionSelect">Region</label>
+              <select class="fp-select" id="fpRegionSelect">
+                <option value="central">Central Lakes</option>
+                <option value="north">North Lakes</option>
+                <option value="south">South Lakes</option>
+                <option value="lakes">Lakes (wide)</option>
+                <option value="restore">Last view</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="fp-field__label" for="fpFuelSelect">Fuel</label>
+              <select class="fp-select" id="fpFuelSelect">
+                <option value="E10">Petrol (E10)</option>
+                <option value="E5">Premium (E5)</option>
+                <option value="DIESEL">Diesel</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fp-controls__row">
+            <button class="fp-btn" id="fpMyLocationBtn" type="button">My Location</button>
+
+            <button class="fp-btn fp-btn--primary" id="fpRefreshBtn" type="button">Refresh</button>
+
+            <button class="fp-chip" id="fpSortBtn" type="button">
+              Sort: <span id="fpSortLabel">Price</span>
+            </button>
+
+            <!-- ✅ REAL toggle that affects API -->
+            <button class="fp-chip" id="fpPricesOnlyBtn" type="button">
+              Prices only
+            </button>
+          </div>
+        </section>
+
+        <button id="fpSearchAreaBtn" class="fp-fab" type="button">Search this area</button>
+      </div>
+
+      <!-- Legend popover -->
+      <div id="fpLegend" class="fp-legend" hidden>
+        <div class="fp-legend__panel">
+          <div class="fp-legend__title">Price bands</div>
+          <div class="fp-legend__sub">Cheapest → Most expensive (this search)</div>
+
+          <div class="fp-legend__row"><span class="fp-dot fp-q0"></span><span>Lowest 20%</span></div>
+          <div class="fp-legend__row"><span class="fp-dot fp-q1"></span><span>Low</span></div>
+          <div class="fp-legend__row"><span class="fp-dot fp-q2"></span><span>Mid</span></div>
+          <div class="fp-legend__row"><span class="fp-dot fp-q3"></span><span>High</span></div>
+          <div class="fp-legend__row"><span class="fp-dot fp-q4"></span><span>Highest 20%</span></div>
         </div>
       </div>
 
-      <div class="fp-controls__grid">
-        <div>
-          <label class="fp-field__label" for="fpRegionSelect">Region</label>
-          <select class="fp-select" id="fpRegionSelect">
-            <option value="central">Central Lakes</option>
-            <option value="north">North Lakes</option>
-            <option value="south">South Lakes</option>
-            <option value="lakes">Lakes (wide)</option>
-            <option value="restore">Last view</option>
-          </select>
+      <!-- Drawer -->
+      <aside class="fp-drawer is-open" id="fpDrawer" aria-label="Results">
+        <div class="fp-drawer__handle" id="fpDrawerHandle"></div>
+
+        <div class="fp-drawer__header">
+          <div>
+            <div class="fp-drawer__title">Stations</div>
+            <div class="fp-drawer__meta" id="fpCountLine">—</div>
+          </div>
+
+          <button class="fp-icon-btn" id="fpCloseDrawerBtn" type="button" aria-label="Close results">×</button>
         </div>
 
-        <div>
-          <label class="fp-field__label" for="fpFuelSelect">Fuel</label>
-          <select class="fp-select" id="fpFuelSelect">
-            <option value="E10">Petrol (E10)</option>
-            <option value="E5">Premium (E5)</option>
-            <option value="DIESEL">Diesel</option>
-          </select>
+        <div class="fp-selected" id="fpSelectedCard" hidden></div>
+
+        <div class="fp-list" id="fpList" role="list"></div>
+
+        <div class="fp-brand-pill">
+          FuelPilot <span class="fp-brand-dot">•</span> Powered by WayPoint Media
+        </div>
+      </aside>
+
+      <!-- Modal -->
+      <div class="fp-modal" id="fpModal" hidden>
+        <div class="fp-modal__backdrop" id="fpModalBackdrop"></div>
+        <div class="fp-modal__panel" role="dialog" aria-modal="true">
+          <div class="fp-modal__title">FuelPilot</div>
+          <div class="fp-modal__text">
+            Pan the map, then tap <b>Search this area</b> to load stations in view.<br />
+            Tap a marker for details. Use <b>Directions</b> to open Google Maps.
+          </div>
+          <button class="fp-btn fp-btn--primary" id="fpModalCloseBtn" type="button">Close</button>
         </div>
       </div>
+    </div>
 
-      <div class="fp-controls__row">
-        <button class="fp-btn" id="fpMyLocationBtn" type="button">My Location</button>
-
-        <button class="fp-btn fp-btn--primary" id="fpRefreshBtn" type="button">Refresh</button>
-
-        <button class="fp-chip" id="fpSortBtn" type="button">
-          Sort: <span id="fpSortLabel">Price</span>
-        </button>
-      </div>
-    </section>
-
-    <button id="fpSearchAreaBtn" class="fp-fab" type="button">Search this area</button>
+    <!-- App JS -->
+    <script defer src="./fuelpilot.js"></script>
   </div>
-
-  <!-- ✅ Legend popover (correct placement: inside map-wrap, outside ui-stack) -->
-  <div id="fpLegend" class="fp-legend" hidden>
-    <div class="fp-legend__panel">
-      <div class="fp-legend__title">Price bands</div>
-      <div class="fp-legend__sub">Cheapest → Most expensive (this search)</div>
-
-      <div class="fp-legend__row"><span class="fp-dot fp-q0"></span><span>Lowest 20%</span></div>
-      <div class="fp-legend__row"><span class="fp-dot fp-q1"></span><span>Low</span></div>
-      <div class="fp-legend__row"><span class="fp-dot fp-q2"></span><span>Mid</span></div>
-      <div class="fp-legend__row"><span class="fp-dot fp-q3"></span><span>High</span></div>
-      <div class="fp-legend__row"><span class="fp-dot fp-q4"></span><span>Highest 20%</span></div>
-    </div>
-  </div>
-
-  <!-- Drawer -->
-  <aside class="fp-drawer is-open" id="fpDrawer" aria-label="Results">
-    <div class="fp-drawer__handle" id="fpDrawerHandle"></div>
-
-    <div class="fp-drawer__header">
-      <div>
-        <div class="fp-drawer__title">Stations</div>
-        <div class="fp-drawer__meta" id="fpCountLine">—</div>
-      </div>
-
-      <button class="fp-icon-btn" id="fpCloseDrawerBtn" type="button" aria-label="Close results">×</button>
-    </div>
-
-    <div class="fp-selected" id="fpSelectedCard" hidden></div>
-
-    <div class="fp-list" id="fpList" role="list"></div>
-
-    <div class="fp-brand-pill">
-      FuelPilot <span class="fp-brand-dot">•</span> Powered by WayPoint Media
-    </div>
-  </aside>
-
-  <!-- Modal -->
-  <div class="fp-modal" id="fpModal" hidden>
-    <div class="fp-modal__backdrop" id="fpModalBackdrop"></div>
-    <div class="fp-modal__panel" role="dialog" aria-modal="true">
-      <div class="fp-modal__title">FuelPilot</div>
-      <div class="fp-modal__text">
-        Pan the map, then tap <b>Search this area</b> to load stations in view.<br />
-        Tap a marker for details. Use <b>Directions</b> to open Google Maps.
-      </div>
-      <button class="fp-btn fp-btn--primary" id="fpModalCloseBtn" type="button">Close</button>
-    </div>
-  </div>
-</div>
-
-  <!-- App JS -->
-  <script defer src="./fuelpilot.js"></script>
 </body>
 </html>

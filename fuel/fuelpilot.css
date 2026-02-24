@@ -679,27 +679,31 @@
 }
 
 /* Missing-price marker (neutral, premium, clickable) */
+/* Missing-price marker (neutral, premium, quieter than priced flags) */
 .fp-miss {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
 
-  background: rgba(16, 18, 24, 0.85);
-  border: 2px solid rgba(255, 255, 255, 0.28);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.40);
+  background: rgba(16, 18, 24, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10);
 
   transform: translate(-50%, -50%);
 }
 
 .fp-miss::after {
   content: "";
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.62);
 }

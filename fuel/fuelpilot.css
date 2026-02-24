@@ -519,3 +519,123 @@
     max-width: 250px;
   }
 }
+
+/* Legend popover */
+.fp-legend {
+  position: absolute;
+  z-index: 40;
+  top: calc(env(safe-area-inset-top, 0px) + 58px);
+  left: 12px;
+  right: auto;
+  pointer-events: none;
+}
+
+@media (min-width: 920px) {
+  .fp-legend {
+    top: calc(env(safe-area-inset-top, 0px) + 68px);
+    left: 16px;
+  }
+}
+
+.fp-legend__panel {
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  pointer-events: auto;
+  position: relative;
+
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(16, 18, 24, 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+}
+
+.fp-legend__title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 2px;
+}
+
+.fp-legend__sub {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-bottom: 10px;
+}
+
+.fp-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+/* Anchor legend to the controls card corner */
+.fp-legend {
+  top: calc(env(safe-area-inset-top, 0px) + 62px);
+  left: 12px;
+  right: auto;
+}
+
+@media (min-width: 920px) {
+  .fp-legend {
+    top: calc(env(safe-area-inset-top, 0px) + 70px);
+    left: 16px;
+  }
+}
+
+
+.fp-legend__panel::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 26px;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  background: rgba(16, 18, 24, 0.86);
+  border-left: 1px solid rgba(255, 255, 255, 0.10);
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.fp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+  border: 1px solid rgba(255,255,255,0.35);
+}
+
+/* Make the dots use your quintile colours */
+.fp-dot.fp-q0 { background: rgba(0, 200, 120, 0.9); }
+.fp-dot.fp-q1 { background: rgba(90, 210, 140, 0.9); }
+.fp-dot.fp-q2 { background: rgba(240, 200, 60, 0.9); }
+.fp-dot.fp-q3 { background: rgba(255, 150, 60, 0.9); }
+.fp-dot.fp-q4 { background: rgba(255, 80, 80, 0.9); }
+
+/* Desktop: tuck it neatly under the controls */
+@media (min-width: 920px) {
+  .fp-legend {
+    left: 16px;
+    right: auto;
+    top: calc(env(safe-area-inset-top, 0px) + 82px);
+  }
+}
+
+.fp-legend__panel {
+  transform-origin: top left;
+  animation: fpPop 140ms ease-out;
+}
+
+@keyframes fpPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

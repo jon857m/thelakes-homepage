@@ -53,7 +53,9 @@
     helpBtn: $("fpHelpBtn"),
     modal: $("fpModal"),
     modalBackdrop: $("fpModalBackdrop"),
-    modalClose: $("fpModalCloseBtn")
+    modalClose: $("fpModalCloseBtn"),   
+    legendBtn: $("fpLegendBtn"),
+    legend: $("fpLegend"),
   };
 
   function setStatus(text) {
@@ -705,6 +707,18 @@
     if (els.regionSelect) {
       els.regionSelect.value = (savedRegion && PRESETS[savedRegion]) ? savedRegion : "central";
     }
+
+    els.legendBtn?.addEventListener("click", () => {
+    if (!els.legend) return;
+    els.legend.hidden = !els.legend.hidden;
+    });
+
+    document.addEventListener("click", (e) => {
+    if (!els.legend || els.legend.hidden) return;
+    const insideLegend = e.target.closest("#fpLegend");
+    const onBtn = e.target.closest("#fpLegendBtn");
+    if (!insideLegend && !onBtn) els.legend.hidden = true;
+    });
 
     initMap();
     initDrawerInteractions();

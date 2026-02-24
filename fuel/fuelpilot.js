@@ -28,6 +28,45 @@
     south:   { name: "South Lakes",    lat: 54.25, lng: -2.95, zoom: 11, radiusMiles: 16, limit: 200 }
   };
 
+  function isInView(st) {
+    if (!map) return false;
+
+    const lat = Number(st.lat != null ? st.lat : st.latitude);
+    const lng = Number(st.lng != null ? st.lng : (st.lon != null ? st.lon : st.longitude));
+
+    if (!isFinite(lat) || !isFinite(lng)) return false;
+
+    return map.getBounds().contains([lat, lng]);
+  }
+
+function recolorForViewport() {
+  if (!stations || !stations.length || !map || !cluster) return;
+
+  const withPrices = stations.filter((s) => s._priceNum != null && isFinite(s._priceNum));
+  if (!withPrices.length) return;
+
+  const inViewWithPrices = withPrices.filter(isInView);   
+
+  const cutsGlobal = computeQuintiles(withPrices).cuts;
+  const cutsView = computeQuintiles(inViewWithPrices).cuts;
+
+  // Use viewport cuts if we have enough priced stations visible, otherwise fall back
+  const cuts = (inViewWithPrices.length >= 10 && cutsView) ? cutsView : cutsGlobal;
+
+  window.__FP_CUTS = cuts;
+
+  // Rebuild markers + list (NO refetch)
+  clearMarkers();
+  for (let i = 0; i < stations.length; i++) {
+    const m = buildMarker(stations[i], cuts);
+    if (m) cluster.addLayer(m);
+  }
+
+  renderList();
+
+  if (activeMarkerId) setActiveFlag(activeMarkerId);
+}
+
   // -----------------------------
   // DOM helpers
   // -----------------------------
@@ -200,6 +239,9 @@
       }
 
       updateSearchAreaButton();
+
+      // ✅ Re-colour markers/list based on what's currently visible
+      recolorForViewport();
     });
   }
 
@@ -328,21 +370,23 @@
     return n.toFixed(1) + "p";
   }
 
-  function computeQuintiles(stationsWithPrices) {
-    const prices = stationsWithPrices
-      .map((s) => s._priceNum)
-      .filter((v) => typeof v === "number" && isFinite(v))
-      .sort((a, b) => a - b);
+function computeQuintiles(stationsWithPrices) {
+  const prices = stationsWithPrices
+    .map((s) => s._priceNum)
+    .filter((v) => typeof v === "number" && isFinite(v))
+    .sort((a, b) => a - b);
 
-    if (prices.length < 5) return { cuts: null };
+  // If we have 0–1 prices, quintiles are meaningless
+  if (prices.length < 2) return { cuts: null };
 
-    const q = (pct) => {
-      const idx = Math.floor((prices.length - 1) * pct);
-      return prices[idx];
-    };
+  // Works even for 2–4 prices (indexes just collapse naturally)
+  const q = (pct) => {
+    const idx = Math.floor((prices.length - 1) * pct);
+    return prices[idx];
+  };
 
-    return { cuts: [q(0.2), q(0.4), q(0.6), q(0.8)] };
-  }
+  return { cuts: [q(0.2), q(0.4), q(0.6), q(0.8)] };
+}
 
   function quintileClass(priceNum, cuts) {
     if (!cuts || !Array.isArray(cuts)) return "fp-q2";
@@ -591,50 +635,62 @@ function renderList() {
   }
 
   async function applyResults(data) {
-    stations = normalizeStations(data);
+  stations = normalizeStations(data);
 
-    const withPrices = stations.filter((s) => s._priceNum != null);
-    const cuts = computeQuintiles(withPrices).cuts;
-    window.__FP_CUTS = cuts;
+  const withPrices = stations.filter((s) => s._priceNum != null && isFinite(s._priceNum));
+  const cutsGlobal = computeQuintiles(withPrices).cuts;
 
-    clearMarkers();
+  // Viewport cuts (only after map exists)
+  let cuts = cutsGlobal;
+  if (map && withPrices.length) {
+    const inViewWithPrices = withPrices.filter(isInView);
+    const cutsView = computeQuintiles(inViewWithPrices).cuts;
+    if (inViewWithPrices.length >= 10 && cutsView) cuts = cutsView;
+  }
 
-    let markerCount = 0;
-    for (let i = 0; i < stations.length; i++) {
-      const m = buildMarker(stations[i], cuts);
-      if (m) {
-        cluster.addLayer(m);
-        markerCount++;
-      }
-    }
+  window.__FP_CUTS = cuts;
 
-    const c = map.getCenter();
-    lastSearchCenter = { lat: c.lat, lng: c.lng };
+  clearMarkers();
 
-    mapDirty = false;
-    updateSearchAreaButton();
-
-    const pricedCount = withPrices.length;
-    const missingCount = stations.length - pricedCount;
-    if (els.countLine) {
-      els.countLine.textContent = `${stations.length} shown • ${pricedCount} priced • ${missingCount} no-price`;
-    }
-
-    setStatus(`Showing ${stations.length} stations (${getPricesOnly() ? "priced only" : "incl. no-price"})`);
-
-    renderList();
-    openDrawer();
-
-    // Auto-pick first station (prefer priced)
-    if (stations.length) {
-      let pick = stations.find(s => s._priceNum != null) || stations[0];
-      if (pick && pick._id) selectStation(pick._id, { openDrawer: false, pan: false });
-    } else {
-      if (els.selectedCard) els.selectedCard.hidden = true;
-      mapDirty = true;
-      updateSearchAreaButton();
+  let markerCount = 0;
+  for (let i = 0; i < stations.length; i++) {
+    const m = buildMarker(stations[i], cuts);
+    if (m) {
+      cluster.addLayer(m);
+      markerCount++;
     }
   }
+
+  const c = map.getCenter();
+  lastSearchCenter = { lat: c.lat, lng: c.lng };
+
+  mapDirty = false;
+  updateSearchAreaButton();
+
+  const pricedCount = withPrices.length;
+  const missingCount = stations.length - pricedCount;
+  if (els.countLine) {
+    els.countLine.textContent = `${stations.length} shown • ${pricedCount} priced • ${missingCount} no-price`;
+  }
+
+  setStatus(`Showing ${stations.length} stations (${getPricesOnly() ? "priced only" : "incl. no-price"})`);
+
+  renderList();
+  openDrawer();
+
+  // Auto-pick first station (prefer priced)
+  if (stations.length) {
+    const pick = stations.find(s => s._priceNum != null) || stations[0];
+    if (pick && pick._id) selectStation(pick._id, { openDrawer: false, pan: false });
+  } else {
+    if (els.selectedCard) els.selectedCard.hidden = true;
+    mapDirty = true;
+    updateSearchAreaButton();
+  }
+
+  // ✅ Final pass: make sure colours match the visible view right now
+  recolorForViewport();
+}
 
   async function runSearchPresetOrRefresh(center, presetConfig) {
     const fuel = els.fuelSelect.value || readLS(LS.fuel, "E10");

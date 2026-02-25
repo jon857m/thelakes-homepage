@@ -67,6 +67,13 @@ function recolorForViewport() {
   if (activeMarkerId) setActiveFlag(activeMarkerId);
 }
 
+function invalidateMapSoon() {
+  if (!map) return;
+  // next frame + a short delay catches layout settling on iOS/Safari
+  requestAnimationFrame(() => map.invalidateSize({ pan: false }));
+  setTimeout(() => map.invalidateSize({ pan: false }), 200);
+}
+
   // -----------------------------
   // DOM helpers
   // -----------------------------
@@ -208,6 +215,8 @@ function recolorForViewport() {
       attribution: "&copy; OpenStreetMap"
     }).addTo(map);
 
+    invalidateMapSoon();
+
     cluster = L.markerClusterGroup({
       showCoverageOnHover: false,
       spiderfyOnMaxZoom: true,
@@ -220,10 +229,12 @@ function recolorForViewport() {
     const savedMap = readJSONLS(LS.map, null);
     if (savedMap && isFinite(savedMap.lat) && isFinite(savedMap.lng) && isFinite(savedMap.zoom)) {
       map.setView([savedMap.lat, savedMap.lng], savedMap.zoom);
+      invalidateMapSoon();
       setStatus("Restored last map");
     } else {
       const def = PRESETS.central;
       map.setView([def.lat, def.lng], def.zoom);
+      invalidateMapSoon();
     }
 
     map.on("dragend zoomend", () => {
@@ -745,6 +756,7 @@ function renderList() {
       const savedMap = readJSONLS(LS.map, null);
       if (savedMap && isFinite(savedMap.lat) && isFinite(savedMap.lng) && isFinite(savedMap.zoom)) {
         map.setView([savedMap.lat, savedMap.lng], savedMap.zoom);
+        invalidateMapSoon();
         setStatus("Restored last view");
         mapDirty = true;
         updateSearchAreaButton();
@@ -756,6 +768,7 @@ function renderList() {
     const p = PRESETS[key] || PRESETS.central;
     writeLS(LS.region, key);
     map.setView([p.lat, p.lng], p.zoom, { animate: true, duration: 0.35 });
+    invalidateMapSoon();
     setStatus(`Region: ${p.name}`);
     mapDirty = true;
     updateSearchAreaButton();
@@ -775,6 +788,7 @@ function renderList() {
         const lng = pos.coords.longitude;
         lastOrigin = { lat, lng };
         map.setView([lat, lng], 12, { animate: true, duration: 0.35 });
+        invalidateMapSoon();
         setStatus("My Location set");
         mapDirty = true;
         updateSearchAreaButton();
@@ -797,9 +811,11 @@ function renderList() {
     if (els.drawerHandle) {
       els.drawerHandle.addEventListener("click", () => {
         if (els.drawer) els.drawer.classList.toggle("is-open");
+        invalidateMapSoon();
       });
     }
     if (els.closeDrawerBtn) els.closeDrawerBtn.addEventListener("click", () => closeDrawer());
+     invalidateMapSoon();
   }
 
   // -----------------------------

@@ -506,6 +506,10 @@ function computeQuintiles(stationsWithPrices) {
 
   function renderSelectedCard(st) {
     const hasPrice = st._priceNum != null && isFinite(st._priceNum);
+
+        // ✅ Give selected card the same accent class as list rows
+    const cuts = window.__FP_CUTS || null;
+    const selClass = hasPrice ? quintileClass(st._priceNum, cuts) : "fp-missing";
     const priceText = hasPrice ? formatPrice(st._priceNum) : "No Price";
     const name = stationName(st);
     const addr = stationAddress(st);
@@ -516,7 +520,7 @@ function computeQuintiles(stationsWithPrices) {
 
     els.selectedCard.hidden = false;
     els.selectedCard.innerHTML = `
-      <div class="fp-card">
+      <div class="fp-card fp-sel ${selClass}">
         <div class="fp-card__price">${escapeHtml(priceText)}</div>
         <div class="fp-card__name">${escapeHtml(name)}</div>
         <div class="fp-card__addr">${escapeHtml(addr)}</div>

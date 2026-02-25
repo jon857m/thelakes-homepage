@@ -66,16 +66,25 @@
 }
 
 .fp-title__name {
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  font-size: 16px;
+  font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 20px;          /* stronger presence */
   line-height: 1.1;
+  letter-spacing: -0.01em;  /* less aggressive tightening */
+  margin-bottom: 4px;       /* breathing space above status */
+}
+
+.fp-brand-fuel {
+  font-weight: 500;
+}
+
+.fp-brand-pilot {
+  font-weight: 600;
 }
 
 .fp-title__sub {
-  font-size: 12px;
-  opacity: 0.78;
-  margin-top: 2px;
+  font-size: 13px;   /* slightly larger but more refined */
+  opacity: 0.7;      /* clearly secondary */
+  margin-top: 0;
 }
 
 .fp-controls__grid {
@@ -809,4 +818,27 @@
 
 .fp-miss.is-active {
   transform: translate(-50%, -50%) scale(1.12);
+}
+
+/* FuelPilot wordmark */
+.fp-title__name {
+  font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 22px;              /* adjust if needed */
+  line-height: 1.1;
+  letter-spacing: -0.01em;      /* -1% tracking */
+  margin-bottom: 4px;           /* gives breathing room above status */
+}
+
+.fp-brand-fuel {
+  font-weight: 500;
+}
+
+.fp-brand-pilot {
+  font-weight: 600;
+}
+
+/* Status line (diagnostic, not tagline) */
+.fp-title__sub {
+  font-size: 14px;
+  opacity: 0.72;                /* secondary hierarchy */
 }

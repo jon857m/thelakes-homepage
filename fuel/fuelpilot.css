@@ -466,15 +466,53 @@
   padding: 10px 12px;
   border-radius: 999px;
   font-size: 12px;
-  opacity: 0.75;
+  
   border: 1px solid rgba(255, 255, 255, 0.10);
   background: rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
-.fp-brand-dot { opacity: 0.6; padding: 0 6px; }
+/* Bottom pill: make the FuelPilot wordmark match the header style (but smaller) */
+/* Wordmark sizing for bottom pill */
+.fp-powered__brand {
+  font-size: 12px;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+/* Ensure weight contrast */
+.fp-brand-fuel {
+  font-weight: 600;
+}
+
+.fp-brand-pilot {
+  font-weight: 800;
+}
+
+/* Secondary text */
+.fp-powered__by {
+  opacity: 0.75;
+}
+
+/* Dot */
+.fp-brand-dot {
+  opacity: 0.6;
+}
+
+/* Hide the bottom brand pill on mobile to save space */
+@media (max-width: 520px) {
+  .fp-brand-pill {
+    display: none !important;
+  }
+}
 
 /* Leaflet marker "price flag" — premium tag */
 .fp-flag {

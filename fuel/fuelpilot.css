@@ -52,7 +52,9 @@
   background: rgba(20,20,20,0.55);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35)   inset 0 1px 0 rgba(255,255,255,0.08);;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255,255,255,0.08);
   border: 1px solid rgba(255, 255, 255, 0.10);
   transition: border-color 140ms ease-out, box-shadow 140ms ease-out;
 }
@@ -65,21 +67,7 @@
   margin-bottom: 10px;
 }
 
-.fp-title__name {
-  font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  font-size: 20px;          /* stronger presence */
-  line-height: 1.1;
-  letter-spacing: -0.01em;  /* less aggressive tightening */
-  margin-bottom: 4px;       /* breathing space above status */
-}
 
-.fp-brand-fuel {
-  font-weight: 500;
-}
-
-.fp-brand-pilot {
-  font-weight: 600;
-}
 
 .fp-title__sub {
   font-size: 13px;   /* slightly larger but more refined */
@@ -123,26 +111,12 @@
   border-color: rgba(255, 255, 255, 0.22);
 }
 
-.fp-btn {
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.25);
-  color: inherit;
-  cursor: pointer;
-  transition: transform 140ms ease-out, opacity 140ms ease-out, background 140ms ease-out;
-}
-
 .fp-btn:hover {
   background: rgba(0, 0, 0, 0.34);
 }
 
 .fp-btn:active {
   transform: scale(0.98);
-}
-
-.fp-btn--primary {
-  background: rgba(255, 255, 255, 0.14);
 }
 
 .fp-chip {
@@ -489,13 +463,7 @@
 }
 
 /* Ensure weight contrast */
-.fp-brand-fuel {
-  font-weight: 600;
-}
 
-.fp-brand-pilot {
-  font-weight: 800;
-}
 
 /* Secondary text */
 .fp-powered__by {
@@ -892,21 +860,7 @@
 }
 
 /* FuelPilot wordmark */
-.fp-title__name {
-  font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  font-size: 22px;              /* adjust if needed */
-  line-height: 1.1;
-  letter-spacing: -0.01em;      /* -1% tracking */
-  margin-bottom: 4px;           /* gives breathing room above status */
-}
 
-.fp-brand-fuel {
-  font-weight: 500;
-}
-
-.fp-brand-pilot {
-  font-weight: 600;
-}
 
 /* Status line (diagnostic, not tagline) */
 .fp-title__sub {
@@ -1006,12 +960,21 @@
 }
 
 @media (max-width: 520px) {
-  .fp-controls { padding: 12px; }
   .fp-controls__grid { gap: 10px; }
 }
 
+.fp-brand-fuel { font-weight: 500; }
+.fp-brand-pilot { font-weight: 600; }
+
+.fp-title__name {
+  font-family: Inter, system-ui, -apple-system, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
 /* Title + subtitle polish */
-.fp-title__name { font-size: 22px; line-height: 1.1; letter-spacing: -0.02em; }
 #fpStatus { margin-top: 4px; font-size: 13px; opacity: 0.7; }
 
 /* Subtle divider under the header area (if you have a wrapper row) */
@@ -1040,31 +1003,33 @@
 }
 
 /* Primary action */
-.fp-controls button.fp-btn--primary {
-  background: rgba(255,255,255,0.14);
-  border-color: rgba(255,255,255,0.18);
-}
-
-/* Buttons — engineered, consistent sizing */
-.fp-btn {
+.fp-controls button.fp-btn {
   height: 40px;
   padding: 0 14px;
   border-radius: 12px;
 
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.18);
-  color: rgba(255,255,255,0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+  color: inherit;
+  cursor: pointer;
 
-  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
 }
 
-/* Primary button (Refresh) */
 .fp-btn--primary {
-  background: rgba(255,255,255,0.14);
-  border-color: rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.95);
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .fp-btn:hover { border-color: rgba(255, 255, 255, 0.18); }
+  .fp-btn:active { transform: translateY(0.5px); }
+}
+
+
+/* Buttons — engineered, consistent sizing */
+/* Primary button (Refresh) */
 /* Micro-interactions (premium, subtle) */
 .fp-btn:hover {
   border-color: rgba(255,255,255,0.18);
@@ -1080,3 +1045,61 @@
     box-shadow: 0 12px 34px rgba(0, 0, 0, 0.40);
   }
 }
+
+/* Utility: hide things without deleting them */
+.fp-hide { display: none !important; }
+
+@media (max-width: 520px) {
+  .fp-hide-mobile { display: none !important; }
+}
+
+@media (max-width: 520px) {
+  .fp-controls {
+    width: calc(100% - 24px);
+    max-width: 420px;
+    padding: 10px;
+  }
+
+
+  /* If your grid feels tall, reduce the gap */
+  .fp-controls__grid { gap: 10px; }
+}
+
+@media (max-width: 520px) {
+  .fp-controls__grid { gap: 10px; }
+  .fp-controls select { height: 40px; border-radius: 12px; }
+  }
+
+
+/* ===========================
+   Mobile: compact top controls
+   =========================== */
+@media (max-width: 520px) {
+  /* Make the whole card feel like a banner */
+  .fp-controls {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  /* Kill the 2-column dashboard layout */
+  .fp-controls__grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  /* Reduce label height cost (if you use .fp-field__label) */
+  .fp-field__label {
+    margin-bottom: 4px;
+    font-size: 10px;
+    opacity: 0.65;
+  }
+
+  /* Buttons/selects stay consistent */
+  .fp-select,
+  .fp-btn {
+    height: 40px;
+    border-radius: 12px;
+  }
+}
+

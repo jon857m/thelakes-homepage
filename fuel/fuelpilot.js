@@ -833,7 +833,7 @@ function renderList() {
     refreshSortLabel();
 
     // default ON if not present
-    if (localStorage.getItem(LS.pricesOnly) == null) writeLS(LS.pricesOnly, "1");
+    if (localStorage.getItem(LS.pricesOnly) == null) writeLS(LS.pricesOnly, "0");
     refreshPricesOnlyLabel();
 
     const savedRegion = readLS(LS.region, "central");

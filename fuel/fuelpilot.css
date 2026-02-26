@@ -1124,3 +1124,11 @@
     display: none !important;
   }
 }
+
+.fp-select {
+  font-weight: 600;
+}
+
+.fp-field {
+  margin-bottom: 0;
+}

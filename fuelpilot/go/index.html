@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+
+  <!-- Keep consistent GA for the Lakes site (leave as-is if your Lakes template already includes it elsewhere) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <title>FuelPilot — Powered by The Lakes in Cumbria</title>
+  <meta name="description" content="FuelPilot — live fuel prices in a premium map-first experience." />
+  <link rel="canonical" href="https://www.thelakesincumbria.co.uk/fuelpilot/go/" />
+
+  <meta name="theme-color" content="#141414" />
+  <link rel="stylesheet" href="/styles.css" />
+
+  <style>
+    /* Make this page feel like a shell hosting the product */
+    html, body { height: 100%; }
+    body { margin: 0; background: #0b0c0f; }
+
+    /* Header mount (your existing injection) */
+    #siteHeader { position: relative; z-index: 50; }
+
+    /* The iframe occupies the remaining viewport */
+    .fp-shell {
+      height: calc(100vh - var(--lakesHeaderH, 72px));
+      min-height: 480px;
+    }
+
+    /* If your header height differs, adjust --lakesHeaderH below via JS */
+    .fp-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #0b0c0f;
+    }
+
+    /* Mobile: prevent overscroll behind the iframe */
+    body { overscroll-behavior: none; }
+  </style>
+</head>
+
+<body>
+  <!-- Lakes header injection -->
+  <div id="siteHeader"></div>
+
+  <!-- FuelPilot hosted under the header -->
+  <main class="fp-shell" aria-label="FuelPilot">
+    <iframe
+      class="fp-frame"
+      src="https://fuelpilot.co.uk/?from=lakes&embed=1"
+      title="FuelPilot"
+      loading="eager"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allow="geolocation"
+    ></iframe>
+  </main>
+
+  <!-- Lakes footer injection if you use it (optional) -->
+  <!-- <div id="siteFooter"></div> -->
+
+  <!-- Your Lakes injector script -->
+  <script src="/app.js"></script>
+
+  <script>
+    // Optional: measure injected header height and set CSS variable
+    (function () {
+      function setHeaderH() {
+        const hdr = document.querySelector("#siteHeader");
+        if (!hdr) return;
+        const h = Math.max(56, Math.round(hdr.getBoundingClientRect().height || 0));
+        document.documentElement.style.setProperty("--lakesHeaderH", h + "px");
+      }
+      window.addEventListener("load", setHeaderH);
+      window.addEventListener("resize", setHeaderH);
+      // attempt a few times in case header injects after load
+      let n = 0;
+      const t = setInterval(() => { setHeaderH(); if (++n > 10) clearInterval(t); }, 200);
+    })();
+  </script>
+</body>
+</html>

@@ -2027,3 +2027,7 @@ html, body {
 .heroNav .btn.btn--active {
   box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset;
 }
+
+header.site-header {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}

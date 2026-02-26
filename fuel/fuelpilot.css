@@ -1103,3 +1103,24 @@
   }
 }
 
+@media (max-width: 520px) {
+  /* Mobile: Fuel + My Location on one line */
+  .fp-controls__grid {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+
+  .fp-controls__myloc-slot {
+    align-self: end;
+  }
+
+  .fp-controls__myloc-slot .fp-btn {
+    white-space: nowrap;
+    padding: 0 12px;
+  }
+
+  /* Make sure the Region column truly disappears */
+  .fp-controls__grid > .fp-hide-mobile {
+    display: none !important;
+  }
+}

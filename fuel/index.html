@@ -46,42 +46,47 @@
             </div>
           </div>
 
-          <div class="fp-controls__grid">
-            <div>
-              <label class="fp-field__label fp-hide-mobile" for="fpRegionSelect">Region</label>
-              <select class="fp-select fp-hide-mobile" id="fpRegionSelect">
-                <option value="central">Central Lakes</option>
-                <option value="north">North Lakes</option>
-                <option value="south">South Lakes</option>
-                <option value="lakes">Lakes (wide)</option>
-                <option value="restore">Last view</option>
-              </select>
-            </div>
+      <div class="fp-controls__grid">
+        <!-- Region (desktop/tablet only) -->
+        <div class="fp-hide-mobile">
+          <label class="fp-field__label" for="fpRegionSelect">Region</label>
+          <select class="fp-select" id="fpRegionSelect">
+            <option value="central">Central Lakes</option>
+            <option value="north">North Lakes</option>
+            <option value="south">South Lakes</option>
+            <option value="lakes">Lakes (wide)</option>
+            <option value="restore">Last view</option>
+          </select>
+        </div>
 
-            <div>
-              <label class="fp-field__label" for="fpFuelSelect">Fuel</label>
-              <select class="fp-select" id="fpFuelSelect">
-                <option value="E10">Petrol (E10)</option>
-                <option value="E5">Premium (E5)</option>
-                <option value="DIESEL">Diesel</option>
-              </select>
-            </div>
-          </div>
+        <!-- Fuel (all devices) -->
+        <div>
+          <label class="fp-field__label" for="fpFuelSelect">Fuel</label>
+          <select class="fp-select" id="fpFuelSelect">
+            <option value="E10">Petrol (E10)</option>
+            <option value="E5">Premium (E5)</option>
+            <option value="DIESEL">Diesel</option>
+          </select>
+        </div>
 
-          <div class="fp-controls__row">
-            <button class="fp-btn" id="fpMyLocationBtn" type="button">My Location</button>
+        <!-- My Location (mobile sits next to Fuel; desktop it’ll drop into the next row unless we style it) -->
+        <div class="fp-controls__myloc-slot">
+          <label class="fp-field__label fp-hide-mobile" aria-hidden="true">&nbsp;</label>
+          <button class="fp-btn" id="fpMyLocationBtn" type="button">My Location</button>
+        </div>
+      </div>
 
-            <button class="fp-btn fp-btn--primary fp-hide-mobile" id="fpRefreshBtn" type="button">Refresh</button>
+      <div class="fp-controls__row fp-hide-mobile">
+        <button class="fp-btn fp-btn--primary" id="fpRefreshBtn" type="button">Refresh</button>
 
-            <button class="fp-chip fp-hide-mobile" id="fpSortBtn" type="button">
-              Sort: <span id="fpSortLabel">Price</span>
-            </button>
+        <button class="fp-chip" id="fpSortBtn" type="button">
+          Sort: <span id="fpSortLabel">Price</span>
+        </button>
 
-            <!-- ✅ REAL toggle that affects API -->
-            <button class="fp-chip fp-hide-mobile" id="fpPricesOnlyBtn" type="button">
-              Prices only
-            </button>
-          </div>
+        <button class="fp-chip" id="fpPricesOnlyBtn" type="button">
+          Prices only
+        </button>
+      </div>
         </section>
 
         <button id="fpSearchAreaBtn" class="fp-fab" type="button">Search this area</button>
@@ -102,7 +107,7 @@
       </div>
 
       <!-- Drawer -->
-      <aside class="fp-drawer is-open" id="fpDrawer" aria-label="Results">
+      <aside class="fp-drawer" id="fpDrawer" aria-label="Results">
         <div class="fp-drawer__handle" id="fpDrawerHandle"></div>
 
         <div class="fp-drawer__header">

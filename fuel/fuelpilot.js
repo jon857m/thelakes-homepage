@@ -623,7 +623,8 @@ function renderList() {
     setActiveFlag(id);
     renderSelectedCard(st);
 
-    if (opts && opts.openDrawer) openDrawer();
+    const shouldOpen = !opts || opts.openDrawer !== false;
+    if (shouldOpen) openDrawer();
 
     if (opts && opts.pan) {
       const lat = Number(st.lat != null ? st.lat : st.latitude);
@@ -691,7 +692,7 @@ function renderList() {
   setStatus(`Showing ${stations.length} stations (${getPricesOnly() ? "priced only" : "incl. no-price"})`);
 
   renderList();
-  openDrawer();
+
 
   // Auto-pick first station (prefer priced)
   if (stations.length) {

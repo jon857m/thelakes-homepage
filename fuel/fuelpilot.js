@@ -143,7 +143,7 @@ function invalidateMapSoon() {
   // -----------------------------
   function getPricesOnly() {
     // default ON
-    return readLS(LS.pricesOnly, "1") !== "0";
+    return readLS(LS.pricesOnly, "0") !== "0";
   }
 
   function setPricesOnly(v) {

@@ -150,9 +150,8 @@
 }
 
 /* Search-this-area FAB (stacked under controls, not guessed) */
-.fp-fab {
-  pointer-events: auto;
-
+/* Search-this-area FAB (animated in/out) */
+.fp-fab{
   align-self: center;
   padding: 10px 14px;
   border-radius: 999px;
@@ -164,16 +163,45 @@
   cursor: pointer;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
 
+  /* hidden state */
   opacity: 0;
-  pointer-events: none; /* until visible */
-  transition: opacity 160ms ease-out, transform 160ms ease-out;
-  transform: translateY(-4px);
+  pointer-events: none;
+  transform: translateY(-6px) scale(0.98);
+  transition:
+    opacity 180ms ease-out,
+    transform 220ms cubic-bezier(.2,.9,.2,1);
+  will-change: opacity, transform;
 }
 
-.fp-fab.is-visible {
+.fp-fab.is-visible{
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
+}
+
+/* Desktop: pin it top-centre of the MAP (traditional placement) */
+@media (min-width: 900px){
+  .fp-fab{
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    z-index: 999;
+    align-self: auto;
+
+    transform: translate(-50%, -6px) scale(0.98);
+  }
+
+  .fp-fab.is-visible{
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* Respect reduced-motion */
+@media (prefers-reduced-motion: reduce){
+  .fp-fab{
+    transition: none;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Drawer (mobile bottom sheet) */
@@ -1131,4 +1159,118 @@
 
 .fp-field {
   margin-bottom: 0;
+}
+
+.fp-controls__icons{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.fp-controls__divider{
+  height:1px;
+  margin:10px 0 12px 0;
+  background: rgba(255,255,255,0.10);
+}
+
+.fp-controls__row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.fp-controls__row .fp-select{
+  flex:1 1 auto;
+  min-width:0;
+}
+
+#fpMyLocationBtn{
+  white-space:nowrap;
+}
+
+/* Force Fuel + My Location to stay on ONE row */
+.fp-controls__row{
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap !important;
+}
+
+/* Stop the select stealing the whole line */
+.fp-controls__row .fp-select{
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto !important;   /* overrides any width:100% */
+}
+
+/* Stop the button becoming full-width */
+#fpMyLocationBtn{
+  flex: 0 0 auto;
+  width: auto !important;   /* overrides any width:100% */
+  white-space: nowrap;
+}
+
+@media (max-width: 520px){
+  /* overall card padding */
+  .fp-controls{
+    padding: 10px !important;          /* was ~12+ */
+    border-radius: 16px;               /* keep */
+  }
+
+  /* reduce space between title/status and inputs */
+  .fp-controls__top{
+    margin-bottom: 8px !important;
+  }
+
+  /* reduce vertical spacing between rows */
+  .fp-controls__grid{
+    gap: 8px !important;               /* was bigger */
+  }
+}
+
+@media (max-width: 520px){
+  /* make the select + button a touch shorter */
+  #fpFuelSelect,
+  #fpMyLocationBtn{
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+}
+
+@media (max-width: 520px){
+  .fp-title__sub{
+    margin-top: 2px !important;
+  }
+
+  /* if you have a divider line */
+  .fp-controls hr,
+  .fp-divider{
+    margin: 8px 0 !important;
+    opacity: 0.18;
+  }
+}
+
+@media (max-width: 520px){
+  .fp-search-here{
+    padding: 10px 14px !important;
+    border-radius: 999px;
+  }
+}
+
+/* Desktop: Search-this-area button centered at top of viewport */
+@media (min-width: 900px) {
+  .fp-fab {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    z-index: 999; /* above map + panels */
+    align-self: auto; /* no longer relevant */
+
+    /* Replace the old transform animation with a centered transform */
+    transform: translate(-50%, -4px);
+  }
+
+  .fp-fab.is-visible {
+    transform: translate(-50%, 0);
+  }
 }

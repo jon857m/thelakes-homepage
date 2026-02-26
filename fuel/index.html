@@ -31,79 +31,67 @@
 
       <!-- UI Stack: Controls + Floating "Search this area" -->
       <div class="fp-ui-stack">
-        <section class="fp-controls" aria-label="Fuel controls">
-          <div class="fp-controls__top">
-            <div>
-              <div class="fp-title__name">
-                <span class="fp-brand-fuel">Fuel</span><span class="fp-brand-pilot">Pilot</span>
-              </div>
-              <div class="fp-title__sub" id="fpStatus">Loading…</div>
-            </div>
+<section class="fp-controls" aria-label="Fuel controls">
 
-            <div style="display:flex; gap:10px; align-items:center;">
-              <button class="fp-icon-btn" id="fpLegendBtn" type="button" aria-label="Price bands">≡</button>
-              <button class="fp-icon-btn" id="fpHelpBtn" type="button" aria-label="Help">?</button>
-            </div>
+  <!-- Top row: Brand + Icons -->
+  <div class="fp-controls__top">
+    <div>
+      <div class="fp-title__name">
+        <span class="fp-brand-fuel">Fuel</span><span class="fp-brand-pilot">Pilot</span>
+      </div>
+      <div class="fp-title__sub" id="fpStatus">Loading…</div>
+    </div>
+
+    <div class="fp-controls__icons">
+      <button class="fp-icon-btn" id="fpLegendBtn" type="button" aria-label="Price bands">≡</button>
+      <button class="fp-icon-btn" id="fpHelpBtn" type="button" aria-label="Help">?</button>
+    </div>
+  </div>
+
+  <div class="fp-controls__divider"></div>
+
+  <!-- Single control row (Fuel + My Location) -->
+  <div class="fp-controls__row">
+
+    <select class="fp-select" id="fpFuelSelect" aria-label="Fuel type">
+      <option value="E10">Petrol (E10)</option>
+      <option value="E5">Premium (E5)</option>
+      <option value="DIESEL">Diesel</option>
+    </select>
+
+    <button class="fp-btn" id="fpMyLocationBtn" type="button">
+      My Location
+    </button>
+
+  </div>
+
+  <!-- Hidden legacy controls (kept for JS compatibility) -->
+  <div style="display:none;">
+    <select id="fpRegionSelect"></select>
+    <button id="fpRefreshBtn" type="button"></button>
+    <button id="fpSortBtn" type="button"></button>
+    <button id="fpPricesOnlyBtn" type="button"></button>
+    <span id="fpSortLabel"></span>
+  </div>
+
+</section>
+
+            <button id="fpSearchAreaBtn" class="fp-fab" type="button">Search this area</button>
           </div>
 
-      <div class="fp-controls__grid">
-        <!-- Region (desktop/tablet only) -->
-        <div class="fp-hide-mobile">
-          <label class="fp-field__label" for="fpRegionSelect">Region</label>
-          <select class="fp-select" id="fpRegionSelect">
-            <option value="central">Central Lakes</option>
-            <option value="north">North Lakes</option>
-            <option value="south">South Lakes</option>
-            <option value="lakes">Lakes (wide)</option>
-            <option value="restore">Last view</option>
-          </select>
-        </div>
+          <!-- Legend popover -->
+          <div id="fpLegend" class="fp-legend" hidden>
+            <div class="fp-legend__panel">
+              <div class="fp-legend__title">Price bands</div>
+              <div class="fp-legend__sub">Cheapest → Most expensive (this search)</div>
 
-        <!-- Fuel (all devices) -->
-        <div>
-          <select class="fp-select" id="fpFuelSelect">
-            <option value="E10">Petrol (E10)</option>
-            <option value="E5">Premium (E5)</option>
-            <option value="DIESEL">Diesel</option>
-          </select>
-        </div>
-
-        <!-- My Location (mobile sits next to Fuel; desktop it’ll drop into the next row unless we style it) -->
-        <div class="fp-controls__myloc-slot">
-          <label class="fp-field__label fp-hide-mobile" aria-hidden="true">&nbsp;</label>
-          <button class="fp-btn" id="fpMyLocationBtn" type="button">My Location</button>
-        </div>
-      </div>
-
-      <div class="fp-controls__row fp-hide-mobile">
-        <button class="fp-btn fp-btn--primary" id="fpRefreshBtn" type="button">Refresh</button>
-
-        <button class="fp-chip" id="fpSortBtn" type="button">
-          Sort: <span id="fpSortLabel">Price</span>
-        </button>
-
-        <button class="fp-chip" id="fpPricesOnlyBtn" type="button">
-          Prices only
-        </button>
-      </div>
-        </section>
-
-        <button id="fpSearchAreaBtn" class="fp-fab" type="button">Search this area</button>
-      </div>
-
-      <!-- Legend popover -->
-      <div id="fpLegend" class="fp-legend" hidden>
-        <div class="fp-legend__panel">
-          <div class="fp-legend__title">Price bands</div>
-          <div class="fp-legend__sub">Cheapest → Most expensive (this search)</div>
-
-          <div class="fp-legend__row"><span class="fp-dot fp-q0"></span><span>Lowest 20%</span></div>
-          <div class="fp-legend__row"><span class="fp-dot fp-q1"></span><span>Low</span></div>
-          <div class="fp-legend__row"><span class="fp-dot fp-q2"></span><span>Mid</span></div>
-          <div class="fp-legend__row"><span class="fp-dot fp-q3"></span><span>High</span></div>
-          <div class="fp-legend__row"><span class="fp-dot fp-q4"></span><span>Highest 20%</span></div>
-        </div>
-      </div>
+              <div class="fp-legend__row"><span class="fp-dot fp-q0"></span><span>Lowest 20%</span></div>
+              <div class="fp-legend__row"><span class="fp-dot fp-q1"></span><span>Low</span></div>
+              <div class="fp-legend__row"><span class="fp-dot fp-q2"></span><span>Mid</span></div>
+              <div class="fp-legend__row"><span class="fp-dot fp-q3"></span><span>High</span></div>
+              <div class="fp-legend__row"><span class="fp-dot fp-q4"></span><span>Highest 20%</span></div>
+            </div>
+          </div>
 
       <!-- Drawer -->
       <aside class="fp-drawer" id="fpDrawer" aria-label="Results">

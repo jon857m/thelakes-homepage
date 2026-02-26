@@ -49,12 +49,12 @@
 
   padding: 12px;
   border-radius: 16px;
-  background: rgba(16, 18, 24, 0.62);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  background: rgba(20,20,20,0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35)   inset 0 1px 0 rgba(255,255,255,0.08);;
   border: 1px solid rgba(255, 255, 255, 0.10);
-  transition: transform 160ms ease-out, opacity 160ms ease-out;
+  transition: border-color 140ms ease-out, box-shadow 140ms ease-out;
 }
 
 .fp-controls__top {
@@ -996,3 +996,87 @@
   background-clip: content-box;
 }
 .fp-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.20); }
+
+.fp-controls button:active {
+  transform: translateY(0.5px);
+}
+
+.fp-controls button:hover {
+  border-color: rgba(255,255,255,0.18);
+}
+
+@media (max-width: 520px) {
+  .fp-controls { padding: 12px; }
+  .fp-controls__grid { gap: 10px; }
+}
+
+/* Title + subtitle polish */
+.fp-title__name { font-size: 22px; line-height: 1.1; letter-spacing: -0.02em; }
+#fpStatus { margin-top: 4px; font-size: 13px; opacity: 0.7; }
+
+/* Subtle divider under the header area (if you have a wrapper row) */
+.fp-controls__top { padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+
+/* Unified control sizing */
+.fp-controls select,
+.fp-controls button {
+  height: 40px;
+  border-radius: 12px;
+}
+
+/* Select polish */
+.fp-controls select {
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.20);
+  color: rgba(255,255,255,0.92);
+}
+
+/* Default button (secondary) */
+.fp-controls button {
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.88);
+}
+
+/* Primary action */
+.fp-controls button.fp-btn--primary {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.18);
+}
+
+/* Buttons — engineered, consistent sizing */
+.fp-btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.88);
+
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+/* Primary button (Refresh) */
+.fp-btn--primary {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.95);
+}
+
+/* Micro-interactions (premium, subtle) */
+.fp-btn:hover {
+  border-color: rgba(255,255,255,0.18);
+}
+
+.fp-btn:active {
+  transform: translateY(0.5px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fp-controls:hover {
+    border-color: rgba(255,255,255,0.18);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.40);
+  }
+}

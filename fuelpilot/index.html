@@ -46,6 +46,28 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 
+<script>
+(function () {
+  // 1) Mark page as embedded mode
+  document.body.classList.add("fp-embedded");
+
+  // 2) Measure your Lakes header (adjust selector if needed)
+  var header = document.querySelector(".fp-site-header") 
+            || document.querySelector("header")
+            || document.querySelector(".site-header");
+
+  if (!header) return;
+
+  function apply() {
+    var h = Math.round(header.getBoundingClientRect().height || 0);
+    document.documentElement.style.setProperty("--fp-site-header-h", h + "px");
+  }
+
+  apply();
+  window.addEventListener("resize", apply);
+})();
+</script>
+
 <body>
 
   <!-- Header injection (existing Lakes header) -->

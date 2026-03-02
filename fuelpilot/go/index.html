@@ -65,13 +65,28 @@
   <!-- FuelPilot hosted under the header -->
   <main class="fp-shell" aria-label="FuelPilot">
     <iframe
+      id="fpFrame"
       class="fp-frame"
-      src="https://fuelpilot.co.uk/?from=lakes&embed=1"
       title="FuelPilot"
       loading="eager"
       referrerpolicy="strict-origin-when-cross-origin"
       allow="geolocation"
     ></iframe>
+
+      <script>
+        (function () {
+          const isLocal =
+            location.hostname === "127.0.0.1" ||
+            location.hostname === "localhost";
+
+          const src = isLocal
+            ? "http://127.0.0.1:5501/index.html?from=lakes&embed=1"
+            : "https://fuelpilot.co.uk/?from=lakes&embed=1";
+
+          document.getElementById("fpFrame").src = src;
+        })();
+      </script>
+
   </main>
 
   <!-- Lakes footer injection if you use it (optional) -->

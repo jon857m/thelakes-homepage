@@ -46,27 +46,33 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 
-<script>
-(function () {
-  // 1) Mark page as embedded mode
-  document.body.classList.add("fp-embedded");
+    <script>
+    (function () {
+    function run() {
+        // 1) Mark page as embedded mode
+        (document.body || document.documentElement).classList.add("fp-embedded");
 
-  // 2) Measure your Lakes header (adjust selector if needed)
-  var header = document.querySelector(".fp-site-header") 
-            || document.querySelector("header")
-            || document.querySelector(".site-header");
+        // 2) Measure your Lakes header (adjust selector if needed)
+        var header =
+        document.querySelector(".fp-site-header") ||
+        document.querySelector("header.site-header") ||
+        document.querySelector("header");
 
-  if (!header) return;
+        if (!header) return;
 
-  function apply() {
-    var h = Math.round(header.getBoundingClientRect().height || 0);
-    document.documentElement.style.setProperty("--fp-site-header-h", h + "px");
-  }
+        function apply() {
+        var h = Math.ceil(header.getBoundingClientRect().height || 0);
+        document.documentElement.style.setProperty("--fp-site-header-h", h + "px");
+        }
 
-  apply();
-  window.addEventListener("resize", apply);
-})();
-</script>
+        apply();
+        window.addEventListener("resize", apply);
+    }
+
+    if (document.body) run();
+    else window.addEventListener("DOMContentLoaded", run);
+    })();
+    </script>
 
 <body>
 

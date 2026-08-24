@@ -13,7 +13,6 @@ tools/.venv/
 # Interactive map build
 node_modules/
 map-app/node_modules/
-map/
 .env
 .env.local
 map-app/.env

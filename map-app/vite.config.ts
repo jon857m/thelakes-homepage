@@ -9,7 +9,7 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, "../map"),
     emptyOutDir: true,
-    sourcemap: true
+    sourcemap: false
   },
   server: { host: "127.0.0.1", port: 5173 }
 });

@@ -12,10 +12,11 @@ import {
   type SearchItem
 } from "./lib/search";
 import {
+  createSharedMapView,
   getSharedLocation,
   supabase
 } from "./lib/supabase";
-import type { Business, CameraState, MapLayerState, PinLocation } from "./types";
+import type { Business, CameraState, MapLayerState, PinLocation, SharedMapView } from "./types";
 
 const DEFAULT_CAMERA: CameraState = {
   longitude: -3.08,
@@ -143,6 +144,7 @@ export function App() {
   );
   const [layersOpen, setLayersOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+  const [sharedBusinessId, setSharedBusinessId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -640,11 +642,11 @@ export function App() {
   }, [mapReady, placePin]);
 
   useEffect(() => {
-    const businessId = sharedViewFromUrl()?.businessId;
+    const businessId = sharedViewFromUrl()?.businessId ?? sharedBusinessId;
     if (!businessId) return;
     const sharedBusiness = businesses.find((business) => business.id === businessId);
     if (sharedBusiness) setSelectedBusiness(sharedBusiness);
-  }, [businesses]);
+  }, [businesses, sharedBusinessId]);
 
   useEffect(() => {
     const code = sharedCodeFromPath();
@@ -656,13 +658,24 @@ export function App() {
           setNotice("This shared location has expired or could not be found.");
           return;
         }
-        placePin(location);
-        setPinIsShared(true);
+        const shared = location.view;
+        if (shared) {
+          applyLayerState(shared.layers);
+          if (shared.pin) {
+            placePin(shared.pin);
+            setPinIsShared(true);
+          }
+          setSharedBusinessId(shared.businessId ?? null);
+        } else {
+          placePin(location);
+          setPinIsShared(true);
+        }
+        const camera = shared?.camera ?? location;
         map.current?.flyTo({
-          center: [location.longitude, location.latitude],
-          zoom: location.zoom,
-          pitch: location.pitch,
-          bearing: location.bearing,
+          center: [camera.longitude, camera.latitude],
+          zoom: camera.zoom,
+          pitch: camera.pitch,
+          bearing: camera.bearing,
           duration: 1800
         });
         setShareUrl(window.location.href);
@@ -692,14 +705,22 @@ export function App() {
     setNotice(null);
     try {
       const centre = map.current.getCenter();
-      const encoded = encodeMapView({
+      const camera = {
         longitude: centre.lng,
         latitude: centre.lat,
         zoom: map.current.getZoom(),
         pitch: map.current.getPitch(),
         bearing: map.current.getBearing()
-      }, currentLayerState(), pinToShare, selectedBusiness?.id);
-      const url = `${window.location.origin}/map/?share=${encoded}`;
+      };
+      const view: SharedMapView = { version: 1, camera, layers: currentLayerState(), pin: pinToShare, businessId: selectedBusiness?.id };
+      let url: string;
+      try {
+        const shortView = await createSharedMapView(view);
+        url = `${window.location.origin}/map/p/${shortView.shortCode}/`;
+      } catch {
+        const encoded = encodeMapView(camera, view.layers, pinToShare, selectedBusiness?.id);
+        url = `${window.location.origin}/map/?share=${encoded}`;
+      }
       setShareUrl(url);
       if (nativeShare && prefersNativeShare) await nativeShare({ title: pinToShare ? "Lake District location" : selectedBusiness?.name ?? "Lake District map view", url });
       else await navigator.clipboard.writeText(url);

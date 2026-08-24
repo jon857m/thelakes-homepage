@@ -29,6 +29,7 @@ export type CameraState = {
 export type SharedLocation = CameraState & {
   shortCode: string;
   expiresAt?: string;
+  view?: SharedMapView;
 };
 
 export type PinLocation = { latitude: number; longitude: number };

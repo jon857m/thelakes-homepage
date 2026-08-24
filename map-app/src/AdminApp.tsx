@@ -118,7 +118,7 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
   </main>;
 }
 
-function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSaved: (business: AdminBusiness) => void }) {
+function BusinessEditor({ business, onSaved, onDeleted }: { business: AdminBusiness; onSaved: (business: AdminBusiness) => void; onDeleted: (id: string) => void }) {
   const [draft, setDraft] = useState(business);
   const [latitudeInput, setLatitudeInput] = useState(String(business.latitude));
   const [longitudeInput, setLongitudeInput] = useState(String(business.longitude));
@@ -239,6 +239,38 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
     setImageBusy(false);
   }
 
+  async function archiveEditorialListing() {
+    if (!supabase || draft.listing_type !== "editorial") return;
+    if (!window.confirm(`Archive ${draft.name}? It will disappear from the public map but remain available here.`)) return;
+    setBusy(true);
+    const { error } = await supabase.from("businesses").update({ listing_status: "suspended", updated_at: new Date().toISOString() }).eq("id", draft.id);
+    setBusy(false);
+    if (error) setMessage(error.message);
+    else {
+      const updated = { ...draft, listing_status: "suspended" as const };
+      setDraft(updated);
+      onSaved(updated);
+      setMessage("Listing archived and removed from the public map.");
+    }
+  }
+
+  async function deleteDraftListing() {
+    if (!supabase || draft.listing_status !== "draft") return;
+    if (!window.confirm(`Permanently delete ${draft.name}? This will also remove its uploaded images and cannot be undone.`)) return;
+    setBusy(true);
+    const storagePaths = (draft.business_images ?? []).map((image) => image.storage_path);
+    const marker = "/storage/v1/object/public/business-images/";
+    for (const imageUrl of [draft.logo_url, draft.image_url]) {
+      const markerIndex = imageUrl?.indexOf(marker) ?? -1;
+      if (imageUrl && markerIndex >= 0) storagePaths.push(decodeURIComponent(imageUrl.slice(markerIndex + marker.length)));
+    }
+    const { error } = await supabase.from("businesses").delete().eq("id", draft.id);
+    if (!error && storagePaths.length) await supabase.storage.from("business-images").remove(storagePaths);
+    setBusy(false);
+    if (error) setMessage(error.message);
+    else onDeleted(draft.id);
+  }
+
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!supabase) return;
@@ -295,6 +327,10 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
           {(draft.business_images?.length ?? 0) < 5 && <label className="admin-image-upload"><span>＋</span><b>Add gallery image</b><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void uploadImage(event, "gallery")} /></label>}
         </div>
       </fieldset>
+      <section className="admin-lifecycle field-wide" aria-label="Listing lifecycle">
+        <div><strong>Listing lifecycle</strong>{draft.listing_type === "subscriber" ? <p>Paid subscriber cancellation will be connected to the payment provider. It cannot be deleted here.</p> : draft.listing_status === "draft" ? <p>This unpaid draft can be permanently deleted.</p> : <p>Archiving removes this editorial listing from the public map without deleting its record.</p>}</div>
+        {draft.listing_type === "subscriber" ? <button type="button" disabled>Cancel through payments</button> : draft.listing_status === "draft" ? <button type="button" className="danger" disabled={busy} onClick={() => void deleteDraftListing()}>Delete draft</button> : draft.listing_status !== "suspended" ? <button type="button" disabled={busy} onClick={() => void archiveEditorialListing()}>Archive listing</button> : <span>Archived</span>}
+      </section>
     </div>
     <div className="admin-save"><button className="account-primary" disabled={busy}>{busy ? "Saving…" : "Save changes"}</button>{message && <span role="status">{message}</span>}</div>
   </form>;
@@ -344,7 +380,7 @@ function AdminDashboard({ session }: { session: Session }) {
     <header className="admin-header"><div><span className="account-kicker">The Lake District</span><h1>Business administration</h1></div><nav><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav></header>
     <div className="admin-layout">
       <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => <button className={selected?.id === item.id ? "is-selected" : ""} key={item.id} onClick={() => setSelected(item)}><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span></button>)}</aside>
-      <section className="admin-workspace">{selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, or use “Edit from map” to find it geographically.</p></div>}</section>
+      <section className="admin-workspace">{selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, or use “Edit from map” to find it geographically.</p></div>}</section>
     </div>
   </main>;
 }

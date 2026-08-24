@@ -29,6 +29,27 @@ type BusinessImage = { id: string; image_url: string; storage_path: string; sort
 const categories = ["Accommodation", "Camping", "Eating", "Activities", "Gifts"];
 const statuses: AdminBusiness["listing_status"][] = ["draft", "awaiting_payment", "active", "past_due", "cancelled", "suspended"];
 
+function parseCoordinatePart(value: string) {
+  const cleaned = value.trim().replace(/[−–—]/g, "-").replace(/[°º]/g, "");
+  const match = cleaned.match(/^([+-]?\d{1,3})(?:[.,\s]+(\d+))?$/);
+  if (!match) return null;
+  const result = Number(match[2] ? `${match[1]}.${match[2]}` : match[1]);
+  return Number.isFinite(result) ? result : null;
+}
+
+function parseCoordinatePaste(value: string) {
+  const cleaned = value.trim().replace(/[−–—]/g, "-");
+  const signedSecond = cleaned.match(/^(.+?)[,;\s]+(?=[+-]\s*\d)(.+)$/);
+  if (signedSecond) {
+    const latitude = parseCoordinatePart(signedSecond[1]);
+    const longitude = parseCoordinatePart(signedSecond[2]);
+    if (latitude !== null && longitude !== null) return [latitude, longitude] as const;
+  }
+  const standardPair = cleaned.match(/^\s*([+-]?\d{1,3}(?:\.\d+)?)\s*[,;\s]\s*([+-]?\d{1,3}(?:\.\d+)?)\s*$/);
+  if (standardPair) return [Number(standardPair[1]), Number(standardPair[2])] as const;
+  return null;
+}
+
 async function optimiseImage(file: File, maxDimension: number) {
   if (!file.type.startsWith("image/")) throw new Error("Choose a JPG, PNG or WebP image.");
   if (file.size > 10 * 1024 * 1024) throw new Error("The original image must be smaller than 10 MB.");
@@ -105,19 +126,23 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
   const set = (field: keyof AdminBusiness, value: string | boolean | number) => setDraft((current) => ({ ...current, [field]: value }));
 
   function updateCoordinate(field: "latitude" | "longitude", value: string) {
-    const match = value.match(/[-+]?\d+(?:\.\d+)?/);
-    if (match) set(field, Number(match[0]));
+    const coordinate = parseCoordinatePart(value);
+    if (coordinate !== null) set(field, coordinate);
   }
 
   function pasteCoordinates(event: ClipboardEvent<HTMLInputElement>, field: "latitude" | "longitude") {
-    const values = event.clipboardData.getData("text").match(/[-+]?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
-    if (values.length >= 2) {
+    const pasted = event.clipboardData.getData("text");
+    const pair = parseCoordinatePaste(pasted);
+    if (pair) {
       event.preventDefault();
-      setDraft((current) => ({ ...current, latitude: values[0], longitude: values[1] }));
+      setDraft((current) => ({ ...current, latitude: pair[0], longitude: pair[1] }));
       setMessage("Latitude and longitude pasted.");
-    } else if (values.length === 1) {
+      return;
+    }
+    const coordinate = parseCoordinatePart(pasted);
+    if (coordinate !== null) {
       event.preventDefault();
-      set(field, values[0]);
+      set(field, coordinate);
     }
   }
 

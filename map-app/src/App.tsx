@@ -176,7 +176,7 @@ export function App() {
     if (!supabase) return;
     void supabase
       .from("businesses")
-      .select("id,name,slug,tagline,description,category,latitude,longitude,town,address,postcode,website_url,image_url,featured")
+      .select("id,name,slug,tagline,description,category,latitude,longitude,town,address,postcode,website_url,logo_url,image_url,featured,business_images(image_url,sort_order)")
       .eq("active", true)
       .then(({ data, error }) => {
         if (error || !data?.length) return;
@@ -195,6 +195,10 @@ export function App() {
             postcode: row.postcode ?? undefined,
             websiteUrl: row.website_url ?? undefined,
             imageUrl: row.image_url ?? undefined,
+            logoUrl: row.logo_url ?? undefined,
+            galleryImages: (row.business_images ?? [])
+              .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
+              .map((image) => image.image_url),
             featured: Boolean(row.featured)
           }))
         );
@@ -1198,7 +1202,11 @@ export function App() {
           <div className="sheet-kicker">{selectedBusiness.category} · {selectedBusiness.town}</div>
           <h1>{selectedBusiness.name}</h1>
           <strong className="tagline">{selectedBusiness.tagline}</strong>
+          {selectedBusiness.imageUrl && <img className="business-sheet__hero" src={selectedBusiness.imageUrl} alt={selectedBusiness.name} />}
           <p>{selectedBusiness.description}</p>
+          {selectedBusiness.galleryImages && selectedBusiness.galleryImages.length > 0 && <div className="business-sheet__gallery">
+            {selectedBusiness.galleryImages.slice(0, 5).map((image, index) => <img key={image} src={image} alt={`${selectedBusiness.name} ${index + 2}`} />)}
+          </div>}
           <div className="sheet-actions">
             {selectedBusiness.websiteUrl && <a href={selectedBusiness.websiteUrl} target="_blank" rel="noreferrer">Website</a>}
             <a href={selectedBusiness.directionsUrl ?? `https://www.google.com/maps/dir/?api=1&destination=${selectedBusiness.latitude},${selectedBusiness.longitude}`} target="_blank" rel="noreferrer">Directions</a>

@@ -13,6 +13,8 @@ export type Business = {
   websiteUrl?: string;
   directionsUrl?: string;
   imageUrl?: string;
+  logoUrl?: string;
+  galleryImages?: string[];
   featured: boolean;
 };
 

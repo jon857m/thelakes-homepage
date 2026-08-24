@@ -120,14 +120,23 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
 
 function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSaved: (business: AdminBusiness) => void }) {
   const [draft, setDraft] = useState(business);
+  const [latitudeInput, setLatitudeInput] = useState(String(business.latitude));
+  const [longitudeInput, setLongitudeInput] = useState(String(business.longitude));
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [imageBusy, setImageBusy] = useState(false);
   const set = (field: keyof AdminBusiness, value: string | boolean | number) => setDraft((current) => ({ ...current, [field]: value }));
 
-  function updateCoordinate(field: "latitude" | "longitude", value: string) {
+  function commitCoordinate(field: "latitude" | "longitude", value: string) {
     const coordinate = parseCoordinatePart(value);
-    if (coordinate !== null) set(field, coordinate);
+    if (coordinate === null) {
+      setMessage(`Enter a valid ${field}, for example ${field === "latitude" ? "54.60351370678621" : "-3.1616886612027884"}.`);
+      return false;
+    }
+    set(field, coordinate);
+    if (field === "latitude") setLatitudeInput(String(coordinate));
+    else setLongitudeInput(String(coordinate));
+    return true;
   }
 
   function pasteCoordinates(event: ClipboardEvent<HTMLInputElement>, field: "latitude" | "longitude") {
@@ -136,12 +145,16 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
     if (coordinate !== null) {
       event.preventDefault();
       set(field, coordinate);
+      if (field === "latitude") setLatitudeInput(String(coordinate));
+      else setLongitudeInput(String(coordinate));
       return;
     }
     const pair = parseCoordinatePaste(pasted);
     if (pair) {
       event.preventDefault();
       setDraft((current) => ({ ...current, latitude: pair[0], longitude: pair[1] }));
+      setLatitudeInput(String(pair[0]));
+      setLongitudeInput(String(pair[1]));
       setMessage("Latitude and longitude pasted.");
       return;
     }
@@ -149,6 +162,8 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
 
   useEffect(() => {
     setDraft(business);
+    setLatitudeInput(String(business.latitude));
+    setLongitudeInput(String(business.longitude));
     setMessage("");
   }, [business]);
 
@@ -205,10 +220,16 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!supabase) return;
+    const latitude = parseCoordinatePart(latitudeInput);
+    const longitude = parseCoordinatePart(longitudeInput);
+    if (latitude === null || longitude === null || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      setMessage("Check the coordinates. Latitude must be −90 to 90 and longitude −180 to 180.");
+      return;
+    }
     setBusy(true);
     const { data, error } = await supabase.from("businesses").update({
       name: draft.name, slug: draft.slug, tagline: draft.tagline, description: draft.description,
-      category: draft.category, latitude: draft.latitude, longitude: draft.longitude,
+      category: draft.category, latitude, longitude,
       address: draft.address || null, town: draft.town || null, postcode: draft.postcode || null,
       website_url: draft.website_url || null, phone: draft.phone || null,
       listing_type: draft.listing_type, listing_status: draft.listing_status, featured: draft.featured,
@@ -217,7 +238,7 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
     setBusy(false);
     if (error) setMessage(error.message);
     else {
-      const saved = { ...draft, ...(data as AdminBusiness), business_images: draft.business_images };
+      const saved = { ...draft, ...(data as AdminBusiness), latitude, longitude, business_images: draft.business_images };
       setDraft(saved);
       setMessage("Saved.");
       onSaved(saved);
@@ -239,8 +260,8 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
       <label>Postcode<input value={draft.postcode ?? ""} onChange={(e) => set("postcode", e.target.value)} /></label>
       <label>Phone<input value={draft.phone ?? ""} onChange={(e) => set("phone", e.target.value)} /></label>
       <label className="field-wide">Website<input type="url" value={draft.website_url ?? ""} onChange={(e) => set("website_url", e.target.value)} /></label>
-      <label>Latitude<input type="text" inputMode="decimal" value={draft.latitude} onChange={(e) => updateCoordinate("latitude", e.target.value)} onPaste={(e) => pasteCoordinates(e, "latitude")} title="Paste one coordinate or a latitude, longitude pair" /></label>
-      <label>Longitude<input type="text" inputMode="decimal" value={draft.longitude} onChange={(e) => updateCoordinate("longitude", e.target.value)} onPaste={(e) => pasteCoordinates(e, "longitude")} title="Paste one coordinate or a latitude, longitude pair" /></label>
+      <label>Latitude<input type="text" inputMode="decimal" value={latitudeInput} onChange={(e) => setLatitudeInput(e.target.value)} onBlur={(e) => commitCoordinate("latitude", e.target.value)} onPaste={(e) => pasteCoordinates(e, "latitude")} placeholder="54.60351370678621" title="Paste one coordinate or a latitude, longitude pair" /></label>
+      <label>Longitude<input type="text" inputMode="decimal" value={longitudeInput} onChange={(e) => setLongitudeInput(e.target.value)} onBlur={(e) => commitCoordinate("longitude", e.target.value)} onPaste={(e) => pasteCoordinates(e, "longitude")} placeholder="-3.1616886612027884" title="Paste one coordinate or a latitude, longitude pair" /></label>
       <label className="check-field"><input type="checkbox" checked={draft.featured} onChange={(e) => set("featured", e.target.checked)} /> Featured listing</label>
       <fieldset className="admin-images field-wide" disabled={imageBusy}>
         <legend>Business images</legend>

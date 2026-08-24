@@ -39,7 +39,7 @@ function parseCoordinatePart(value: string) {
 
 function parseCoordinatePaste(value: string) {
   const cleaned = value.trim().replace(/[−–—]/g, "-");
-  const signedSecond = cleaned.match(/^(.+?)[,;\s]+(?=[+-]\s*\d)(.+)$/);
+  const signedSecond = cleaned.match(/^(.+?)[,;\s]+(?=[+-]\s*\d)([+-]\s*\d.*)$/);
   if (signedSecond) {
     const latitude = parseCoordinatePart(signedSecond[1]);
     const longitude = parseCoordinatePart(signedSecond[2]);
@@ -132,17 +132,18 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
 
   function pasteCoordinates(event: ClipboardEvent<HTMLInputElement>, field: "latitude" | "longitude") {
     const pasted = event.clipboardData.getData("text");
+    const coordinate = parseCoordinatePart(pasted);
+    if (coordinate !== null) {
+      event.preventDefault();
+      set(field, coordinate);
+      return;
+    }
     const pair = parseCoordinatePaste(pasted);
     if (pair) {
       event.preventDefault();
       setDraft((current) => ({ ...current, latitude: pair[0], longitude: pair[1] }));
       setMessage("Latitude and longitude pasted.");
       return;
-    }
-    const coordinate = parseCoordinatePart(pasted);
-    if (coordinate !== null) {
-      event.preventDefault();
-      set(field, coordinate);
     }
   }
 

@@ -394,12 +394,13 @@ export function App() {
         );
       }
 
-      // Liberty includes its own extrusion. Keep flat building footprints for
-      // map context, but suppress every pre-existing 3D building layer so the
-      // product toggle has one unambiguous source of truth.
+      // Liberty includes several flat and extruded building layers with
+      // different zoom ranges. Suppress the complete stack so a footprint
+      // cannot briefly appear between zoom thresholds; the product toggle
+      // below is the single source of truth for all buildings.
       instance.getStyle().layers.forEach((layer) => {
         const sourceLayer = "source-layer" in layer ? layer["source-layer"] : undefined;
-        if (layer.type === "fill-extrusion" && sourceLayer === "building") {
+        if (sourceLayer === "building") {
           instance.setLayoutProperty(layer.id, "visibility", "none");
         }
       });

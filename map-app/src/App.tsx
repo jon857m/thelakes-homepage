@@ -62,6 +62,8 @@ const nativeShare: ((data: ShareData) => Promise<void>) | undefined =
 const prefersNativeShare = window.matchMedia("(pointer: coarse)").matches;
 
 function sharedCodeFromPath() {
+  const queryCode = new URLSearchParams(window.location.search).get("v");
+  if (queryCode?.match(/^[23456789A-HJ-NP-Z]{6}$/i)) return queryCode.toUpperCase();
   const match = window.location.pathname.match(/^\/map\/p\/([A-Za-z0-9_-]+)\/?$/);
   return match?.[1]?.toUpperCase() ?? null;
 }
@@ -735,7 +737,7 @@ export function App() {
       let url: string;
       try {
         const shortView = await createSharedMapView(view);
-        url = `${window.location.origin}/map/p/${shortView.shortCode}/`;
+        url = `${window.location.origin}/map/?v=${shortView.shortCode}`;
       } catch {
         const encoded = encodeMapView(camera, view.layers, pinToShare, selectedBusiness?.id);
         url = `${window.location.origin}/map/?share=${encoded}`;

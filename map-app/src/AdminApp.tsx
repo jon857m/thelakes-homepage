@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type ClipboardEvent, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 
@@ -104,6 +104,23 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
   const [imageBusy, setImageBusy] = useState(false);
   const set = (field: keyof AdminBusiness, value: string | boolean | number) => setDraft((current) => ({ ...current, [field]: value }));
 
+  function updateCoordinate(field: "latitude" | "longitude", value: string) {
+    const match = value.match(/[-+]?\d+(?:\.\d+)?/);
+    if (match) set(field, Number(match[0]));
+  }
+
+  function pasteCoordinates(event: ClipboardEvent<HTMLInputElement>, field: "latitude" | "longitude") {
+    const values = event.clipboardData.getData("text").match(/[-+]?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+    if (values.length >= 2) {
+      event.preventDefault();
+      setDraft((current) => ({ ...current, latitude: values[0], longitude: values[1] }));
+      setMessage("Latitude and longitude pasted.");
+    } else if (values.length === 1) {
+      event.preventDefault();
+      set(field, values[0]);
+    }
+  }
+
   useEffect(() => {
     setDraft(business);
     setMessage("");
@@ -196,8 +213,8 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
       <label>Postcode<input value={draft.postcode ?? ""} onChange={(e) => set("postcode", e.target.value)} /></label>
       <label>Phone<input value={draft.phone ?? ""} onChange={(e) => set("phone", e.target.value)} /></label>
       <label className="field-wide">Website<input type="url" value={draft.website_url ?? ""} onChange={(e) => set("website_url", e.target.value)} /></label>
-      <label>Latitude<input type="number" step="any" value={draft.latitude} onChange={(e) => set("latitude", Number(e.target.value))} /></label>
-      <label>Longitude<input type="number" step="any" value={draft.longitude} onChange={(e) => set("longitude", Number(e.target.value))} /></label>
+      <label>Latitude<input type="text" inputMode="decimal" value={draft.latitude} onChange={(e) => updateCoordinate("latitude", e.target.value)} onPaste={(e) => pasteCoordinates(e, "latitude")} title="Paste one coordinate or a latitude, longitude pair" /></label>
+      <label>Longitude<input type="text" inputMode="decimal" value={draft.longitude} onChange={(e) => updateCoordinate("longitude", e.target.value)} onPaste={(e) => pasteCoordinates(e, "longitude")} title="Paste one coordinate or a latitude, longitude pair" /></label>
       <label className="check-field"><input type="checkbox" checked={draft.featured} onChange={(e) => set("featured", e.target.checked)} /> Featured listing</label>
       <fieldset className="admin-images field-wide" disabled={imageBusy}>
         <legend>Business images</legend>

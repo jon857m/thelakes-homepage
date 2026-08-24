@@ -58,6 +58,7 @@ const styleUrl = mapTilerKey
 const shareCandidate: unknown = Reflect.get(navigator, "share");
 const nativeShare: ((data: ShareData) => Promise<void>) | undefined =
   typeof shareCandidate === "function" ? shareCandidate.bind(navigator) : undefined;
+const prefersNativeShare = window.matchMedia("(pointer: coarse)").matches;
 
 function sharedCodeFromPath() {
   const match = window.location.pathname.match(/^\/map\/p\/([A-Za-z0-9_-]+)\/?$/);
@@ -639,6 +640,13 @@ export function App() {
   }, [mapReady, placePin]);
 
   useEffect(() => {
+    const businessId = sharedViewFromUrl()?.businessId;
+    if (!businessId) return;
+    const sharedBusiness = businesses.find((business) => business.id === businessId);
+    if (sharedBusiness) setSelectedBusiness(sharedBusiness);
+  }, [businesses]);
+
+  useEffect(() => {
     const code = sharedCodeFromPath();
     if (!code || !mapReady) return;
     setBusy(true);
@@ -690,12 +698,12 @@ export function App() {
         zoom: map.current.getZoom(),
         pitch: map.current.getPitch(),
         bearing: map.current.getBearing()
-      }, currentLayerState(), pinToShare);
+      }, currentLayerState(), pinToShare, selectedBusiness?.id);
       const url = `${window.location.origin}/map/?share=${encoded}`;
       setShareUrl(url);
-      if (nativeShare) await nativeShare({ title: pinToShare ? "Lake District location" : "Lake District map view", url });
+      if (nativeShare && prefersNativeShare) await nativeShare({ title: pinToShare ? "Lake District location" : selectedBusiness?.name ?? "Lake District map view", url });
       else await navigator.clipboard.writeText(url);
-      if (!pinToShare) setNotice("Map view link copied.");
+      if (!pinToShare && !(nativeShare && prefersNativeShare)) setNotice(selectedBusiness ? `${selectedBusiness.name} view copied to clipboard.` : "Map view link copied to clipboard.");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setNotice(error instanceof Error ? error.message : "Unable to share this location.");
@@ -1289,7 +1297,7 @@ export function App() {
           <h1>Share this location</h1>
           <p className="coordinates">{formatCoordinates(pin)}</p>
           <div className="sheet-actions">
-            <button onClick={shareLocation} disabled={busy}>{nativeShare ? "Share" : "Create link"}</button>
+            <button onClick={shareLocation} disabled={busy}>{nativeShare && prefersNativeShare ? "Share" : "Copy link"}</button>
             {shareUrl && <button className="secondary" onClick={copyLink}>Copy link</button>}
             <button className="secondary" onClick={removePin}>Remove pin</button>
           </div>

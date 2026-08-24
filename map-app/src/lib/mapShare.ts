@@ -1,7 +1,7 @@
 import type { CameraState, MapLayerState, PinLocation, SharedMapView } from "../types";
 
-export function encodeMapView(camera: CameraState, layers: MapLayerState, pin?: PinLocation) {
-  const payload: SharedMapView = { version: 1, camera, layers, pin };
+export function encodeMapView(camera: CameraState, layers: MapLayerState, pin?: PinLocation, businessId?: string) {
+  const payload: SharedMapView = { version: 1, camera, layers, pin, businessId };
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   const base64 = btoa(String.fromCharCode(...bytes));
   return base64.replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");

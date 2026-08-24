@@ -50,4 +50,5 @@ export type SharedMapView = {
   camera: CameraState;
   layers: MapLayerState;
   pin?: PinLocation;
+  businessId?: string;
 };

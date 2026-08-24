@@ -88,6 +88,7 @@ button { cursor: pointer; }
 .brand-link strong, .brand-link small { display: block; line-height: 1.05; }
 .brand-link strong { font-size: 16px; font-weight: 900; letter-spacing: .1px; }
 .brand-link small { margin-top: 4px; color: rgba(246,242,231,.7); font-size: 9px; letter-spacing: .04em; }
+.brand-subtitle--mobile { display: none; }
 .brand-mark { display: block; width: 44px; height: 44px; border: 1px solid rgba(246,242,231,.2); border-radius: 12px; object-fit: cover; box-shadow: 0 8px 22px rgba(0,0,0,.3); }
 .map-label { padding: 7px 10px; border: 1px solid rgba(234,182,121,.4); border-radius: 999px; color: #191a0f; background: linear-gradient(135deg, #eab679, #b28a58); font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; }
 
@@ -264,6 +265,8 @@ button { cursor: pointer; }
     line-height: 1.35;
   }
   .brand-panel { top: max(10px, env(safe-area-inset-top)); left: 10px; }
+  .brand-subtitle--desktop { display: none; }
+  .brand-subtitle--mobile { display: inline; color: rgba(246,242,231,.76); font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
   .map-label { display: none; }
   .business-cta { top: max(20px, calc(env(safe-area-inset-top) + 10px)); right: 10px; bottom: auto; display: block; width: auto; padding: 0; border: 0; border-radius: 999px; background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .business-cta strong, .business-cta span { display: none; }

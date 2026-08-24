@@ -1037,7 +1037,7 @@ export function App() {
       <header className="brand-panel">
         <a href="/" className="brand-link" aria-label="The Lake District homepage">
           <img className="brand-mark" src="/map/brand/hero.jpg" alt="" />
-          <span><strong>The Lake District</strong><small>Visitor &amp; local community hub</small></span>
+          <span><strong>The Lake District</strong><small><span className="brand-subtitle--desktop">Visitor &amp; local community hub</span><span className="brand-subtitle--mobile">3D Explorer</span></small></span>
         </a>
         <span className="map-label">3D explorer</span>
       </header>

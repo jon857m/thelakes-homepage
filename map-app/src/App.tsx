@@ -1200,8 +1200,13 @@ export function App() {
         <section className="bottom-sheet business-sheet" aria-label={selectedBusiness.name}>
           <button className="sheet-close" onClick={() => setSelectedBusiness(null)} aria-label="Close">×</button>
           <div className="sheet-kicker">{selectedBusiness.category} · {selectedBusiness.town}</div>
-          <h1>{selectedBusiness.name}</h1>
-          <strong className="tagline">{selectedBusiness.tagline}</strong>
+          <div className="business-sheet__identity">
+            {selectedBusiness.logoUrl && <img className="business-sheet__logo" src={selectedBusiness.logoUrl} alt={`${selectedBusiness.name} logo`} />}
+            <div>
+              <h1>{selectedBusiness.name}</h1>
+              <strong className="tagline">{selectedBusiness.tagline}</strong>
+            </div>
+          </div>
           {selectedBusiness.imageUrl && <img className="business-sheet__hero" src={selectedBusiness.imageUrl} alt={selectedBusiness.name} />}
           <p>{selectedBusiness.description}</p>
           {selectedBusiness.galleryImages && selectedBusiness.galleryImages.length > 0 && <div className="business-sheet__gallery">

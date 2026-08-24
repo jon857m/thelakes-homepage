@@ -213,6 +213,14 @@ button { cursor: pointer; }
   color: #243027; background: rgba(255,252,238,.94); text-align: left; font-size: 13px;
 }
 .notice span { margin-left: auto; font-size: 18px; }
+.share-panel { position: absolute; z-index: 9; top: 88px; left: 50%; display: grid; width: min(480px, calc(100% - 32px)); gap: 10px; padding: 18px; transform: translateX(-50%); border: 1px solid rgba(255,255,255,.7); border-radius: 18px; color: #26342b; background: rgba(249,248,240,.98); box-shadow: 0 20px 55px rgba(19,31,23,.3); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.share-panel > strong { padding-right: 34px; font: 700 22px Georgia, serif; }
+.share-panel > span { color: #657268; font-size: 12px; line-height: 1.4; }
+.share-panel input { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px solid #cbd2c8; border-radius: 10px; color: #203027; background: white; font-size: 14px; }
+.share-panel > div { display: flex; gap: 9px; }
+.share-panel > div button, .share-panel > div a { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; padding: 0 15px; border: 0; border-radius: 10px; color: white; background: #28563a; font-size: 12px; font-weight: 850; text-decoration: none; }
+.share-panel > div a { border: 1px solid #c9d0c7; color: #344239; background: transparent; }
+.share-panel__close { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border: 0; border-radius: 50%; color: #405046; background: #e5e8e1; font-size: 19px; }
 
 .business-marker-shell { width: 34px; height: 34px; }
 .business-marker {
@@ -316,6 +324,7 @@ button { cursor: pointer; }
   .drop-hint { top: max(82px, calc(env(safe-area-inset-top) + 72px)); left: auto; right: 10px; transform: none; }
   .flight-control { bottom: max(14px, env(safe-area-inset-bottom)); max-width: calc(100% - 28px); white-space: nowrap; }
   .notice { top: max(76px, calc(env(safe-area-inset-top) + 66px)); }
+  .share-panel { top: max(76px, calc(env(safe-area-inset-top) + 66px)); }
   .notice--source { display: none; }
   .bottom-sheet { right: 0; bottom: 0; width: 100%; max-height: 57dvh; padding: 22px 20px max(20px, env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }
   .bottom-sheet h1 { font-size: 26px; }

@@ -88,6 +88,24 @@ function formatCoordinates(pin: PinLocation) {
   return `${pin.latitude.toFixed(4)}° N, ${Math.abs(pin.longitude).toFixed(4)}° W`;
 }
 
+async function copyText(value: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    const input = document.createElement("textarea");
+    input.value = value;
+    input.setAttribute("readonly", "");
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.append(input);
+    input.select();
+    const copied = document.execCommand("copy");
+    input.remove();
+    return copied;
+  }
+}
+
 function routeDistance(a: number[], b: number[]) {
   const toRadians = Math.PI / 180;
   const latA = a[1] * toRadians;
@@ -144,6 +162,7 @@ export function App() {
   );
   const [layersOpen, setLayersOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+  const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const [sharedBusinessId, setSharedBusinessId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -723,8 +742,7 @@ export function App() {
       }
       setShareUrl(url);
       if (nativeShare && prefersNativeShare) await nativeShare({ title: pinToShare ? "Lake District location" : selectedBusiness?.name ?? "Lake District map view", url });
-      else await navigator.clipboard.writeText(url);
-      if (!pinToShare && !(nativeShare && prefersNativeShare)) setNotice(selectedBusiness ? `${selectedBusiness.name} view copied to clipboard.` : "Map view link copied to clipboard.");
+      else setSharePanelOpen(true);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setNotice(error instanceof Error ? error.message : "Unable to share this location.");
@@ -765,8 +783,13 @@ export function App() {
 
   async function copyLink() {
     if (!shareUrl) return;
-    await navigator.clipboard.writeText(shareUrl);
-    setNotice("Link copied to clipboard.");
+    const copied = await copyText(shareUrl);
+    if (copied) {
+      setSharePanelOpen(false);
+      setNotice("Link copied to clipboard.");
+    } else {
+      setNotice("Select the link and press Command+C to copy it.");
+    }
   }
 
   function removePin() {
@@ -1228,6 +1251,13 @@ export function App() {
       {dropMode && <div className="drop-hint">Tap anywhere to place your pin</div>}
       {busy && <div className="loading-badge">Working…</div>}
       {notice && <button className={notice.startsWith("Free 3D terrain") ? "notice notice--source" : "notice"} onClick={() => setNotice(null)}>{notice}<span>×</span></button>}
+      {sharePanelOpen && shareUrl && <section className="share-panel" aria-label="Share link">
+        <button className="share-panel__close" onClick={() => setSharePanelOpen(false)} aria-label="Close share link">×</button>
+        <strong>Link ready</strong>
+        <span>Copy this short link and paste it into Facebook, Messages or email.</span>
+        <input value={shareUrl} readOnly onFocus={(event) => event.currentTarget.select()} aria-label="Short map link" />
+        <div><button onClick={copyLink}>Copy link</button><a href={shareUrl} target="_blank" rel="noreferrer">Open link</a></div>
+      </section>}
       {flyingWalk && (
         <div className="flight-control" role="group" aria-label={`${flyingWalk.name} flight controls`}>
           <button onClick={() => map.current?.zoomOut({ duration: 250 })} aria-label="Zoom out during flight">−</button>

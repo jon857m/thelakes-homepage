@@ -18,7 +18,7 @@ Environment variables:
 
 - `VITE_MAPTILER_KEY`: Optional MapTiler browser key restricted to the production domain. Upgrades the basemap to MapTiler Outdoor and uses its terrain service.
 - `VITE_SUPABASE_URL`: Supabase project URL.
-- `VITE_SUPABASE_ANON_KEY`: Supabase publishable/anonymous key. Never use the service-role key here.
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: Supabase publishable key. Never use a secret or service-role key here.
 
 Without a MapTiler key, the application uses OpenFreeMap's Liberty vector style and public Mapzen Terrain Tiles hosted on AWS. This provides genuine 3D terrain at no service-account cost. Without Supabase variables, persistent sharing is disabled rather than emulated.
 

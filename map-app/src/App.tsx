@@ -218,6 +218,10 @@ export function App() {
       // even though the regional Sentinel imagery reaches native detail sooner.
       maxZoom: 18,
       maxPitch: 80,
+      // The style and terrain are assembled during the first load. Disabling
+      // placement fading prevents symbols being stranded half-transparent
+      // until the first user camera gesture.
+      fadeDuration: 0,
       attributionControl: false
     });
     map.current = instance;
@@ -505,6 +509,10 @@ export function App() {
         // the frame on tall and near-square desktop windows.
         instance.setZoom(Math.min(10.6, instance.getZoom() + 1.15));
       }
+      window.requestAnimationFrame(() => {
+        instance.resize();
+        instance.triggerRepaint();
+      });
       setMapReady(true);
     });
     return () => {
@@ -540,9 +548,11 @@ export function App() {
           padding: { bottom: 220, top: 0, left: 0, right: 0 }
         });
       });
-      return new maplibregl.Marker({ element, anchor: "bottom" })
+      const marker = new maplibregl.Marker({ element, anchor: "bottom" })
         .setLngLat([business.longitude, business.latitude])
         .addTo(instance);
+      marker.setOpacity(1, 1);
+      return marker;
       });
     return () => businessMarkers.current.forEach((marker) => marker.remove());
   }, [activeBusinessCategories, adminMode, businesses, commercialEnabled, mapReady]);
@@ -572,6 +582,7 @@ export function App() {
     const marker = new maplibregl.Marker({ element, draggable: true, anchor: "bottom" })
       .setLngLat([location.longitude, location.latitude])
       .addTo(instance);
+    marker.setOpacity(1, 1);
     marker.on("dragend", () => {
       const coordinates = marker.getLngLat();
       setPin({ latitude: coordinates.lat, longitude: coordinates.lng });
@@ -937,6 +948,7 @@ export function App() {
         .setLngLat(coordinates[0] as [number, number])
         .setRotation(lastBearing)
         .addTo(instance);
+      flightMarker.current.setOpacity(1, 1);
       instance.easeTo({ center: coordinates[0] as [number, number], zoom: 12.2, pitch: 67, bearing: lastBearing, duration: 1400 });
       await new Promise((resolve) => window.setTimeout(resolve, 1450));
       if (token !== flightToken.current) return;

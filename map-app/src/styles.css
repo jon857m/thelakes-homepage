@@ -156,11 +156,11 @@ button { cursor: pointer; }
 .business-filter > span { display: grid; flex: 0 0 22px; width: 22px; height: 22px; place-items: center; border-radius: 7px; color: white; background: #879188; }
 .business-filter svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .business-filter[aria-pressed="true"] { border-color: #9eae9f; color: #203127; background: #fffdf4; box-shadow: 0 2px 8px rgba(22,39,27,.08); }
-.business-filter--accommodation[aria-pressed="true"] > span, .business-marker--accommodation { background: #356a91; }
-.business-filter--camping[aria-pressed="true"] > span, .business-marker--camping { background: #397248; }
-.business-filter--eating[aria-pressed="true"] > span, .business-marker--eating { background: #a65e32; }
-.business-filter--activities[aria-pressed="true"] > span, .business-marker--activities { background: #875b98; }
-.business-filter--gifts[aria-pressed="true"] > span, .business-marker--gifts { background: #b1812d; }
+.business-filter--accommodation[aria-pressed="true"] > span { background: #2778a5; }
+.business-filter--camping[aria-pressed="true"] > span { background: #16879a; }
+.business-filter--eating[aria-pressed="true"] > span { background: #c25f38; }
+.business-filter--activities[aria-pressed="true"] > span { background: #7652a0; }
+.business-filter--gifts[aria-pressed="true"] > span { background: #bd8124; }
 .route-filters { padding: 9px 12px 12px; border-top: 1px solid #dde1da; background: rgba(231,235,227,.55); }
 .route-filter-row { display: grid; grid-template-columns: 1fr 36px; gap: 6px; }
 .route-filter-toggle { display: grid; width: 100%; grid-template-columns: 13px 1fr auto; align-items: center; gap: 8px; padding: 9px 10px; border: 1px solid #cfd6cd; border-radius: 11px; color: #26332a; background: rgba(255,255,255,.65); text-align: left; }
@@ -199,6 +199,11 @@ button { cursor: pointer; }
 }
 .business-marker span { display: grid; width: 21px; height: 21px; place-items: center; transform: rotate(45deg); }
 .business-marker svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.business-marker--accommodation { background: #2778a5; }
+.business-marker--camping { background: #16879a; }
+.business-marker--eating { background: #c25f38; }
+.business-marker--activities { background: #7652a0; }
+.business-marker--gifts { background: #bd8124; }
 .business-marker:hover, .business-marker:focus-visible { transform: rotate(-45deg) scale(1.12); outline: 3px solid rgba(239,211,128,.7); box-shadow: 0 7px 18px rgba(22,39,27,.45); }
 .business-marker--featured { box-shadow: 0 0 0 3px #f1d37e, 0 5px 14px rgba(22,39,27,.35); }
 .location-pin { position: relative; width: 42px; height: 52px; }

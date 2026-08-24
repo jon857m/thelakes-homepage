@@ -46,7 +46,9 @@ Commercial and amenity POI layers supplied by the basemap are hidden at runtime,
 
 ## Shared locations
 
-The visitor drops and may drag a temporary marker. On sharing, the client stores its coordinates plus zoom, pitch and bearing in `shared_locations`; the generated six-character code becomes `/map/p/:shortCode`. The database defaults links to a 30-day expiry. `get_shared_location` atomically counts valid opens and returns no expired record.
+The visitor can share either the current camera view or a dropped, draggable marker. New links encode a versioned, compact map-state payload in the `/map/?share=…` URL. It contains camera centre, zoom, pitch and bearing; every master layer toggle; enabled commercial categories; enabled special-walk identifiers; and the optional pin coordinate. Reopening the link reconstructs the same planning view without requiring an account, a database request or a dynamic server route.
+
+The original `shared_locations` table and `/map/p/:shortCode` reader remain compatible with previously issued short links. A future short-link service can store the same versioned state payload when shorter social URLs justify the extra infrastructure.
 
 Public inserts should be rate-limited by a Cloudflare Worker before launch. Supabase constraints and RLS remain the second enforcement layer.
 

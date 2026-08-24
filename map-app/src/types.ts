@@ -30,3 +30,22 @@ export type SharedLocation = CameraState & {
 };
 
 export type PinLocation = { latitude: number; longitude: number };
+
+export type MapLayerState = {
+  satellite: boolean;
+  roads: boolean;
+  buildings: boolean;
+  wainwrights: boolean;
+  highGround: boolean;
+  commercial: boolean;
+  specialWalks: boolean;
+  businessCategories: string[];
+  walkIds: string[];
+};
+
+export type SharedMapView = {
+  version: 1;
+  camera: CameraState;
+  layers: MapLayerState;
+  pin?: PinLocation;
+};

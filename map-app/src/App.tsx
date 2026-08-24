@@ -4,6 +4,7 @@ import { demoBusinesses } from "./data/demoBusinesses";
 import { searchableSummits, summitOverlayRegistry, type Summit } from "./data/overlays";
 import { specialWalks, type SpecialWalk } from "./data/routes";
 import { nearbyBusinesses } from "./lib/geo";
+import { decodeMapView, encodeMapView } from "./lib/mapShare";
 import {
   coreSearchItems,
   loadGeographicSearchItems,
@@ -11,12 +12,10 @@ import {
   type SearchItem
 } from "./lib/search";
 import {
-  createSharedLocation,
   getSharedLocation,
-  isSupabaseConfigured,
   supabase
 } from "./lib/supabase";
-import type { Business, CameraState, PinLocation } from "./types";
+import type { Business, CameraState, MapLayerState, PinLocation } from "./types";
 
 const DEFAULT_CAMERA: CameraState = {
   longitude: -3.08,
@@ -63,6 +62,10 @@ const nativeShare: ((data: ShareData) => Promise<void>) | undefined =
 function sharedCodeFromPath() {
   const match = window.location.pathname.match(/^\/map\/p\/([A-Za-z0-9_-]+)\/?$/);
   return match?.[1]?.toUpperCase() ?? null;
+}
+
+function sharedViewFromUrl() {
+  return decodeMapView(new URLSearchParams(window.location.search).get("share"));
 }
 
 function markerElement(business: Business) {
@@ -123,9 +126,9 @@ export function App() {
   const [pin, setPin] = useState<PinLocation | null>(null);
   const [dropMode, setDropMode] = useState(false);
   const [satelliteEnabled, setSatelliteEnabled] = useState(true);
-  const [roadsEnabled, setRoadsEnabled] = useState(true);
-  const [buildingsEnabled, setBuildingsEnabled] = useState(true);
-  const [wainwrightsEnabled, setWainwrightsEnabled] = useState(true);
+  const [roadsEnabled, setRoadsEnabled] = useState(false);
+  const [buildingsEnabled, setBuildingsEnabled] = useState(false);
+  const [wainwrightsEnabled, setWainwrightsEnabled] = useState(false);
   const [highGroundEnabled, setHighGroundEnabled] = useState(false);
   const [commercialEnabled, setCommercialEnabled] = useState(true);
   const [specialWalksEnabled, setSpecialWalksEnabled] = useState(false);
@@ -331,6 +334,7 @@ export function App() {
         })
         .map((layer) => layer.id);
       roadOverlayLayers.current.forEach((layerId) => instance.moveLayer(layerId, firstLabelLayer));
+      roadOverlayLayers.current.forEach((layerId) => instance.setLayoutProperty(layerId, "visibility", "none"));
 
       instance.addLayer(
         {
@@ -397,7 +401,7 @@ export function App() {
           source: "openmaptiles",
           "source-layer": "building",
           minzoom: 14,
-          layout: { visibility: "visible" },
+          layout: { visibility: "none" },
           paint: {
             "fill-extrusion-color": [
               "interpolate",
@@ -427,7 +431,7 @@ export function App() {
         type: "circle",
         source: wainwrightOverlay.sourceId,
         minzoom: 8,
-        layout: { visibility: "visible" },
+        layout: { visibility: "none" },
         paint: {
           "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 3, 12, 6, 16, 8],
           "circle-color": "#f0c85a",
@@ -442,7 +446,7 @@ export function App() {
         source: wainwrightOverlay.sourceId,
         minzoom: 11,
         layout: {
-          visibility: "visible",
+          visibility: "none",
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Regular"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 11, 11, 15, 13],
@@ -482,7 +486,7 @@ export function App() {
       if (!mapTilerKey) {
         setNotice("Free 3D terrain preview · OpenFreeMap and Mapzen elevation data");
       }
-      if (!sharedCodeFromPath()) {
+      if (!sharedCodeFromPath() && !sharedViewFromUrl()) {
         instance.fitBounds(LAKE_DISTRICT_OPENING_BOUNDS, {
           padding: { top: 105, right: 70, bottom: 75, left: 70 },
           bearing: -12,
@@ -588,6 +592,16 @@ export function App() {
   }, [dropMode, mapReady, placePin]);
 
   useEffect(() => {
+    const shared = sharedViewFromUrl();
+    if (!shared || !mapReady) return;
+    applyLayerState(shared.layers);
+    if (shared.pin) placePin(shared.pin);
+    map.current?.flyTo({ ...shared.camera, center: [shared.camera.longitude, shared.camera.latitude], duration: 1200 });
+    setShareUrl(window.location.href);
+    setNotice(shared.pin ? "Location shared from The Lakes in Cumbria" : "Map view shared from The Lakes in Cumbria");
+  }, [mapReady, placePin]);
+
+  useEffect(() => {
     const code = sharedCodeFromPath();
     if (!code || !mapReady) return;
     setBusy(true);
@@ -612,31 +626,74 @@ export function App() {
       .finally(() => setBusy(false));
   }, [mapReady, placePin]);
 
-  async function shareLocation() {
-    if (!pin || !map.current) return;
+  function currentLayerState(): MapLayerState {
+    return {
+      satellite: satelliteEnabled,
+      roads: roadsEnabled,
+      buildings: buildingsEnabled,
+      wainwrights: wainwrightsEnabled,
+      highGround: highGroundEnabled,
+      commercial: commercialEnabled,
+      specialWalks: specialWalksEnabled,
+      businessCategories: [...activeBusinessCategories],
+      walkIds: [...activeSpecialWalks]
+    };
+  }
+
+  async function shareMap(pinToShare?: PinLocation) {
+    if (!map.current) return;
     setBusy(true);
     setNotice(null);
     try {
       const centre = map.current.getCenter();
-      const shared = await createSharedLocation({
-        longitude: pin.longitude,
-        latitude: pin.latitude,
+      const encoded = encodeMapView({
+        longitude: centre.lng,
+        latitude: centre.lat,
         zoom: map.current.getZoom(),
         pitch: map.current.getPitch(),
         bearing: map.current.getBearing()
-      });
-      void centre;
-      const url = `${window.location.origin}/map/p/${shared.shortCode}`;
+      }, currentLayerState(), pinToShare);
+      const url = `${window.location.origin}/map/?share=${encoded}`;
       setShareUrl(url);
-      window.history.replaceState({}, "", `/map/p/${shared.shortCode}`);
-      if (nativeShare) await nativeShare({ title: "Lake District location", url });
+      if (nativeShare) await nativeShare({ title: pinToShare ? "Lake District location" : "Lake District map view", url });
       else await navigator.clipboard.writeText(url);
+      if (!pinToShare) setNotice("Map view link copied.");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setNotice(error instanceof Error ? error.message : "Unable to share this location.");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function shareLocation() {
+    if (pin) await shareMap(pin);
+  }
+
+  function applyLayerState(state: MapLayerState) {
+    const instance = map.current;
+    if (!instance) return;
+    setSatelliteEnabled(state.satellite);
+    ["satellite-imagery", "satellite-underlay"].forEach((id) => {
+      if (instance.getLayer(id)) instance.setLayoutProperty(id, "visibility", state.satellite ? "visible" : "none");
+    });
+    if (instance.getLayer("terrain-hillshade")) instance.setLayoutProperty("terrain-hillshade", "visibility", state.satellite ? "none" : "visible");
+    setSatelliteLabels.current(state.satellite);
+    setRoadsEnabled(state.roads);
+    roadOverlayLayers.current.forEach((id) => instance.setLayoutProperty(id, "visibility", state.roads ? "visible" : "none"));
+    setBuildingsEnabled(state.buildings);
+    if (instance.getLayer("lakes-3d-buildings")) instance.setLayoutProperty("lakes-3d-buildings", "visibility", state.buildings ? "visible" : "none");
+    setWainwrightsEnabled(state.wainwrights);
+    const summit = summitOverlayRegistry.wainwrights;
+    [summit.pointLayerId, summit.labelLayerId].forEach((id) => instance.setLayoutProperty(id, "visibility", state.wainwrights ? "visible" : "none"));
+    setHighGroundEnabled(state.highGround);
+    if (instance.getLayer("high-ground-400m")) instance.setLayoutProperty("high-ground-400m", "visibility", state.highGround ? "visible" : "none");
+    setCommercialEnabled(state.commercial);
+    setActiveBusinessCategories(new Set(state.businessCategories.filter((category): category is BusinessCategory => BUSINESS_CATEGORIES.includes(category as BusinessCategory))));
+    setSpecialWalksEnabled(state.specialWalks);
+    const activeWalks = new Set(state.walkIds);
+    setActiveSpecialWalks(activeWalks);
+    specialWalks.forEach((walk) => setSpecialWalkVisibility(walk, state.specialWalks && activeWalks.has(walk.id)));
   }
 
   async function copyLink() {
@@ -1036,6 +1093,9 @@ export function App() {
         >
           <span className="layer-icon" aria-hidden="true">◫</span>Layers
         </button>
+        <button className="action-button" onClick={() => void shareMap()} disabled={busy || !mapReady}>
+          <span className="share-icon" aria-hidden="true">↗</span>Share view
+        </button>
       </div>
 
       {layersOpen && (
@@ -1179,11 +1239,10 @@ export function App() {
           <h1>Share this location</h1>
           <p className="coordinates">{formatCoordinates(pin)}</p>
           <div className="sheet-actions">
-            <button onClick={shareLocation} disabled={busy || !isSupabaseConfigured}>{nativeShare ? "Share" : "Create link"}</button>
+            <button onClick={shareLocation} disabled={busy}>{nativeShare ? "Share" : "Create link"}</button>
             {shareUrl && <button className="secondary" onClick={copyLink}>Copy link</button>}
             <button className="secondary" onClick={removePin}>Remove pin</button>
           </div>
-          {!isSupabaseConfigured && <p className="config-note">Connect Supabase to create persistent links.</p>}
           <div className="nearby-list">
             <h2>Nearby</h2>
             {nearby.map(({ business, distance }) => (

@@ -124,6 +124,8 @@ export function App() {
   const [selectedWalk, setSelectedWalk] = useState<SpecialWalk | null>(null);
   const [flyingWalk, setFlyingWalk] = useState<SpecialWalk | null>(null);
   const [pin, setPin] = useState<PinLocation | null>(null);
+  const [pinSheetOpen, setPinSheetOpen] = useState(false);
+  const [pinIsShared, setPinIsShared] = useState(false);
   const [dropMode, setDropMode] = useState(false);
   const [satelliteEnabled, setSatelliteEnabled] = useState(true);
   const [roadsEnabled, setRoadsEnabled] = useState(false);
@@ -569,10 +571,18 @@ export function App() {
     marker.on("dragend", () => {
       const coordinates = marker.getLngLat();
       setPin({ latitude: coordinates.lat, longitude: coordinates.lng });
+      setPinIsShared(false);
+      setPinSheetOpen(true);
       setShareUrl("");
+    });
+    element.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setPinSheetOpen(true);
     });
     pinMarker.current = marker;
     setPin(location);
+    setPinIsShared(false);
+    setPinSheetOpen(true);
     setShareUrl("");
     setSelectedBusiness(null);
     setSelectedSummit(null);
@@ -583,19 +593,30 @@ export function App() {
     const instance = map.current;
     if (!instance || !mapReady) return;
     const onClick = (event: maplibregl.MapMouseEvent) => {
-      if (!dropMode) return;
+      if (!dropMode) {
+        if (pinSheetOpen) setPinSheetOpen(false);
+        return;
+      }
       placePin({ latitude: event.lngLat.lat, longitude: event.lngLat.lng });
       setDropMode(false);
+      instance.easeTo({
+        center: event.lngLat,
+        offset: [0, window.innerWidth <= 680 ? -105 : -130],
+        duration: 550
+      });
     };
     instance.on("click", onClick);
     return () => { instance.off("click", onClick); };
-  }, [dropMode, mapReady, placePin]);
+  }, [dropMode, mapReady, pinSheetOpen, placePin]);
 
   useEffect(() => {
     const shared = sharedViewFromUrl();
     if (!shared || !mapReady) return;
     applyLayerState(shared.layers);
-    if (shared.pin) placePin(shared.pin);
+    if (shared.pin) {
+      placePin(shared.pin);
+      setPinIsShared(true);
+    }
     map.current?.flyTo({ ...shared.camera, center: [shared.camera.longitude, shared.camera.latitude], duration: 1200 });
     setShareUrl(window.location.href);
     setNotice(shared.pin ? "Location shared from The Lakes in Cumbria" : "Map view shared from The Lakes in Cumbria");
@@ -612,6 +633,7 @@ export function App() {
           return;
         }
         placePin(location);
+        setPinIsShared(true);
         map.current?.flyTo({
           center: [location.longitude, location.latitude],
           zoom: location.zoom,
@@ -706,6 +728,8 @@ export function App() {
     pinMarker.current?.remove();
     pinMarker.current = null;
     setPin(null);
+    setPinSheetOpen(false);
+    setPinIsShared(false);
     setShareUrl("");
     window.history.replaceState({}, "", "/map/");
   }
@@ -1007,7 +1031,7 @@ export function App() {
   }
 
   return (
-    <main className={`map-shell${dropMode ? " is-dropping" : ""}${pin || selectedBusiness || selectedSummit || selectedPlace || selectedWalk ? " has-sheet" : ""}`}>
+    <main className={`map-shell${dropMode ? " is-dropping" : ""}${(pin && pinSheetOpen) || selectedBusiness || selectedSummit || selectedPlace || selectedWalk ? " has-sheet" : ""}`}>
       <div ref={mapContainer} className="map-canvas" aria-label="Interactive map of the Lake District" />
 
       <header className="brand-panel">
@@ -1232,7 +1256,7 @@ export function App() {
         </section>
       )}
 
-      {pin && !selectedBusiness && !selectedSummit && !selectedPlace && (
+      {pin && pinSheetOpen && !selectedBusiness && !selectedSummit && !selectedPlace && (
         <section className="bottom-sheet pin-sheet" aria-label="Shared location">
           <button className="sheet-close" onClick={removePin} aria-label="Remove pin">×</button>
           <div className="sheet-kicker">Exact location</div>
@@ -1243,15 +1267,15 @@ export function App() {
             {shareUrl && <button className="secondary" onClick={copyLink}>Copy link</button>}
             <button className="secondary" onClick={removePin}>Remove pin</button>
           </div>
-          <div className="nearby-list">
-            <h2>Nearby</h2>
-            {nearby.map(({ business, distance }) => (
-              <button key={business.id} onClick={() => setSelectedBusiness(business)}>
-                <span><strong>{business.name}</strong><small>{business.town}</small></span>
-                <b>{distance < 0.1 ? "< 0.1" : distance.toFixed(1)} miles</b>
-              </button>
-            ))}
-          </div>
+          {pinIsShared && <div className="nearby-list">
+              <h2>Nearby</h2>
+              {nearby.map(({ business, distance }) => (
+                <button key={business.id} onClick={() => setSelectedBusiness(business)}>
+                  <span><strong>{business.name}</strong><small>{business.town}</small></span>
+                  <b>{distance < 0.1 ? "< 0.1" : distance.toFixed(1)} miles</b>
+                </button>
+              ))}
+            </div>}
         </section>
       )}
     </main>

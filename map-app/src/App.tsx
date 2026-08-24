@@ -1219,7 +1219,7 @@ export function App() {
 
       <aside className="business-cta">
         <strong>Own a Lake District business?</strong>
-        <span>Founding listings from £5/month</span>
+        <span>Listings available from £10/month</span>
         <a href="/map/business/" onClick={() => trackEvent("select_business_cta", { placement: "map_header" })}>Add your business</a>
       </aside>
 

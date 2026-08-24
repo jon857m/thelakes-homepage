@@ -4,6 +4,7 @@ import { demoBusinesses } from "./data/demoBusinesses";
 import { searchableSummits, summitOverlayRegistry, type Summit } from "./data/overlays";
 import { specialWalks, type SpecialWalk } from "./data/routes";
 import { nearbyBusinesses } from "./lib/geo";
+import { trackEvent } from "./lib/analytics";
 import { decodeMapView, encodeMapView } from "./lib/mapShare";
 import {
   coreSearchItems,
@@ -190,6 +191,26 @@ export function App() {
   );
 
   useEffect(() => setActiveSearchIndex(0), [searchQuery]);
+
+  useEffect(() => {
+    if (!selectedBusiness) return;
+    trackEvent("view_business", {
+      business_id: selectedBusiness.id,
+      business_slug: selectedBusiness.slug,
+      business_name: selectedBusiness.name,
+      business_category: businessCategory(selectedBusiness.category),
+      business_town: selectedBusiness.town,
+      featured: selectedBusiness.featured
+    });
+  }, [selectedBusiness]);
+
+  useEffect(() => {
+    if (!selectedWalk) return;
+    trackEvent("view_route", {
+      route_id: selectedWalk.id,
+      route_name: selectedWalk.name
+    });
+  }, [selectedWalk]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -638,6 +659,7 @@ export function App() {
         return;
       }
       placePin({ latitude: event.lngLat.lat, longitude: event.lngLat.lng });
+      trackEvent("drop_pin", { source: "map" });
       setDropMode(false);
       instance.easeTo({
         center: event.lngLat,
@@ -743,6 +765,12 @@ export function App() {
         url = `${window.location.origin}/map/?share=${encoded}`;
       }
       setShareUrl(url);
+      trackEvent("share_map", {
+        share_type: pinToShare ? "pin" : selectedBusiness ? "business" : "view",
+        business_id: selectedBusiness?.id ?? "",
+        business_slug: selectedBusiness?.slug ?? "",
+        short_link: url.includes("?v=")
+      });
       if (nativeShare && prefersNativeShare) await nativeShare({ title: pinToShare ? "Lake District location" : selectedBusiness?.name ?? "Lake District map view", url });
       else setSharePanelOpen(true);
     } catch (error) {
@@ -787,6 +815,7 @@ export function App() {
     if (!shareUrl) return;
     const copied = await copyText(shareUrl);
     if (copied) {
+      trackEvent("copy_share_link", { short_link: shareUrl.includes("?v=") });
       setSharePanelOpen(false);
       setNotice("Link copied to clipboard.");
     } else {
@@ -806,6 +835,7 @@ export function App() {
 
   function toggleSatellite() {
     const next = !satelliteEnabled;
+    trackEvent("toggle_map_layer", { layer_name: "satellite", enabled: next });
     setSatelliteEnabled(next);
     if (map.current?.getLayer("satellite-imagery")) {
       map.current.setLayoutProperty("satellite-imagery", "visibility", next ? "visible" : "none");
@@ -821,6 +851,7 @@ export function App() {
 
   function toggleBuildings() {
     const next = !buildingsEnabled;
+    trackEvent("toggle_map_layer", { layer_name: "3d_buildings", enabled: next });
     setBuildingsEnabled(next);
     if (map.current?.getLayer("lakes-3d-buildings")) {
       map.current.setLayoutProperty("lakes-3d-buildings", "visibility", next ? "visible" : "none");
@@ -829,6 +860,7 @@ export function App() {
 
   function toggleRoads() {
     const next = !roadsEnabled;
+    trackEvent("toggle_map_layer", { layer_name: "roads_and_paths", enabled: next });
     setRoadsEnabled(next);
     roadOverlayLayers.current.forEach((layerId) => {
       if (map.current?.getLayer(layerId)) {
@@ -839,6 +871,7 @@ export function App() {
 
   function toggleWainwrights() {
     const next = !wainwrightsEnabled;
+    trackEvent("toggle_map_layer", { layer_name: "wainwrights", enabled: next });
     setWainwrightsEnabled(next);
     const overlay = summitOverlayRegistry.wainwrights;
     [overlay.pointLayerId, overlay.labelLayerId].forEach((layerId) => {
@@ -851,6 +884,7 @@ export function App() {
 
   function toggleHighGround() {
     const next = !highGroundEnabled;
+    trackEvent("toggle_map_layer", { layer_name: "high_ground_400m", enabled: next });
     setHighGroundEnabled(next);
     if (map.current?.getLayer("high-ground-400m")) {
       map.current.setLayoutProperty("high-ground-400m", "visibility", next ? "visible" : "none");
@@ -931,12 +965,14 @@ export function App() {
 
   function toggleSpecialWalks() {
     const next = !specialWalksEnabled;
+    trackEvent("toggle_map_layer", { layer_name: "special_walks", enabled: next });
     setSpecialWalksEnabled(next);
     specialWalks.forEach((walk) => setSpecialWalkVisibility(walk, next && activeSpecialWalks.has(walk.id)));
   }
 
   function toggleSpecialWalk(walk: SpecialWalk) {
     const nextActive = !activeSpecialWalks.has(walk.id);
+    trackEvent("toggle_route", { route_id: walk.id, route_name: walk.name, enabled: nextActive });
     setActiveSpecialWalks((current) => {
       const next = new Set(current);
       if (nextActive) next.add(walk.id);
@@ -962,6 +998,7 @@ export function App() {
     setSelectedWalk(null);
     const token = flightToken.current;
     setFlyingWalk(walk);
+    trackEvent("fly_route", { route_id: walk.id, route_name: walk.name });
     try {
       const response = await fetch(walk.dataUrl);
       if (!response.ok) throw new Error("Unable to load this route.");
@@ -1050,6 +1087,8 @@ export function App() {
   }
 
   function toggleBusinessCategory(category: BusinessCategory) {
+    const enabled = !activeBusinessCategories.has(category);
+    trackEvent("toggle_business_category", { business_category: category, enabled });
     setActiveBusinessCategories((current) => {
       const next = new Set(current);
       if (next.has(category)) next.delete(category);
@@ -1071,6 +1110,13 @@ export function App() {
   }
 
   function chooseSearchResult(item: SearchItem) {
+    trackEvent("select_search_result", {
+      search_term: searchQuery.trim().slice(0, 100),
+      result_id: item.id,
+      result_name: item.name,
+      result_type: item.kind,
+      result_category: item.category
+    });
     setSearchQuery(item.name);
     setSearchOpen(false);
     setLayersOpen(false);
@@ -1084,6 +1130,12 @@ export function App() {
       duration: 1400,
       essential: true
     });
+  }
+
+  function toggleCommercialListings() {
+    const next = !commercialEnabled;
+    trackEvent("toggle_map_layer", { layer_name: "commercial_listings", enabled: next });
+    setCommercialEnabled(next);
   }
 
   function handleSearchKey(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -1168,7 +1220,7 @@ export function App() {
       <aside className="business-cta">
         <strong>Own a Lake District business?</strong>
         <span>Founding listings from £5/month</span>
-        <a href="/map/business/">Add your business</a>
+        <a href="/map/business/" onClick={() => trackEvent("select_business_cta", { placement: "map_header" })}>Add your business</a>
       </aside>
 
       {adminMode && <a className="admin-map-mode" href="/map/admin/">Admin edit mode · Exit</a>}
@@ -1225,7 +1277,7 @@ export function App() {
               ))}
             </div>
           )}
-          <button className="layer-row" onClick={() => setCommercialEnabled((enabled) => !enabled)} aria-pressed={commercialEnabled} disabled={!mapReady}>
+          <button className="layer-row" onClick={toggleCommercialListings} aria-pressed={commercialEnabled} disabled={!mapReady}>
             <span><strong>Commercial listings</strong><small>{businesses.length} places</small></span><i>{commercialEnabled ? "On" : "Off"}</i>
           </button>
           {commercialEnabled && (
@@ -1287,8 +1339,18 @@ export function App() {
             {selectedBusiness.galleryImages.slice(0, 5).map((image, index) => <img key={image} src={image} alt={`${selectedBusiness.name} ${index + 2}`} />)}
           </div>}
           <div className="sheet-actions">
-            {selectedBusiness.websiteUrl && <a href={selectedBusiness.websiteUrl} target="_blank" rel="noreferrer">Website</a>}
-            <a href={selectedBusiness.directionsUrl ?? `https://www.google.com/maps/dir/?api=1&destination=${selectedBusiness.latitude},${selectedBusiness.longitude}`} target="_blank" rel="noreferrer">Directions</a>
+            {selectedBusiness.websiteUrl && <a href={selectedBusiness.websiteUrl} target="_blank" rel="noreferrer" onClick={() => trackEvent("business_website_click", {
+              business_id: selectedBusiness.id,
+              business_slug: selectedBusiness.slug,
+              business_name: selectedBusiness.name,
+              business_category: businessCategory(selectedBusiness.category)
+            })}>Website</a>}
+            <a href={selectedBusiness.directionsUrl ?? `https://www.google.com/maps/dir/?api=1&destination=${selectedBusiness.latitude},${selectedBusiness.longitude}`} target="_blank" rel="noreferrer" onClick={() => trackEvent("business_directions_click", {
+              business_id: selectedBusiness.id,
+              business_slug: selectedBusiness.slug,
+              business_name: selectedBusiness.name,
+              business_category: businessCategory(selectedBusiness.category)
+            })}>Directions</a>
             {isAdmin && <a className="secondary" href={`/map/admin/?business=${selectedBusiness.id}`}>Edit listing</a>}
           </div>
         </section>
@@ -1336,7 +1398,10 @@ export function App() {
           <p className="route-distance">{selectedWalk.distanceKm.toFixed(1)} km · {(selectedWalk.distanceKm * 0.621371).toFixed(1)} miles</p>
           <p>A planning aid based on the supplied GPX track. Check current access, conditions and official route information before setting out.</p>
           <div className="sheet-actions">
-            <button onClick={() => map.current?.fitBounds(selectedWalk.bounds, { padding: 70, duration: 900, pitch: 45 })}>View whole route</button>
+            <button onClick={() => {
+              trackEvent("view_whole_route", { route_id: selectedWalk.id, route_name: selectedWalk.name });
+              map.current?.fitBounds(selectedWalk.bounds, { padding: 70, duration: 900, pitch: 45 });
+            }}>View whole route</button>
             <button className="secondary" onClick={() => void flyRoute(selectedWalk)} disabled={flyingWalk?.id === selectedWalk.id}>Fly the route</button>
             {selectedWalk.id === "lakeland-way" && <a href="https://lakelandway.uk/" target="_blank" rel="noreferrer">Official website</a>}
           </div>

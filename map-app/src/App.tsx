@@ -144,6 +144,8 @@ export function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [geographicSearchItems, setGeographicSearchItems] = useState<SearchItem[]>([]);
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const adminMode = isAdmin && new URLSearchParams(window.location.search).get("admin") === "1";
 
   const nearby = useMemo(
     () => (pin ? nearbyBusinesses(pin, businesses) : []),
@@ -159,6 +161,11 @@ export function App() {
   );
 
   useEffect(() => setActiveSearchIndex(0), [searchQuery]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    void supabase.rpc("is_admin").then(({ data }) => setIsAdmin(Boolean(data)));
+  }, []);
 
   useEffect(() => {
     if (!supabase) return;
@@ -510,6 +517,10 @@ export function App() {
       const element = markerElement(business);
       element.addEventListener("click", (event) => {
         event.stopPropagation();
+        if (adminMode) {
+          window.location.assign(`/map/admin/?business=${business.id}`);
+          return;
+        }
         setSelectedBusiness(business);
         setSelectedSummit(null);
         setSelectedPlace(null);
@@ -524,7 +535,22 @@ export function App() {
         .addTo(instance);
       });
     return () => businessMarkers.current.forEach((marker) => marker.remove());
-  }, [activeBusinessCategories, businesses, commercialEnabled, mapReady]);
+  }, [activeBusinessCategories, adminMode, businesses, commercialEnabled, mapReady]);
+
+  useEffect(() => {
+    if (!mapReady) return;
+    const requestedId = new URLSearchParams(window.location.search).get("business");
+    const requested = businesses.find((business) => business.id === requestedId);
+    if (!requested) return;
+    setSelectedBusiness(requested);
+    map.current?.flyTo({
+      center: [requested.longitude, requested.latitude],
+      zoom: 15,
+      pitch: 58,
+      duration: 900,
+      essential: true
+    });
+  }, [businesses, mapReady]);
 
   const placePin = useCallback((location: PinLocation) => {
     const instance = map.current;
@@ -993,6 +1019,8 @@ export function App() {
         <a href="/map/business/">Add your business</a>
       </aside>
 
+      {adminMode && <a className="admin-map-mode" href="/map/admin/">Admin edit mode · Exit</a>}
+
       <div className="map-actions">
         <button
           className={dropMode ? "action-button action-button--active" : "action-button"}
@@ -1090,6 +1118,7 @@ export function App() {
           <div className="sheet-actions">
             {selectedBusiness.websiteUrl && <a href={selectedBusiness.websiteUrl} target="_blank" rel="noreferrer">Website</a>}
             <a href={selectedBusiness.directionsUrl ?? `https://www.google.com/maps/dir/?api=1&destination=${selectedBusiness.latitude},${selectedBusiness.longitude}`} target="_blank" rel="noreferrer">Directions</a>
+            {isAdmin && <a className="secondary" href={`/map/admin/?business=${selectedBusiness.id}`}>Edit listing</a>}
           </div>
         </section>
       )}

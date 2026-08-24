@@ -3,9 +3,12 @@ import { createRoot } from "react-dom/client";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./styles.css";
 import { App } from "./App";
+import { AdminApp } from "./AdminApp";
+
+const isAccountRoute = window.location.pathname.startsWith("/map/login") || window.location.pathname.startsWith("/map/admin");
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    {isAccountRoute ? <AdminApp /> : <App />}
   </StrictMode>
 );

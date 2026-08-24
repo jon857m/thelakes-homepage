@@ -10,6 +10,50 @@ html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; }
 button, a { font: inherit; }
 button { cursor: pointer; }
 
+.account-shell, .admin-shell { min-height: 100dvh; color: #213027; background: radial-gradient(circle at 15% 0, #47684f 0, #1c3023 40%, #121d16 100%); overflow: auto; }
+.account-shell { display: grid; place-items: center; padding: 72px 20px 30px; }
+.account-brand { position: absolute; top: 24px; left: 24px; color: #f5f0df; font-weight: 800; text-decoration: none; }
+.login-card { width: min(460px, 100%); padding: 32px; border: 1px solid rgba(255,255,255,.6); border-radius: 24px; background: #f7f5eb; box-shadow: 0 24px 70px rgba(0,0,0,.3); }
+.account-kicker { color: #9a642e; font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.login-card h1, .admin-header h1, .admin-editor h2, .admin-empty h2 { margin: 7px 0 8px; font: 700 30px/1.05 Georgia, serif; }
+.login-card > p { color: #667168; line-height: 1.5; }
+.login-card form { display: grid; gap: 16px; margin-top: 24px; }
+.login-card label, .admin-fields label { display: grid; gap: 7px; color: #435047; font-size: 12px; font-weight: 800; }
+.login-card input, .admin-fields input, .admin-fields textarea, .admin-fields select, .admin-list > input { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #cbd2c8; border-radius: 11px; outline: none; color: #203027; background: white; font-size: 15px; }
+.login-card input:focus, .admin-fields input:focus, .admin-fields textarea:focus, .admin-fields select:focus, .admin-list > input:focus { border-color: #41694e; box-shadow: 0 0 0 3px rgba(65,105,78,.14); }
+.account-primary { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; padding: 0 18px; border: 0; border-radius: 11px; color: white; background: #28563a; font-weight: 850; text-decoration: none; }
+.account-primary:disabled { opacity: .55; }
+.account-link { margin-top: 18px; padding: 0; border: 0; color: #355a41; background: transparent; font-size: 12px; font-weight: 800; }
+.login-links { display: flex; justify-content: space-between; gap: 12px; }
+.account-message, .account-alert { padding: 11px 12px; border-radius: 10px; color: #71491f !important; background: #efe2c3; font-size: 12px; }
+.admin-shell { padding: 22px; }
+.admin-header { display: flex; max-width: 1500px; margin: 0 auto 18px; align-items: center; justify-content: space-between; color: #f5f0df; }
+.admin-header h1 { margin-bottom: 0; }
+.admin-header nav { display: flex; align-items: center; gap: 10px; }
+.admin-header nav a, .admin-header nav button { min-height: 42px; padding: 0 14px; border: 1px solid rgba(255,255,255,.3); border-radius: 11px; color: white; background: rgba(255,255,255,.08); font-size: 12px; font-weight: 800; text-decoration: none; }
+.admin-layout { display: grid; max-width: 1500px; min-height: calc(100dvh - 118px); margin: auto; grid-template-columns: 310px 1fr; overflow: hidden; border: 1px solid rgba(255,255,255,.25); border-radius: 22px; background: #f5f3e9; box-shadow: 0 22px 60px rgba(0,0,0,.28); }
+.admin-list { padding: 16px; overflow: auto; border-right: 1px solid #d8ddd4; background: #e9eee7; }
+.admin-list > p { margin: 10px 3px; color: #728078; font-size: 11px; }
+.admin-list > .admin-create { display: flex; min-height: 42px; margin-bottom: 10px; align-items: center; justify-content: center; border: 0; border-radius: 11px; color: white; background: #2b593d; font-weight: 850; }
+.admin-list > button { display: grid; width: 100%; gap: 4px; padding: 12px; border: 0; border-top: 1px solid #d5dcd3; color: #26342b; background: transparent; text-align: left; }
+.admin-list > button.is-selected { border-radius: 11px; background: white; box-shadow: 0 4px 14px rgba(32,51,39,.08); }
+.admin-list > button span { color: #6b786f; font-size: 11px; text-transform: capitalize; }
+.admin-workspace { min-width: 0; padding: 28px; overflow: auto; }
+.admin-empty { display: grid; min-height: 55vh; place-content: center; text-align: center; }
+.admin-empty p { color: #68756c; }
+.admin-editor__heading { display: flex; align-items: flex-start; justify-content: space-between; }
+.admin-editor__heading span { color: #8a6235; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.admin-editor__heading a { color: #355b42; font-size: 12px; font-weight: 850; }
+.admin-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; margin-top: 24px; }
+.admin-fields .field-wide { grid-column: 1 / -1; }
+.admin-fields textarea { resize: vertical; }
+.admin-fields label small { justify-self: end; margin-top: -20px; color: #879188; }
+.admin-fields .check-field { display: flex; align-items: center; }
+.admin-fields .check-field input { width: 20px; min-height: 20px; }
+.admin-save { display: flex; align-items: center; gap: 15px; margin-top: 24px; }
+.admin-save span { color: #42614c; font-size: 12px; font-weight: 800; }
+.admin-map-mode { position: absolute; z-index: 7; right: max(16px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); padding: 11px 14px; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; color: #1b271f; background: #f0cf70; box-shadow: 0 10px 28px rgba(0,0,0,.25); font-size: 12px; font-weight: 900; text-decoration: none; }
+
 .map-shell { position: relative; width: 100%; height: 100%; min-height: 100dvh; }
 .map-canvas { position: absolute; inset: 0; }
 .map-shell.is-dropping .map-canvas { cursor: crosshair; }
@@ -195,6 +239,19 @@ button { cursor: pointer; }
 .map-shell.has-sheet .maplibregl-ctrl-bottom-right { display: none; }
 
 @media (max-width: 680px) {
+  .account-shell { place-items: start center; padding-top: 72px; }
+  .account-brand { top: 20px; left: 20px; }
+  .login-card { padding: 24px 20px; border-radius: 20px; }
+  .admin-shell { padding: 12px; }
+  .admin-header { align-items: flex-start; }
+  .admin-header h1 { font-size: 23px; }
+  .admin-header nav { display: grid; }
+  .admin-layout { display: block; min-height: 0; overflow: visible; }
+  .admin-list { max-height: 34dvh; border-right: 0; border-bottom: 1px solid #d8ddd4; }
+  .admin-workspace { padding: 20px 16px; }
+  .admin-fields { grid-template-columns: 1fr; }
+  .admin-fields .field-wide { grid-column: auto; }
+  .admin-map-mode { right: 10px; bottom: max(14px, env(safe-area-inset-bottom)); }
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib.maplibregl-compact {
     max-width: calc(100vw - 78px);
     margin: 0 0 max(10px, env(safe-area-inset-bottom)) 10px;

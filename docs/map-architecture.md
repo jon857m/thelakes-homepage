@@ -56,6 +56,14 @@ The initial migration creates `businesses` and `shared_locations`, coordinate an
 
 The `businesses` schema already distinguishes editorial and subscriber listings and includes ownership and subscription-ready states. Business hours, subscriptions, uploads, analytics events and admin claims will be added in their phase-specific migrations rather than weakening the initial public policies.
 
+## Accounts and administration
+
+`/map/login/` uses Supabase Auth for the same authenticated session used by business owners and administrators. `/map/admin/` is protected twice: the client checks `is_admin()` for navigation and the database independently applies row-level policies to every business query. A non-admin cannot gain access by changing a URL or a browser flag.
+
+Administrators can search all listings by business name, town or postcode, create editorial drafts, edit listing content and coordinates, change lifecycle state, feature or suspend a listing, and enter an edit-from-map mode. In that mode, selecting a commercial marker opens its record directly in the admin editor. The first admin is bootstrapped once in `admin_users` after their Supabase Auth account exists; routine business management thereafter requires no Supabase table editing.
+
+Owner-editable and administrator-controlled fields are separated at the database boundary. A trigger prevents ordinary owners from changing ownership, listing type, payment-derived status or featured state even if they bypass the interface. Stripe webhooks will remain authoritative for subscriber lifecycle transitions.
+
 ## Future screenshot generation
 
 The share-card action boundary is the insertion point for future branded map images. Generation should occur server-side from the stored camera state so social images are stable and do not depend on client screenshot support.

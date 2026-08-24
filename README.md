@@ -28,7 +28,7 @@ Without a MapTiler key, the application uses OpenFreeMap's Liberty vector style 
 npm run map:check
 ```
 
-The generated `/map/` directory is checked in because the current production host publishes the repository as static files without running a build command. Run `npm run map:build` and commit the refreshed bundle before deployment. If hosting later moves to a build-aware Cloudflare Pages project, it can instead run that command during deployment and ignore the generated directory. `_redirects` supplies the SPA fallback for shared-location URLs where the host supports redirect rules.
+The generated `/map/` directory is checked in because the current production host publishes the repository as static files without running a build command. Run `npm run map:build` and commit the refreshed bundle before deployment. The build also creates physical entry points for `/map/login/`, `/map/admin/` and `/map/business/` because the current host does not honour SPA fallback rules. If hosting later moves to a build-aware Cloudflare Pages project, it can instead run that command during deployment and ignore the generated directory. `_redirects` supplies the SPA fallback for shared-location URLs where the host supports redirect rules.
 
 Apply `supabase/migrations/202608240001_map_mvp.sql` to a Supabase project before enabling sharing.
 

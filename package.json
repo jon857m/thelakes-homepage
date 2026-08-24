@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "map:dev": "vite --config map-app/vite.config.ts",
-    "map:build": "tsc -p map-app/tsconfig.json && vite build --config map-app/vite.config.ts",
+    "map:build": "tsc -p map-app/tsconfig.json && vite build --config map-app/vite.config.ts && node tools/build_static_map_routes.mjs",
     "map:lint": "eslint --config map-app/eslint.config.js map-app/src --max-warnings=0",
     "map:check": "npm run map:lint && npm run map:build"
   },

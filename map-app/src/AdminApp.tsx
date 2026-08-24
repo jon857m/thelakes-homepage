@@ -217,6 +217,28 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
     }
   }
 
+  async function removePrimaryImage(kind: "logo" | "hero") {
+    if (!supabase) return;
+    const field = kind === "logo" ? "logo_url" : "image_url";
+    const imageUrl = draft[field];
+    if (!imageUrl) return;
+    setImageBusy(true);
+    const { error } = await supabase.from("businesses").update({ [field]: null, updated_at: new Date().toISOString() }).eq("id", draft.id);
+    if (!error) {
+      const marker = "/storage/v1/object/public/business-images/";
+      const markerIndex = imageUrl.indexOf(marker);
+      if (markerIndex >= 0) {
+        const storagePath = decodeURIComponent(imageUrl.slice(markerIndex + marker.length));
+        await supabase.storage.from("business-images").remove([storagePath]);
+      }
+      const updated = { ...draft, [field]: null };
+      setDraft(updated);
+      onSaved(updated);
+      setMessage(`${kind === "logo" ? "Logo" : "Main image"} removed.`);
+    } else setMessage(error.message);
+    setImageBusy(false);
+  }
+
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!supabase) return;
@@ -267,8 +289,8 @@ function BusinessEditor({ business, onSaved }: { business: AdminBusiness; onSave
         <legend>Business images</legend>
         <p>Images are resized and compressed before upload. Add one logo, one main image and up to five gallery images.</p>
         <div className="admin-image-slots">
-          <label className="admin-image-upload">{draft.logo_url ? <img src={draft.logo_url} alt="Current logo" /> : <span>Logo</span>}<b>{draft.logo_url ? "Replace logo" : "Add logo"}</b><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void uploadImage(event, "logo")} /></label>
-          <label className="admin-image-upload admin-image-upload--hero">{draft.image_url ? <img src={draft.image_url} alt="Current main" /> : <span>Main image</span>}<b>{draft.image_url ? "Replace main image" : "Add main image"}</b><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void uploadImage(event, "hero")} /></label>
+          <div className="admin-image-primary"><label className="admin-image-upload">{draft.logo_url ? <img src={draft.logo_url} alt="Current logo" /> : <span>Logo</span>}<b>{draft.logo_url ? "Replace logo" : "Add logo"}</b><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void uploadImage(event, "logo")} /></label>{draft.logo_url && <button type="button" className="admin-image-remove" onClick={() => void removePrimaryImage("logo")} aria-label="Remove logo">×</button>}</div>
+          <div className="admin-image-primary admin-image-upload--hero"><label className="admin-image-upload">{draft.image_url ? <img src={draft.image_url} alt="Current main" /> : <span>Main image</span>}<b>{draft.image_url ? "Replace main image" : "Add main image"}</b><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void uploadImage(event, "hero")} /></label>{draft.image_url && <button type="button" className="admin-image-remove" onClick={() => void removePrimaryImage("hero")} aria-label="Remove main image">×</button>}</div>
           {(draft.business_images ?? []).map((image, index) => <div className="admin-image-preview" key={image.id}><img src={image.image_url} alt={`Gallery ${index + 1}`} /><button type="button" onClick={() => void removeGalleryImage(image)} aria-label={`Remove gallery image ${index + 1}`}>×</button></div>)}
           {(draft.business_images?.length ?? 0) < 5 && <label className="admin-image-upload"><span>＋</span><b>Add gallery image</b><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void uploadImage(event, "gallery")} /></label>}
         </div>

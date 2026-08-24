@@ -56,6 +56,8 @@ button { cursor: pointer; }
 .admin-images legend { padding: 0 6px; color: #2d4034; font-size: 13px; font-weight: 900; }
 .admin-images > p { margin: 0 0 14px; color: #6b786f; font-size: 12px; line-height: 1.45; }
 .admin-image-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; }
+.admin-image-primary { position: relative; min-width: 0; }
+.admin-image-primary .admin-image-upload { height: 100%; }
 .admin-image-upload, .admin-image-preview { position: relative; display: grid; min-height: 142px; place-items: center; overflow: hidden; border: 1px dashed #aeb9ae; border-radius: 12px; color: #46604f; background: #f4f6f1; text-align: center; }
 .admin-image-upload { padding: 10px; cursor: pointer; }
 .admin-image-upload--hero { grid-column: span 2; }
@@ -64,7 +66,7 @@ button { cursor: pointer; }
 .admin-image-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .admin-image-upload img, .admin-image-preview img { width: 100%; height: 105px; object-fit: cover; border-radius: 8px; }
 .admin-image-preview { padding: 8px; border-style: solid; }
-.admin-image-preview button { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border: 0; border-radius: 50%; color: white; background: rgba(24,33,27,.82); font-size: 20px; line-height: 1; }
+.admin-image-preview button, .admin-image-remove { position: absolute; z-index: 2; top: 8px; right: 8px; width: 30px; height: 30px; border: 0; border-radius: 50%; color: white; background: rgba(24,33,27,.82); box-shadow: 0 3px 10px rgba(0,0,0,.24); font-size: 20px; line-height: 1; }
 .admin-map-mode { position: absolute; z-index: 7; right: max(16px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); padding: 11px 14px; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; color: #1b271f; background: #f0cf70; box-shadow: 0 10px 28px rgba(0,0,0,.25); font-size: 12px; font-weight: 900; text-decoration: none; }
 
 .map-shell { position: relative; width: 100%; height: 100%; min-height: 100dvh; }

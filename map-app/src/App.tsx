@@ -670,19 +670,39 @@ export function App() {
     // against an intermediate camera until the first user gesture. Open shared
     // listings at their final camera immediately, then re-project markers once
     // the map has completed its next layout pass.
-    instance.stop();
-    instance.jumpTo({
-      center: [requested.longitude, requested.latitude],
-      zoom: 15,
-      pitch: 58
-    });
-    const settleMarkers = () => {
+    const settleListing = () => {
+      instance.stop();
       instance.resize();
+      instance.jumpTo({
+        center: [requested.longitude, requested.latitude],
+        zoom: 15,
+        pitch: 58
+      });
       businessMarkers.current.forEach((marker) => marker.setLngLat(marker.getLngLat()));
       instance.triggerRepaint();
     };
-    window.requestAnimationFrame(() => window.requestAnimationFrame(settleMarkers));
-    instance.once("idle", settleMarkers);
+    const settleWhenVisible = () => {
+      if (document.visibilityState === "visible") settleListing();
+    };
+    const settleAfterTerrain = (event: { sourceId?: string; isSourceLoaded?: boolean }) => {
+      if (event.sourceId !== "terrain" || !event.isSourceLoaded) return;
+      settleListing();
+      instance.off("sourcedata", settleAfterTerrain);
+    };
+
+    settleListing();
+    window.requestAnimationFrame(() => window.requestAnimationFrame(settleListing));
+    instance.once("idle", settleListing);
+    instance.on("sourcedata", settleAfterTerrain);
+    window.addEventListener("focus", settleWhenVisible);
+    window.addEventListener("pageshow", settleWhenVisible);
+    document.addEventListener("visibilitychange", settleWhenVisible);
+    return () => {
+      instance.off("sourcedata", settleAfterTerrain);
+      window.removeEventListener("focus", settleWhenVisible);
+      window.removeEventListener("pageshow", settleWhenVisible);
+      document.removeEventListener("visibilitychange", settleWhenVisible);
+    };
   }, [businesses, mapReady]);
 
   const placePin = useCallback((location: PinLocation) => {

@@ -401,6 +401,8 @@ export function AdminApp() {
   }, []);
   if (session === undefined) return <main className="account-shell"><div className="login-card">Loading…</div></main>;
   if (!session) return <Login onSession={setSession} />;
-  if (window.location.pathname.startsWith("/map/admin") || window.location.pathname.startsWith("/map/login")) return <AdminDashboard session={session} />;
-  return <BusinessAccount session={session} />;
+  // Always resolve the user's role before choosing an account experience.
+  // Previously /map/business/ bypassed this check, so administrators could be
+  // shown the subscriber onboarding screen despite having admin access.
+  return <AdminDashboard session={session} />;
 }

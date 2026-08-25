@@ -17,17 +17,26 @@ Deno.serve(async (request) => {
     const { businessId } = await request.json() as { businessId?: string };
     if (!businessId) return json({ error: "Choose a business listing" }, 400);
 
-    const admin = adminClient();
-    const { data: business } = await admin.from("businesses")
+    const { data: business, error: businessError } = await scoped.from("businesses")
       .select("id,name,owner_user_id,listing_type,listing_status")
-      .eq("id", businessId).eq("owner_user_id", user.id).single();
-    if (!business || business.listing_type !== "subscriber") return json({ error: "Listing not found" }, 404);
+      .eq("id", businessId).single();
+    if (businessError) {
+      console.error("Unable to load checkout listing", businessError);
+      return json({ error: businessError.code === "PGRST116" ? "This listing does not belong to your account" : businessError.message }, businessError.code === "PGRST116" ? 404 : 500);
+    }
+    if (!business || business.owner_user_id !== user.id) return json({ error: "This listing does not belong to your account" }, 404);
+    if (business.listing_type !== "subscriber") return json({ error: "Editorial listings cannot be subscribed to" }, 409);
     if (!["draft", "awaiting_payment", "past_due", "cancelled"].includes(business.listing_status)) {
       return json({ error: "This listing already has an active subscription" }, 409);
     }
 
-    const { data: subscription } = await admin.from("business_subscriptions")
+    const admin = adminClient();
+    const { data: subscription, error: subscriptionError } = await admin.from("business_subscriptions")
       .select("*").eq("business_id", business.id).single();
+    if (subscriptionError) {
+      console.error("Unable to load subscription record", subscriptionError);
+      return json({ error: subscriptionError.message }, 500);
+    }
     if (!subscription) return json({ error: "Subscription record not found" }, 409);
 
     let customerId = subscription.stripe_customer_id as string | null;

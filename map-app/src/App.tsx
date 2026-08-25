@@ -159,6 +159,7 @@ export function App() {
   const flightToken = useRef(0);
   const flightMarker = useRef<Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [startupCoverVisible, setStartupCoverVisible] = useState(true);
   const [businessMarkersReady, setBusinessMarkersReady] = useState(false);
   const [businesses, setBusinesses] = useState<Business[]>(demoBusinesses);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -237,6 +238,17 @@ export function App() {
     if (!supabase) return;
     void supabase.rpc("is_admin").then(({ data }) => setIsAdmin(Boolean(data)));
   }, []);
+
+  useEffect(() => {
+    // This cover is deliberately independent of MapLibre's tile/source state.
+    // It never participates in layout or captures input, and this timeout means
+    // it cannot strand a visitor behind it if map loading fails or is slow.
+    const timeout = window.setTimeout(
+      () => setStartupCoverVisible(false),
+      mapReady ? 450 : 4000
+    );
+    return () => window.clearTimeout(timeout);
+  }, [mapReady]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -1264,6 +1276,14 @@ export function App() {
   return (
     <main className={`map-shell${dropMode ? " is-dropping" : ""}${(pin && pinSheetOpen) || selectedBusiness || selectedSummit || selectedPlace || selectedWalk ? " has-sheet" : ""}`}>
       <div ref={mapContainer} className="map-canvas" aria-label="Interactive map of the Lake District" />
+      <div className={`map-startup-cover${startupCoverVisible ? "" : " is-hidden"}`} role="status" aria-label="Preparing the 3D Explorer">
+        <div className="map-startup-cover__brand">
+          <img src="/map/brand/hero.jpg" alt="" />
+          <span><strong>The Lake District</strong><small>Preparing the 3D Explorer</small></span>
+        </div>
+        <div className="map-startup-cover__progress"><i /></div>
+        <p>Loading aerial imagery and terrain…</p>
+      </div>
 
       <header className="brand-panel">
         <a href="/" className="brand-link" aria-label="The Lake District homepage">

@@ -61,13 +61,18 @@ Deno.serve(async (request) => {
       const businessId = subscription.metadata.business_id;
       if (businessId) {
         const periodEnd = subscription.items.data[0]?.current_period_end;
+        const cancellationDate = subscription.cancel_at ?? null;
         const { error: subscriptionError } = await admin.from("business_subscriptions").update({
           stripe_customer_id: String(subscription.customer),
           stripe_subscription_id: subscription.id,
           stripe_price_id: subscription.items.data[0]?.price.id ?? null,
           stripe_status: subscription.status,
-          current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
-          cancel_at_period_end: subscription.cancel_at_period_end,
+          current_period_end: cancellationDate
+            ? new Date(cancellationDate * 1000).toISOString()
+            : periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+          // Newer Stripe Billing configurations can schedule a future
+          // `cancel_at` date while leaving `cancel_at_period_end` false.
+          cancel_at_period_end: subscription.cancel_at_period_end || Boolean(cancellationDate),
           updated_at: new Date().toISOString(),
         }).eq("business_id", businessId);
         assertDatabaseWrite(subscriptionError, "Updating subscription state");

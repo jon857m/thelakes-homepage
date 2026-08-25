@@ -159,6 +159,7 @@ export function App() {
   const flightToken = useRef(0);
   const flightMarker = useRef<Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [businessMarkersReady, setBusinessMarkersReady] = useState(false);
   const [businesses, setBusinesses] = useState<Business[]>(demoBusinesses);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [selectedSummit, setSelectedSummit] = useState<Summit | null>(null);
@@ -385,6 +386,10 @@ export function App() {
         });
       }
       instance.setTerrain({ source: "terrain", exaggeration: 1.35 });
+      // HTML markers are projected against the terrain surface. Do not reveal
+      // them while the first DEM tiles are still resolving, otherwise they
+      // visibly catch up when the ground elevation changes beneath them.
+      instance.once("idle", () => setBusinessMarkersReady(true));
 
       if (mapTilerKey) {
         instance.addSource("satellite-imagery", {
@@ -628,6 +633,8 @@ export function App() {
     const instance = map.current;
     if (!instance || !mapReady) return;
     businessMarkers.current.forEach((marker) => marker.remove());
+    businessMarkers.current = [];
+    if (!businessMarkersReady) return;
     businessMarkers.current = businesses
       .filter((business) => commercialEnabled && activeBusinessCategories.has(businessCategory(business.category)))
       .map((business) => {
@@ -654,7 +661,7 @@ export function App() {
       return marker;
       });
     return () => businessMarkers.current.forEach((marker) => marker.remove());
-  }, [activeBusinessCategories, adminMode, businesses, commercialEnabled, mapReady]);
+  }, [activeBusinessCategories, adminMode, businesses, businessMarkersReady, commercialEnabled, mapReady]);
 
   useEffect(() => {
     if (!mapReady) return;
@@ -664,6 +671,7 @@ export function App() {
     const instance = map.current;
     if (!instance) return;
     openedBusiness.current = requested.id;
+    setBusinessMarkersReady(false);
     setSelectedBusiness(requested);
     // Listing links commonly open in a background tab. Browsers throttle the
     // animation frames used by flyTo there, which can leave HTML markers drawn
@@ -687,12 +695,16 @@ export function App() {
     const settleAfterTerrain = (event: { sourceId?: string; isSourceLoaded?: boolean }) => {
       if (event.sourceId !== "terrain" || !event.isSourceLoaded) return;
       settleListing();
+      setBusinessMarkersReady(true);
       instance.off("sourcedata", settleAfterTerrain);
     };
 
     settleListing();
     window.requestAnimationFrame(() => window.requestAnimationFrame(settleListing));
-    instance.once("idle", settleListing);
+    instance.once("idle", () => {
+      settleListing();
+      setBusinessMarkersReady(true);
+    });
     instance.on("sourcedata", settleAfterTerrain);
     window.addEventListener("focus", settleWhenVisible);
     window.addEventListener("pageshow", settleWhenVisible);

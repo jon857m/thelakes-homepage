@@ -195,6 +195,7 @@ export function App() {
   const [geographicSearchItems, setGeographicSearchItems] = useState<SearchItem[]>([]);
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const adminMode = isAdmin && new URLSearchParams(window.location.search).get("admin") === "1";
 
   const nearby = useMemo(
@@ -235,6 +236,13 @@ export function App() {
   useEffect(() => {
     if (!supabase) return;
     void supabase.rpc("is_admin").then(({ data }) => setIsAdmin(Boolean(data)));
+  }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+    void supabase.auth.getSession().then(({ data }) => setIsSignedIn(Boolean(data.session)));
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => setIsSignedIn(Boolean(session)));
+    return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -1317,9 +1325,19 @@ export function App() {
       </div>
 
       <aside className="business-cta">
-        <strong>Own a Lake District business?</strong>
-        <span>Listings available from £10/month</span>
-        <a href="/map/business/" onClick={() => trackEvent("select_business_cta", { placement: "map_header" })}>Add your business</a>
+        {isSignedIn ? (
+          <>
+            <strong>Manage your Lake District listing</strong>
+            <span>Your business account and subscription</span>
+            <a href={isAdmin ? "/map/admin/" : "/map/business/"}>Back to dashboard</a>
+          </>
+        ) : (
+          <>
+            <strong>Own a Lake District business?</strong>
+            <span>Listings available from £10/month</span>
+            <a href="/map/business/" onClick={() => trackEvent("select_business_cta", { placement: "map_header" })}>Add your business</a>
+          </>
+        )}
       </aside>
 
       {adminMode && <a className="admin-map-mode" href="/map/admin/">Admin edit mode · Exit</a>}

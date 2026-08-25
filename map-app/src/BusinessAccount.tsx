@@ -147,9 +147,23 @@ export function BusinessAccount({ session }: { session: Session }) {
   async function openHostedPage(functionName: "create-checkout" | "create-billing-portal") {
     if (!supabase || !selected) return;
     setBusy(true); setMessage("");
-    const { data, error } = await supabase.functions.invoke(functionName, { body: { businessId: selected.id } });
+    const { data: authData } = await supabase.auth.getSession();
+    const accessToken = authData.session?.access_token;
+    if (!accessToken) { setBusy(false); setMessage("Your session has expired. Sign in again to continue."); return; }
+    const { data, error } = await supabase.functions.invoke(functionName, {
+      body: { businessId: selected.id },
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
     setBusy(false);
-    if (error || !data?.url) return setMessage(data?.error ?? error?.message ?? "Unable to open payment page.");
+    if (error || !data?.url) {
+      let detail = data?.error as string | undefined;
+      const context = error && "context" in error ? (error as { context?: Response }).context : undefined;
+      if (!detail && context) {
+        try { detail = ((await context.clone().json()) as { error?: string; message?: string }).error; }
+        catch { /* Keep the SDK's fallback message for non-JSON responses. */ }
+      }
+      return setMessage(detail ?? error?.message ?? "Unable to open payment page.");
+    }
     if (functionName === "create-checkout") trackEvent("begin_checkout", { business_id: selected.id, business_slug: selected.slug, value: 10, currency: "GBP" });
     window.location.assign(data.url as string);
   }

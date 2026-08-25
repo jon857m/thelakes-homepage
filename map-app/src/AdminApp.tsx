@@ -381,7 +381,7 @@ function AdminDashboard({ session }: { session: Session }) {
   }
 
   if (allowed === null) return <main className="account-shell"><div className="login-card">Checking access…</div></main>;
-  if (!allowed) return <main className="account-shell"><section className="login-card"><h1>Business account</h1><p>{session.user.email} is signed in, but does not have administrator access.</p><a className="account-primary" href="/map/">Return to map</a></section></main>;
+  if (!allowed) return <BusinessAccount session={session} />;
   return <main className="admin-shell">
     <header className="admin-header"><div><span className="account-kicker">The Lake District</span><h1>Business administration</h1></div><nav><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav></header>
     <div className="admin-layout">

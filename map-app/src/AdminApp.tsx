@@ -23,6 +23,8 @@ type AdminBusiness = {
   listing_type: "editorial" | "subscriber";
   listing_status: "draft" | "awaiting_payment" | "active" | "past_due" | "cancelled" | "suspended";
   featured: boolean;
+  owner_user_id: string | null;
+  owner_email?: string | null;
 };
 
 type BusinessImage = { id: string; image_url: string; storage_path: string; sort_order: number };
@@ -86,7 +88,7 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
   async function resetPassword() {
     if (!supabase || !email) return setMessage("Enter your email address first.");
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/map/login/`
+      redirectTo: `${window.location.origin}/map/login/?recovery=1`
     });
     setMessage(error ? error.message : "Password reset email sent.");
   }
@@ -119,6 +121,42 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
         <button className="account-primary" disabled={busy || !isSupabaseConfigured}>{busy ? "Signing in…" : "Sign in"}</button>
       </form>
       <div className="login-links"><button className="account-link" onClick={createAccount}>Create an account</button><button className="account-link" onClick={resetPassword}>Forgotten your password?</button></div>
+      {message && <p className="account-message" role="status">{message}</p>}
+    </section>
+  </main>;
+}
+
+function PasswordRecovery({ onComplete }: { onComplete: () => void }) {
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function updatePassword(event: FormEvent) {
+    event.preventDefault();
+    if (!supabase) return;
+    if (password.length < 8) return setMessage("Use at least eight characters.");
+    if (password !== confirmation) return setMessage("The passwords do not match.");
+    setBusy(true);
+    setMessage("");
+    const { error } = await supabase.auth.updateUser({ password });
+    setBusy(false);
+    if (error) return setMessage(error.message);
+    window.history.replaceState({}, "", "/map/login/");
+    onComplete();
+  }
+
+  return <main className="account-shell">
+    <a className="account-brand" href="/map/">← The Lake District map</a>
+    <section className="login-card">
+      <div className="account-kicker">Business accounts</div>
+      <h1>Choose a new password</h1>
+      <p>Enter a new password for your Lake District business account.</p>
+      <form onSubmit={updatePassword}>
+        <label>New password<input type="password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" required autoFocus /></label>
+        <label>Confirm new password<input type="password" minLength={8} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="new-password" required /></label>
+        <button className="account-primary" disabled={busy}>{busy ? "Updating…" : "Update password"}</button>
+      </form>
       {message && <p className="account-message" role="status">{message}</p>}
     </section>
   </main>;
@@ -310,6 +348,7 @@ function BusinessEditor({ business, onSaved, onDeleted }: { business: AdminBusin
     <div className="admin-fields">
       <label>Company name<input value={draft.name} onChange={(e) => set("name", e.target.value)} required /></label>
       <label>Slug<input value={draft.slug} onChange={(e) => set("slug", e.target.value)} required /></label>
+      <label className="field-wide">Customer account email<input className="admin-readonly" type="email" value={draft.owner_email ?? "No customer account — editorial listing"} readOnly /></label>
       <label className="field-wide">Tagline <small>{draft.tagline.length}/80</small><input maxLength={80} value={draft.tagline} onChange={(e) => set("tagline", e.target.value)} /></label>
       <label className="field-wide">Details<textarea rows={5} value={draft.description} onChange={(e) => set("description", e.target.value)} /></label>
       <label>Category<select value={draft.category} onChange={(e) => set("category", e.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -354,8 +393,16 @@ function AdminDashboard({ session }: { session: Session }) {
   }, []);
   useEffect(() => {
     if (!supabase || !allowed) return;
-    void supabase.from("businesses").select("*,business_images(*)").order("name").then(({ data }) => {
-      const loaded = (data ?? []) as AdminBusiness[];
+    void Promise.all([
+      supabase.from("businesses").select("*,business_images(*)").order("name"),
+      supabase.rpc("admin_business_owner_emails")
+    ]).then(([businessResult, ownerResult]) => {
+      const ownerEmails = new Map<string, string | null>(
+        ((ownerResult.data ?? []) as { business_id: string; owner_email: string | null }[])
+          .map((item) => [item.business_id, item.owner_email])
+      );
+      const loaded = ((businessResult.data ?? []) as AdminBusiness[])
+        .map((business) => ({ ...business, owner_email: ownerEmails.get(business.id) ?? null }));
       setBusinesses(loaded);
       const requestedId = new URLSearchParams(window.location.search).get("business");
       if (requestedId) setSelected(loaded.find((item) => item.id === requestedId) ?? null);
@@ -363,7 +410,7 @@ function AdminDashboard({ session }: { session: Session }) {
   }, [allowed]);
   const visible = useMemo(() => {
     const term = query.trim().toLowerCase();
-    return businesses.filter((item) => !term || `${item.name} ${item.town ?? ""} ${item.postcode ?? ""}`.toLowerCase().includes(term));
+    return businesses.filter((item) => !term || `${item.name} ${item.town ?? ""} ${item.postcode ?? ""} ${item.owner_email ?? ""}`.toLowerCase().includes(term));
   }, [businesses, query]);
 
   async function createBusiness() {
@@ -385,7 +432,7 @@ function AdminDashboard({ session }: { session: Session }) {
   return <main className="admin-shell">
     <header className="admin-header"><div><span className="account-kicker">The Lake District</span><h1>Business administration</h1></div><nav><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav></header>
     <div className="admin-layout">
-      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => <button className={selected?.id === item.id ? "is-selected" : ""} key={item.id} onClick={() => setSelected(item)}><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span></button>)}</aside>
+      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => <button className={selected?.id === item.id ? "is-selected" : ""} key={item.id} onClick={() => setSelected(item)}><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</button>)}</aside>
       <section className="admin-workspace">{selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, or use “Edit from map” to find it geographically.</p></div>}</section>
     </div>
   </main>;
@@ -393,14 +440,19 @@ function AdminDashboard({ session }: { session: Session }) {
 
 export function AdminApp() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [recovering, setRecovering] = useState(() => new URLSearchParams(window.location.search).get("recovery") === "1");
   useEffect(() => {
     if (!supabase) { setSession(null); return; }
     void supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
+      setSession(next);
+      if (event === "PASSWORD_RECOVERY") setRecovering(true);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
   if (session === undefined) return <main className="account-shell"><div className="login-card">Loading…</div></main>;
   if (!session) return <Login onSession={setSession} />;
+  if (recovering) return <PasswordRecovery onComplete={() => setRecovering(false)} />;
   // Always resolve the user's role before choosing an account experience.
   // Previously /map/business/ bypassed this check, so administrators could be
   // shown the subscriber onboarding screen despite having admin access.

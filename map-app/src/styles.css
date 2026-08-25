@@ -21,6 +21,7 @@ button { cursor: pointer; }
 .login-card label, .admin-fields label { display: grid; gap: 7px; color: #435047; font-size: 12px; font-weight: 800; }
 .login-card input, .admin-fields input, .admin-fields textarea, .admin-fields select, .admin-list > input { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #cbd2c8; border-radius: 11px; outline: none; color: #203027; background: white; font-size: 15px; }
 .login-card input:focus, .admin-fields input:focus, .admin-fields textarea:focus, .admin-fields select:focus, .admin-list > input:focus { border-color: #41694e; box-shadow: 0 0 0 3px rgba(65,105,78,.14); }
+.admin-fields .admin-readonly { color: #5c6961; background: #edf0ea; cursor: default; }
 .account-primary { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; padding: 0 18px; border: 0; border-radius: 11px; color: white; background: #28563a; font-weight: 850; text-decoration: none; }
 .account-primary:disabled { opacity: .55; }
 .account-link { margin-top: 18px; padding: 0; border: 0; color: #355a41; background: transparent; font-size: 12px; font-weight: 800; }
@@ -38,6 +39,7 @@ button { cursor: pointer; }
 .admin-list > button { display: grid; width: 100%; gap: 4px; padding: 12px; border: 0; border-top: 1px solid #d5dcd3; color: #26342b; background: transparent; text-align: left; }
 .admin-list > button.is-selected { border-radius: 11px; background: white; box-shadow: 0 4px 14px rgba(32,51,39,.08); }
 .admin-list > button span { color: #6b786f; font-size: 11px; text-transform: capitalize; }
+.admin-list > button small { overflow: hidden; color: #65736a; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .admin-workspace { min-width: 0; padding: 28px; overflow: auto; }
 .admin-empty { display: grid; min-height: 55vh; place-content: center; text-align: center; }
 .admin-empty p { color: #68756c; }

@@ -151,6 +151,7 @@ export function App() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
   const businessMarkers = useRef<Marker[]>([]);
+  const openedBusiness = useRef<string | null>(null);
   const pinMarker = useRef<Marker | null>(null);
   const setSatelliteLabels = useRef<(enabled: boolean) => void>(() => undefined);
   const roadOverlayLayers = useRef<string[]>([]);
@@ -659,15 +660,29 @@ export function App() {
     if (!mapReady) return;
     const requestedId = new URLSearchParams(window.location.search).get("business");
     const requested = businesses.find((business) => business.id === requestedId);
-    if (!requested) return;
+    if (!requested || openedBusiness.current === requested.id) return;
+    const instance = map.current;
+    if (!instance) return;
+    openedBusiness.current = requested.id;
     setSelectedBusiness(requested);
-    map.current?.flyTo({
+    // Listing links commonly open in a background tab. Browsers throttle the
+    // animation frames used by flyTo there, which can leave HTML markers drawn
+    // against an intermediate camera until the first user gesture. Open shared
+    // listings at their final camera immediately, then re-project markers once
+    // the map has completed its next layout pass.
+    instance.stop();
+    instance.jumpTo({
       center: [requested.longitude, requested.latitude],
       zoom: 15,
-      pitch: 58,
-      duration: 900,
-      essential: true
+      pitch: 58
     });
+    const settleMarkers = () => {
+      instance.resize();
+      businessMarkers.current.forEach((marker) => marker.setLngLat(marker.getLngLat()));
+      instance.triggerRepaint();
+    };
+    window.requestAnimationFrame(() => window.requestAnimationFrame(settleMarkers));
+    instance.once("idle", settleMarkers);
   }, [businesses, mapReady]);
 
   const placePin = useCallback((location: PinLocation) => {

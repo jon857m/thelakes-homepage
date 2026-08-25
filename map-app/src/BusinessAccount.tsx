@@ -72,7 +72,10 @@ export function BusinessAccount({ session }: { session: Session }) {
   async function load() {
     if (!supabase) return;
     setLoading(true);
-    const { data, error } = await supabase.from("businesses").select("*,business_subscriptions(*)").order("created_at");
+    const { data, error } = await supabase.from("businesses")
+      .select("*,business_subscriptions(*)")
+      .eq("owner_user_id", session.user.id)
+      .order("created_at");
     setLoading(false);
     if (error) return setMessage(error.message);
     const loaded = (data ?? []) as CustomerBusiness[];

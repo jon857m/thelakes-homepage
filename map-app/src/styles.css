@@ -104,6 +104,11 @@ button { cursor: pointer; }
 .billing-return > div:last-child { display: flex; flex: 0 0 auto; gap: 9px; }
 .billing-return button, .billing-return a { display: inline-flex; min-height: 44px; padding: 0 15px; align-items: center; justify-content: center; border: 1px solid #315f42; border-radius: 11px; color: #315f42; background: white; font-weight: 850; text-decoration: none; }
 .billing-return a { color: white; background: #315f42; }
+.subscription-summary { display: flex; max-width: 900px; margin: 0 auto 28px; padding: 20px 22px; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid #b9cbbd; border-radius: 16px; background: #edf3ea; box-shadow: 0 10px 28px rgba(30,50,37,.07); }
+.subscription-summary--ending { border-color: #d9bd7e; background: #f7eed6; }
+.subscription-summary h2 { margin: 5px 0 5px; font: 700 24px/1.15 Georgia, serif; }
+.subscription-summary p { max-width: 680px; margin: 0; color: #5b695f; line-height: 1.5; }
+.subscription-summary > button { min-height: 44px; padding: 0 16px; flex: 0 0 auto; border: 1px solid #315f42; border-radius: 11px; color: white; background: #315f42; font-weight: 850; }
 .onboarding-step { max-width: 900px; margin: 0 auto; }
 .onboarding-step h2 { margin: 8px 0; font: 700 38px/1.05 Georgia, serif; }
 .onboarding-step > p { margin: 0 0 26px; color: #6b776f; line-height: 1.55; }
@@ -137,7 +142,6 @@ button { cursor: pointer; }
 .listing-preview__hero { width: 100%; max-height: 230px; margin: 17px 0 10px; border-radius: 14px; object-fit: cover; }
 .listing-preview p { color: #59665e; line-height: 1.5; }
 .customer-message { position: sticky; bottom: 12px; max-width: 900px; margin: 20px auto 0; }
-.billing-note { color: #748078; text-align: center; font-size: 11px; }
 
 .map-shell { position: relative; width: 100%; height: 100%; min-height: 100dvh; }
 .map-canvas { position: absolute; inset: 0; }
@@ -354,6 +358,8 @@ button { cursor: pointer; }
   .customer-layout { display: block; width: 100%; min-height: calc(100dvh - 62px); margin: 0; overflow: visible; border-radius: 0; }
   .billing-return { display: block; padding: 18px; }
   .billing-return > div:last-child { margin-top: 15px; flex-wrap: wrap; }
+  .subscription-summary { display: block; padding: 18px; }
+  .subscription-summary > button { width: 100%; margin-top: 16px; }
   .customer-progress { padding: 20px 18px 14px; border-right: 0; border-bottom: 1px solid #d6ddd2; }
   .customer-progress h1 { margin-bottom: 8px; font-size: 23px; }
   .customer-progress ol { display: flex; margin-top: 18px; gap: 4px; }

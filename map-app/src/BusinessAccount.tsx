@@ -60,6 +60,17 @@ function statusLabel(status: CustomerBusiness["listing_status"]) {
   return ({ draft: "Draft", awaiting_payment: "Awaiting payment", active: "Listing active", past_due: "Payment needs attention", cancelled: "Subscription cancelled", suspended: "Listing suspended" })[status];
 }
 
+function formatBillingDate(value: string | null | undefined) {
+  if (!value) return null;
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
+}
+
+function hasPaidAccess(subscription: Subscription | undefined) {
+  if (!subscription) return false;
+  if (subscription.stripe_status === "active" || subscription.stripe_status === "trialing") return true;
+  return Boolean(subscription.cancel_at_period_end && subscription.current_period_end && new Date(subscription.current_period_end).getTime() > Date.now());
+}
+
 export function BusinessAccount({ session }: { session: Session }) {
   const returnedFromBilling = new URLSearchParams(window.location.search).get("billing") === "returned";
   const [selected, setSelected] = useState<CustomerBusiness | null>(null);
@@ -180,14 +191,34 @@ export function BusinessAccount({ session }: { session: Session }) {
   </main>;
 
   const subscription = selected.business_subscriptions?.[0];
-  const isActive = selected.listing_status === "active";
+  const paidAccess = hasPaidAccess(subscription);
+  const isActive = selected.listing_status === "active" || paidAccess;
+  const hasBillingAccount = Boolean(subscription?.stripe_customer_id);
+  const billingEndDate = formatBillingDate(subscription?.current_period_end);
+  const isEnding = Boolean(subscription?.cancel_at_period_end && paidAccess);
+  const effectiveStatus = paidAccess ? "active" : selected.listing_status;
+  const displayedStatus = isEnding && billingEndDate ? `Live until ${billingEndDate}` : statusLabel(effectiveStatus);
   return <main className="customer-shell">
     <header className="customer-header"><a href="/map/">The Lake District · 3D Explorer</a><div><span>{session.user.email}</span><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></div></header>
     <div className="customer-layout">
-      <aside className="customer-progress"><div className="account-kicker">Your listing</div><h1>{selected.name}</h1><span className={`listing-status listing-status--${selected.listing_status}`}>{statusLabel(selected.listing_status)}</span>{!isActive && <ol>{["Your business", "Location", "Details & preview"].map((label, index) => <li className={step === index + 1 ? "is-current" : step > index + 1 ? "is-done" : ""} key={label}><button onClick={() => setStep(index + 1)}><i>{index + 1}</i>{label}</button></li>)}</ol>}
+      <aside className="customer-progress"><div className="account-kicker">Your listing</div><h1>{selected.name}</h1><span className={`listing-status listing-status--${effectiveStatus}`}>{displayedStatus}</span>{!isActive && <ol>{["Your business", "Location", "Details & preview"].map((label, index) => <li className={step === index + 1 ? "is-current" : step > index + 1 ? "is-done" : ""} key={label}><button onClick={() => setStep(index + 1)}><i>{index + 1}</i>{label}</button></li>)}</ol>}
         {isActive && <nav><button onClick={() => setStep(1)}>Edit business</button><a href={`/map/?business=${selected.id}`} target="_blank">View on map ↗</a><button onClick={() => void openHostedPage("create-billing-portal")}>Manage billing</button></nav>}
       </aside>
       <section className="customer-workspace">
+        {hasBillingAccount && <section className={`subscription-summary${isEnding ? " subscription-summary--ending" : ""}`} aria-labelledby="subscription-summary-title">
+          <div>
+            <div className="account-kicker">Billing &amp; subscription</div>
+            <h2 id="subscription-summary-title">{isEnding ? "Your listing remains live until the end of your paid period" : paidAccess ? "Your subscription is active" : "Your subscription needs attention"}</h2>
+            <p>{isEnding && billingEndDate
+              ? `You have cancelled renewal. Your listing and dashboard remain available until ${billingEndDate}; after that, we will keep your details safely so you can reactivate later.`
+              : paidAccess && billingEndDate
+                ? `Your next billing period begins after ${billingEndDate}. You can update payment details or cancel renewal in the billing portal.`
+                : billingEndDate
+                  ? `Your previous billing period ended on ${billingEndDate}. Your listing details are saved and ready to reactivate.`
+                  : "Open billing to review your subscription or payment details."}</p>
+          </div>
+          <button onClick={() => void openHostedPage("create-billing-portal")} disabled={busy}>Manage billing</button>
+        </section>}
         {returnedFromBilling && isActive && <section className="billing-return" aria-labelledby="billing-return-title">
           <div><div className="account-kicker">Back from Stripe</div><h2 id="billing-return-title">Your billing settings are saved</h2><p>You can now continue editing your business or check how the live listing looks on the map.</p></div>
           <div><button onClick={() => setStep(1)}>Continue editing</button><a href={`/map/?business=${selected.id}`}>View live listing ↗</a></div>
@@ -198,7 +229,6 @@ export function BusinessAccount({ session }: { session: Session }) {
           <article className="listing-preview"><div className="account-kicker">Preview</div>{selected.logo_url && <img className="listing-preview__logo" src={selected.logo_url} alt="" />}<h3>{selected.name}</h3><strong>{selected.tagline || "Your tagline will appear here"}</strong>{selected.image_url && <img className="listing-preview__hero" src={selected.image_url} alt="" />}<p>{selected.description || "Your short description will appear here."}</p><small>{selected.town} · {selected.category}</small></article>
           <div className="onboarding-actions"><button className="secondary" onClick={() => setStep(2)}>Back</button><button className="secondary" onClick={() => void saveCurrent()} disabled={busy}>Save preview</button>{!isActive && <button className="account-primary" onClick={() => void saveAndCheckout()} disabled={busy}>Subscribe · £10/month</button>}{isActive && <a className="account-primary" href={`/map/?business=${selected.id}`}>View live listing</a>}</div></div>}
         {message && <p className="account-message customer-message" role="status">{message}</p>}
-        {subscription?.current_period_end && <p className="billing-note">Current billing period ends {new Date(subscription.current_period_end).toLocaleDateString("en-GB")}.</p>}
       </section>
     </div>
   </main>;

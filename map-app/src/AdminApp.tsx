@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type ClipboardEvent, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
+import { BusinessAccount } from "./BusinessAccount";
 
 type AdminBusiness = {
   id: string;
@@ -93,7 +94,12 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
   async function createAccount() {
     if (!supabase || !email || !password) return setMessage("Enter an email address and password first.");
     setBusy(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const customerSignup = window.location.pathname.startsWith("/map/business");
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}${customerSignup ? "/map/business/" : "/map/login/"}` }
+    });
     setBusy(false);
     if (error) setMessage(error.message);
     else if (data.session) onSession(data.session);
@@ -395,5 +401,6 @@ export function AdminApp() {
   }, []);
   if (session === undefined) return <main className="account-shell"><div className="login-card">Loading…</div></main>;
   if (!session) return <Login onSession={setSession} />;
-  return <AdminDashboard session={session} />;
+  if (window.location.pathname.startsWith("/map/admin") || window.location.pathname.startsWith("/map/login")) return <AdminDashboard session={session} />;
+  return <BusinessAccount session={session} />;
 }

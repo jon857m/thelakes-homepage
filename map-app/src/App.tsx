@@ -91,6 +91,23 @@ function formatCoordinates(pin: PinLocation) {
   return `${pin.latitude.toFixed(4)}° N, ${Math.abs(pin.longitude).toFixed(4)}° W`;
 }
 
+function businessHoursStatus(business: Business) {
+  if (business.hoursVary) return "Hours vary · check website";
+  if (!business.openingHours || Object.keys(business.openingHours).length === 0) return null;
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London", weekday: "long", hour: "2-digit", minute: "2-digit", hour12: false
+  }).formatToParts(new Date());
+  const weekday = parts.find((part) => part.type === "weekday")?.value;
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "00";
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "00";
+  const today = weekday ? business.openingHours[weekday] : undefined;
+  if (!today || today.closed) return "Closed today";
+  const now = `${hour}:${minute}`;
+  if (now >= today.open && now < today.close) return `Open now · closes ${today.close}`;
+  if (now < today.open) return `Closed · opens ${today.open}`;
+  return "Closed for today";
+}
+
 async function copyText(value: string) {
   try {
     await navigator.clipboard.writeText(value);
@@ -221,7 +238,7 @@ export function App() {
     if (!supabase) return;
     void supabase
       .from("businesses")
-      .select("id,name,slug,tagline,description,category,latitude,longitude,town,address,postcode,website_url,logo_url,image_url,featured,business_images(image_url,sort_order)")
+      .select("id,name,slug,tagline,description,category,latitude,longitude,town,address,postcode,website_url,directions_url,facebook_url,instagram_url,logo_url,image_url,opening_hours,hours_vary,featured,business_images(image_url,sort_order)")
       .eq("active", true)
       .then(({ data, error }) => {
         if (error || !data?.length) return;
@@ -239,8 +256,13 @@ export function App() {
             address: row.address ?? undefined,
             postcode: row.postcode ?? undefined,
             websiteUrl: row.website_url ?? undefined,
+            directionsUrl: row.directions_url ?? undefined,
+            facebookUrl: row.facebook_url ?? undefined,
+            instagramUrl: row.instagram_url ?? undefined,
             imageUrl: row.image_url ?? undefined,
             logoUrl: row.logo_url ?? undefined,
+            openingHours: row.opening_hours ?? undefined,
+            hoursVary: Boolean(row.hours_vary),
             galleryImages: (row.business_images ?? [])
               .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
               .map((image) => image.image_url),
@@ -1334,6 +1356,7 @@ export function App() {
             </div>
           </div>
           {selectedBusiness.imageUrl && <img className="business-sheet__hero" src={selectedBusiness.imageUrl} alt={selectedBusiness.name} />}
+          {businessHoursStatus(selectedBusiness) && <div className="business-hours-status">{businessHoursStatus(selectedBusiness)}</div>}
           <p>{selectedBusiness.description}</p>
           {selectedBusiness.galleryImages && selectedBusiness.galleryImages.length > 0 && <div className="business-sheet__gallery">
             {selectedBusiness.galleryImages.slice(0, 5).map((image, index) => <img key={image} src={image} alt={`${selectedBusiness.name} ${index + 2}`} />)}

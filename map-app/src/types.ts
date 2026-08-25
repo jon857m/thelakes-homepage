@@ -15,6 +15,10 @@ export type Business = {
   imageUrl?: string;
   logoUrl?: string;
   galleryImages?: string[];
+  openingHours?: Record<string, { closed: boolean; open: string; close: string }>;
+  hoursVary?: boolean;
+  facebookUrl?: string;
+  instagramUrl?: string;
   featured: boolean;
 };
 

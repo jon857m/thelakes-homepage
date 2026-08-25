@@ -76,6 +76,61 @@ button { cursor: pointer; }
 .admin-lifecycle > span { color: #6b786f; font-size: 12px; font-weight: 850; }
 .admin-map-mode { position: absolute; z-index: 7; right: max(16px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); padding: 11px 14px; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; color: #1b271f; background: #f0cf70; box-shadow: 0 10px 28px rgba(0,0,0,.25); font-size: 12px; font-weight: 900; text-decoration: none; }
 
+.business-account-shell .onboarding-start select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #cbd2c8; border-radius: 11px; color: #203027; background: white; font-size: 15px; }
+.customer-shell { height: 100dvh; overflow: auto; color: #203027; background: #17281e; }
+.customer-header { display: flex; min-height: 70px; padding: 14px max(24px, calc((100% - 1320px) / 2)); align-items: center; justify-content: space-between; gap: 20px; color: #f7f3e7; background: #15281c; }
+.customer-header > a { color: inherit; font: 700 19px/1 Georgia, serif; text-decoration: none; }
+.customer-header > div { display: flex; align-items: center; gap: 14px; font-size: 12px; }
+.customer-header button { min-height: 38px; padding: 0 13px; border: 1px solid rgba(255,255,255,.3); border-radius: 10px; color: white; background: rgba(255,255,255,.08); font-weight: 800; }
+.customer-layout { display: grid; width: min(1320px, calc(100% - 40px)); min-height: calc(100dvh - 100px); margin: 0 auto 30px; grid-template-columns: 285px minmax(0, 1fr); overflow: hidden; border-radius: 22px; background: #f7f4e9; box-shadow: 0 24px 70px rgba(0,0,0,.28); }
+.customer-progress { padding: 30px 24px; border-right: 1px solid #d6ddd2; background: #e9eee7; }
+.customer-progress h1 { margin: 8px 0 12px; font: 700 28px/1.08 Georgia, serif; }
+.listing-status { display: inline-flex; padding: 7px 10px; border-radius: 999px; color: #69471f; background: #ead8aa; font-size: 11px; font-weight: 900; }
+.listing-status--active { color: #fff; background: #2a6843; }
+.listing-status--past_due, .listing-status--suspended { color: #fff; background: #963f32; }
+.customer-progress ol { display: grid; margin: 30px 0 0; padding: 0; gap: 7px; list-style: none; }
+.customer-progress li button, .customer-progress nav button, .customer-progress nav a { display: flex; width: 100%; min-height: 46px; padding: 8px 10px; align-items: center; gap: 10px; border: 0; border-radius: 10px; color: #536158; background: transparent; text-align: left; text-decoration: none; font-size: 13px; font-weight: 800; }
+.customer-progress li.is-current button { color: #183324; background: white; box-shadow: 0 5px 18px rgba(30,50,37,.09); }
+.customer-progress li i { display: grid; width: 27px; height: 27px; flex: 0 0 27px; place-items: center; border: 1px solid #acb8ae; border-radius: 50%; font-style: normal; }
+.customer-progress li.is-current i, .customer-progress li.is-done i { border-color: #315f42; color: white; background: #315f42; }
+.customer-progress nav { display: grid; gap: 7px; margin-top: 28px; }
+.customer-progress nav button, .customer-progress nav a { border: 1px solid #c8d1c8; background: rgba(255,255,255,.55); }
+.customer-workspace { position: relative; min-width: 0; padding: 42px 48px 70px; }
+.onboarding-step { max-width: 900px; margin: 0 auto; }
+.onboarding-step h2 { margin: 8px 0; font: 700 38px/1.05 Georgia, serif; }
+.onboarding-step > p { margin: 0 0 26px; color: #6b776f; line-height: 1.55; }
+.customer-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.customer-fields label { display: grid; gap: 7px; color: #435047; font-size: 12px; font-weight: 850; }
+.customer-fields label small { justify-self: end; margin-top: -20px; color: #879188; }
+.customer-fields input, .customer-fields textarea, .customer-fields select { width: 100%; min-height: 48px; padding: 11px 12px; border: 1px solid #c9d1c7; border-radius: 11px; outline: none; color: #203027; background: white; font-size: 15px; }
+.customer-fields input:focus, .customer-fields textarea:focus, .customer-fields select:focus { border-color: #41694e; box-shadow: 0 0 0 3px rgba(65,105,78,.14); }
+.customer-fields textarea { resize: vertical; }
+.customer-fields .field-wide { grid-column: 1 / -1; }
+.customer-fields .check-field { display: flex; align-items: center; flex-direction: row; }
+.customer-fields .check-field input { width: 20px; min-height: 20px; }
+.onboarding-map { width: 100%; height: 360px; overflow: hidden; border: 1px solid #c8d1c7; border-radius: 16px; background: #d8e1d4; }
+.map-confirmation { margin: 8px 2px 0; color: #708078; font-size: 11px; }
+.onboarding-actions { display: flex; margin-top: 28px; align-items: center; justify-content: flex-end; gap: 10px; }
+.onboarding-actions .secondary { min-height: 46px; padding: 0 17px; border: 1px solid #bfc9bf; border-radius: 11px; color: #30453a; background: white; font-weight: 850; }
+.opening-hours { margin: 0; padding: 16px; border: 1px solid #d1d8cf; border-radius: 13px; }
+.opening-hours legend, .subscriber-images legend { padding: 0 6px; color: #34483b; font-size: 13px; font-weight: 900; }
+.opening-hours > div { display: grid; grid-template-columns: 1fr 90px 110px 20px 110px; align-items: center; gap: 8px; padding: 6px 0; }
+.opening-hours > div label { display: flex; align-items: center; flex-direction: row; font-weight: 700; }
+.opening-hours > div label input { width: 17px; min-height: 17px; }
+.subscriber-images { display: grid; grid-template-columns: 150px minmax(180px, 280px); gap: 12px; margin: 0; padding: 16px; border: 1px solid #d1d8cf; border-radius: 13px; }
+.subscriber-images legend { grid-column: 1 / -1; }
+.subscriber-images label { position: relative; display: grid; min-height: 135px; padding: 9px; place-items: center; overflow: hidden; border: 1px dashed #adb9ad; border-radius: 12px; background: #f3f6f1; text-align: center; cursor: pointer; }
+.subscriber-images img { width: 100%; height: 95px; border-radius: 8px; object-fit: contain; }
+.subscriber-images input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.listing-preview { position: relative; max-width: 620px; margin: 28px auto 0; padding: 24px; overflow: hidden; border: 1px solid #d3d9d0; border-radius: 20px; background: #f3f1e7; box-shadow: 0 15px 38px rgba(30,46,35,.12); }
+.listing-preview h3 { margin: 6px 0; font: 700 30px/1 Georgia, serif; }
+.listing-preview > strong { display: block; color: #355c43; }
+.listing-preview__logo { position: absolute; top: 20px; right: 20px; width: 68px; height: 68px; border-radius: 12px; background: white; object-fit: contain; }
+.listing-preview__hero { width: 100%; max-height: 230px; margin: 17px 0 10px; border-radius: 14px; object-fit: cover; }
+.listing-preview p { color: #59665e; line-height: 1.5; }
+.customer-message { position: sticky; bottom: 12px; max-width: 900px; margin: 20px auto 0; }
+.billing-note { color: #748078; text-align: center; font-size: 11px; }
+
 .map-shell { position: relative; width: 100%; height: 100%; min-height: 100dvh; }
 .map-canvas { position: absolute; inset: 0; }
 .map-shell.is-dropping .map-canvas { cursor: crosshair; }
@@ -254,6 +309,7 @@ button { cursor: pointer; }
 .bottom-sheet h1 { margin: 7px 38px 8px 0; font: 700 29px/1.05 Georgia, serif; letter-spacing: -.5px; }
 .bottom-sheet p { margin: 9px 0 16px; color: #4d5b51; line-height: 1.5; }
 .tagline { display: block; margin-bottom: 8px; color: #34523e; }
+.business-hours-status { display: inline-flex; margin: 2px 0 7px; padding: 7px 10px; border-radius: 999px; color: #245238; background: #dce9da; font-size: 12px; font-weight: 850; }
 .business-sheet__identity { display: flex; align-items: center; gap: 14px; padding-right: 36px; }
 .business-sheet__identity > div { min-width: 0; }
 .business-sheet__identity h1 { margin-right: 0; }
@@ -285,6 +341,28 @@ button { cursor: pointer; }
   .account-shell { place-items: start center; padding-top: 72px; }
   .account-brand { top: 20px; left: 20px; }
   .login-card { padding: 24px 20px; border-radius: 20px; }
+  .customer-header { min-height: 62px; padding: 11px 15px; }
+  .customer-header > div span { display: none; }
+  .customer-layout { display: block; width: 100%; min-height: calc(100dvh - 62px); margin: 0; overflow: visible; border-radius: 0; }
+  .customer-progress { padding: 20px 18px 14px; border-right: 0; border-bottom: 1px solid #d6ddd2; }
+  .customer-progress h1 { margin-bottom: 8px; font-size: 23px; }
+  .customer-progress ol { display: flex; margin-top: 18px; gap: 4px; }
+  .customer-progress li { flex: 1; }
+  .customer-progress li button { min-height: 38px; justify-content: center; padding: 5px; font-size: 0; }
+  .customer-progress li i { font-size: 12px; }
+  .customer-progress nav { grid-template-columns: 1fr 1fr; margin-top: 15px; }
+  .customer-workspace { padding: 28px 18px 50px; }
+  .onboarding-step h2 { font-size: 31px; }
+  .customer-fields { grid-template-columns: 1fr; }
+  .customer-fields .field-wide { grid-column: auto; }
+  .onboarding-map { height: 310px; }
+  .opening-hours > div { grid-template-columns: 1fr 76px 1fr 16px 1fr; }
+  .opening-hours > div label { font-size: 0; }
+  .opening-hours > div label input { font-size: initial; }
+  .opening-hours input { min-width: 0; padding: 5px; font-size: 12px; }
+  .subscriber-images { grid-template-columns: 1fr 1fr; }
+  .onboarding-actions { flex-wrap: wrap; }
+  .onboarding-actions .account-primary { flex: 1 1 180px; }
   .admin-shell { display: block; height: 100dvh; padding: 12px; overflow: auto; }
   .admin-header { align-items: flex-start; }
   .admin-header h1 { font-size: 23px; }

@@ -159,7 +159,6 @@ export function App() {
   const flightToken = useRef(0);
   const flightMarker = useRef<Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const [mapVisualReady, setMapVisualReady] = useState(false);
   const [businessMarkersReady, setBusinessMarkersReady] = useState(false);
   const [businesses, setBusinesses] = useState<Business[]>(demoBusinesses);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -429,26 +428,6 @@ export function App() {
         firstLabelLayer
       );
 
-      // Keep the assembled base map behind the branded loading cover until
-      // both the aerial texture and terrain for the opening view are ready.
-      // This prevents the vector style and markers flashing up first.
-      let visualReady = false;
-      const revealMap = () => {
-        if (visualReady) return;
-        const satelliteLoaded = instance.isSourceLoaded("satellite-imagery");
-        const terrainLoaded = instance.isSourceLoaded("terrain");
-        if (!satelliteLoaded || !terrainLoaded) return;
-        visualReady = true;
-        window.setTimeout(() => setMapVisualReady(true), 120);
-      };
-      instance.on("sourcedata", revealMap);
-      instance.on("idle", revealMap);
-      window.setTimeout(() => {
-        if (!visualReady) {
-          visualReady = true;
-          setMapVisualReady(true);
-        }
-      }, 12000);
       setSatelliteLabels.current(true);
       instance.addLayer(
         {
@@ -1285,11 +1264,6 @@ export function App() {
   return (
     <main className={`map-shell${dropMode ? " is-dropping" : ""}${(pin && pinSheetOpen) || selectedBusiness || selectedSummit || selectedPlace || selectedWalk ? " has-sheet" : ""}`}>
       <div ref={mapContainer} className="map-canvas" aria-label="Interactive map of the Lake District" />
-      {!mapVisualReady && <div className="map-opening" role="status" aria-live="polite">
-        <div className="map-opening__brand"><img src="/map/brand/hero.jpg" alt="" /><span><strong>The Lake District</strong><small>Preparing the 3D Explorer</small></span></div>
-        <div className="map-opening__progress"><i></i></div>
-        <p>Loading aerial imagery and terrain…</p>
-      </div>}
 
       <header className="brand-panel">
         <a href="/" className="brand-link" aria-label="The Lake District homepage">

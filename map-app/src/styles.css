@@ -157,16 +157,6 @@ button { cursor: pointer; }
 
 .map-shell { position: relative; width: 100%; height: 100%; min-height: 100dvh; }
 .map-canvas { position: absolute; inset: 0; }
-.map-opening { position: absolute; z-index: 30; inset: 0; display: grid; place-content: center; justify-items: center; padding: 24px; color: #f7f2e5; background: radial-gradient(circle at 30% 20%, #45654d 0, #1d3526 42%, #101c15 100%); text-align: center; }
-.map-opening__brand { display: flex; align-items: center; gap: 14px; text-align: left; }
-.map-opening__brand img { width: 62px; height: 62px; border: 1px solid rgba(255,255,255,.25); border-radius: 15px; object-fit: cover; box-shadow: 0 12px 35px rgba(0,0,0,.3); }
-.map-opening__brand strong, .map-opening__brand small { display: block; }
-.map-opening__brand strong { font: 700 25px/1 Georgia, serif; }
-.map-opening__brand small { margin-top: 7px; color: rgba(247,242,229,.65); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
-.map-opening__progress { width: min(310px, 72vw); height: 3px; margin-top: 28px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.13); }
-.map-opening__progress i { display: block; width: 42%; height: 100%; border-radius: inherit; background: #e7bd5e; animation: map-opening-progress 1.45s ease-in-out infinite; }
-.map-opening p { margin: 12px 0 0; color: rgba(247,242,229,.68); font-size: 12px; }
-@keyframes map-opening-progress { 0% { transform: translateX(-110%); } 100% { transform: translateX(350%); } }
 .map-shell.is-dropping .map-canvas { cursor: crosshair; }
 
 .brand-panel,

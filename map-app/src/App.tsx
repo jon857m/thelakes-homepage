@@ -53,9 +53,10 @@ function businessCategory(category: string): BusinessCategory {
 }
 
 const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
-const styleUrl = mapTilerKey
-  ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${mapTilerKey}`
-  : "https://tiles.openfreemap.org/styles/liberty";
+// Keep the site's established cartography independent from the imagery
+// provider so adding a MapTiler key does not unexpectedly restyle roads,
+// labels and water across the product.
+const styleUrl = "https://tiles.openfreemap.org/styles/liberty";
 
 const shareCandidate: unknown = Reflect.get(navigator, "share");
 const nativeShare: ((data: ShareData) => Promise<void>) | undefined =
@@ -236,12 +237,32 @@ export function App() {
 
   useEffect(() => {
     if (!supabase) return;
-    void supabase
-      .from("businesses")
-      .select("id,name,slug,tagline,description,category,latitude,longitude,town,address,postcode,website_url,directions_url,facebook_url,instagram_url,logo_url,image_url,opening_hours,hours_vary,featured,business_images(image_url,sort_order)")
-      .eq("active", true)
-      .then(({ data, error }) => {
-        if (error || !data?.length) return;
+    void (async () => {
+      const enhanced = await supabase
+        .from("businesses")
+        .select("id,name,slug,tagline,description,category,latitude,longitude,town,address,postcode,website_url,directions_url,facebook_url,instagram_url,logo_url,image_url,opening_hours,hours_vary,featured,business_images(image_url,sort_order)")
+        .eq("active", true);
+      let data = enhanced.data;
+
+      // Keep published listings available while an older production database
+      // is awaiting the optional subscriber-onboarding columns migration.
+      if (enhanced.error?.code === "42703") {
+        const legacy = await supabase
+          .from("businesses")
+          .select("id,name,slug,tagline,description,category,latitude,longitude,town,address,postcode,website_url,facebook_url,instagram_url,logo_url,image_url,featured,business_images(image_url,sort_order)")
+          .eq("active", true);
+        if (legacy.error) return;
+        data = legacy.data.map((row) => ({
+          ...row,
+          directions_url: null,
+          opening_hours: null,
+          hours_vary: false
+        }));
+      } else if (enhanced.error) {
+        return;
+      }
+
+      if (data) {
         setBusinesses(
           data.map((row) => ({
             id: row.id,
@@ -269,7 +290,8 @@ export function App() {
             featured: Boolean(row.featured)
           }))
         );
-      });
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -363,15 +385,23 @@ export function App() {
       }
       instance.setTerrain({ source: "terrain", exaggeration: 1.35 });
 
-      instance.addSource("satellite-imagery", {
-        type: "raster",
-        tiles: [
-          "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2025_3857/default/g/{z}/{y}/{x}.jpg"
-        ],
-        tileSize: 256,
-        maxzoom: 14,
-        attribution: "Sentinel-2 cloudless 2025 © EOX IT Services GmbH · Contains modified Copernicus Sentinel data 2025"
-      });
+      if (mapTilerKey) {
+        instance.addSource("satellite-imagery", {
+          type: "raster",
+          url: `https://api.maptiler.com/tiles/satellite-v2/tiles.json?key=${mapTilerKey}`,
+          tileSize: 256
+        });
+      } else {
+        instance.addSource("satellite-imagery", {
+          type: "raster",
+          tiles: [
+            "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2025_3857/default/g/{z}/{y}/{x}.jpg"
+          ],
+          tileSize: 256,
+          maxzoom: 14,
+          attribution: "Sentinel-2 cloudless 2025 © EOX IT Services GmbH · Contains modified Copernicus Sentinel data 2025"
+        });
+      }
 
       const firstLabelLayer = instance.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
       instance.addLayer(

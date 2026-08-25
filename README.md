@@ -16,7 +16,7 @@ Open `http://127.0.0.1:5173/map/`.
 
 Environment variables:
 
-- `VITE_MAPTILER_KEY`: Optional MapTiler browser key restricted to the production domain. Upgrades the basemap to MapTiler Outdoor and uses its terrain service.
+- `VITE_MAPTILER_KEY`: Optional MapTiler browser key restricted to the production domain. Uses MapTiler Satellite and its terrain service while retaining the site's OpenFreeMap cartography.
 - `VITE_SUPABASE_URL`: Supabase project URL.
 - `VITE_SUPABASE_PUBLISHABLE_KEY`: Supabase publishable key. Never use a secret or service-role key here.
 

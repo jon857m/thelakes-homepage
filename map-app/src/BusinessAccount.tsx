@@ -71,12 +71,12 @@ function hasPaidAccess(subscription: Subscription | undefined) {
   return Boolean(subscription.cancel_at_period_end && subscription.current_period_end && new Date(subscription.current_period_end).getTime() > Date.now());
 }
 
-export function BusinessAccount({ session }: { session: Session }) {
+export function BusinessAccount({ session, initialMessage = "" }: { session: Session; initialMessage?: string }) {
   const returnedFromBilling = new URLSearchParams(window.location.search).get("billing") === "returned";
   const [selected, setSelected] = useState<CustomerBusiness | null>(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
   const [busy, setBusy] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("Accommodation");

@@ -383,14 +383,29 @@ function BusinessEditor({ business, onSaved, onDeleted }: { business: AdminBusin
 
 function AdminDashboard({ session }: { session: Session }) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [accessError, setAccessError] = useState("");
   const [businesses, setBusinesses] = useState<AdminBusiness[]>([]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<AdminBusiness | null>(null);
 
   useEffect(() => {
     if (!supabase) return;
-    void supabase.rpc("is_admin").then(({ data }) => setAllowed(Boolean(data)));
+    void supabase.rpc("is_admin").then(({ data, error }) => {
+      if (error) {
+        setAccessError("We could not check your account permissions. Please refresh and try again.");
+        setAllowed(false);
+        return;
+      }
+      setAllowed(Boolean(data));
+    });
   }, []);
+  useEffect(() => {
+    if (allowed === null) return;
+    const canonicalPath = allowed ? "/map/admin/" : "/map/business/";
+    if (!window.location.pathname.startsWith(canonicalPath)) {
+      window.history.replaceState({}, "", canonicalPath);
+    }
+  }, [allowed]);
   useEffect(() => {
     if (!supabase || !allowed) return;
     void Promise.all([
@@ -428,7 +443,7 @@ function AdminDashboard({ session }: { session: Session }) {
   }
 
   if (allowed === null) return <main className="account-shell"><div className="login-card">Checking access…</div></main>;
-  if (!allowed) return <BusinessAccount session={session} />;
+  if (!allowed) return <BusinessAccount session={session} initialMessage={accessError} />;
   return <main className="admin-shell">
     <header className="admin-header"><div><span className="account-kicker">The Lake District</span><h1>Business administration</h1></div><nav><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav></header>
     <div className="admin-layout">

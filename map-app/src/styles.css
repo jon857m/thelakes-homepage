@@ -11,11 +11,16 @@ button, a { font: inherit; }
 button { cursor: pointer; }
 
 .account-shell, .admin-shell { min-height: 100dvh; color: #213027; background: radial-gradient(circle at 15% 0, #47684f 0, #1c3023 40%, #121d16 100%); overflow: auto; }
-.account-shell { display: grid; place-items: center; padding: 72px 20px 30px; }
+.account-shell { display: grid; place-items: center; padding: 106px 20px 38px; }
 .account-brand { position: absolute; top: 24px; left: 24px; color: #f5f0df; font-weight: 800; text-decoration: none; }
-.login-card { width: min(460px, 100%); padding: 32px; border: 1px solid rgba(255,255,255,.6); border-radius: 24px; background: #f7f5eb; box-shadow: 0 24px 70px rgba(0,0,0,.3); }
+.account-brand--full { display: flex; align-items: center; gap: 12px; padding: 8px 13px 8px 8px; border: 1px solid rgba(255,255,255,.2); border-radius: 17px; background: rgba(17,29,21,.62); box-shadow: 0 12px 32px rgba(0,0,0,.2); }
+.account-brand--full img { width: 46px; height: 46px; border-radius: 11px; object-fit: cover; }
+.account-brand--full span, .account-brand--full strong, .account-brand--full small { display: block; }
+.account-brand--full strong { font: 700 17px/1 Georgia, serif; }
+.account-brand--full small { margin-top: 5px; color: rgba(245,240,223,.68); font-size: 9px; letter-spacing: .04em; }
+.login-card { width: min(520px, 100%); padding: 38px; border: 1px solid rgba(255,255,255,.68); border-radius: 26px; background: #f7f5eb; box-shadow: 0 28px 80px rgba(0,0,0,.34); }
 .account-kicker { color: #9a642e; font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
-.login-card h1, .admin-header h1, .admin-editor h2, .admin-empty h2 { margin: 7px 0 8px; font: 700 30px/1.05 Georgia, serif; }
+.login-card h1, .admin-header h1, .admin-editor h2, .admin-empty h2 { margin: 9px 0 10px; font: 700 34px/1.02 Georgia, serif; }
 .login-card > p { color: #667168; line-height: 1.5; }
 .login-card form { display: grid; gap: 16px; margin-top: 24px; }
 .login-card label, .admin-fields label { display: grid; gap: 7px; color: #435047; font-size: 12px; font-weight: 800; }
@@ -26,6 +31,13 @@ button { cursor: pointer; }
 .account-primary:disabled { opacity: .55; }
 .account-link { margin-top: 18px; padding: 0; border: 0; color: #355a41; background: transparent; font-size: 12px; font-weight: 800; }
 .login-links { display: flex; justify-content: space-between; gap: 12px; }
+.login-switch { display: flex; justify-content: center; gap: 5px; margin-top: 20px; color: #68746b; font-size: 12px; }
+.login-switch .account-link { margin: 0; }
+.forgot-link { display: block; margin: 12px auto 0; }
+.password-help { margin-top: -11px; color: #718078; }
+.login-card .terms-check { display: flex; grid-template-columns: none; align-items: flex-start; gap: 10px; color: #647168; line-height: 1.45; }
+.login-card .terms-check input { width: 17px; min-height: 17px; margin-top: 2px; flex: 0 0 17px; }
+.terms-check strong { color: #2f6141; font-weight: 900; }
 .account-message, .account-alert { padding: 11px 12px; border-radius: 10px; color: #71491f !important; background: #efe2c3; font-size: 12px; }
 .admin-shell { display: flex; height: 100dvh; padding: 22px; flex-direction: column; overflow: hidden; }
 .admin-header { display: flex; width: 100%; max-width: 1500px; margin: 0 auto 18px; flex: 0 0 auto; align-items: center; justify-content: space-between; color: #f5f0df; }
@@ -145,6 +157,16 @@ button { cursor: pointer; }
 
 .map-shell { position: relative; width: 100%; height: 100%; min-height: 100dvh; }
 .map-canvas { position: absolute; inset: 0; }
+.map-opening { position: absolute; z-index: 30; inset: 0; display: grid; place-content: center; justify-items: center; padding: 24px; color: #f7f2e5; background: radial-gradient(circle at 30% 20%, #45654d 0, #1d3526 42%, #101c15 100%); text-align: center; }
+.map-opening__brand { display: flex; align-items: center; gap: 14px; text-align: left; }
+.map-opening__brand img { width: 62px; height: 62px; border: 1px solid rgba(255,255,255,.25); border-radius: 15px; object-fit: cover; box-shadow: 0 12px 35px rgba(0,0,0,.3); }
+.map-opening__brand strong, .map-opening__brand small { display: block; }
+.map-opening__brand strong { font: 700 25px/1 Georgia, serif; }
+.map-opening__brand small { margin-top: 7px; color: rgba(247,242,229,.65); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.map-opening__progress { width: min(310px, 72vw); height: 3px; margin-top: 28px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.13); }
+.map-opening__progress i { display: block; width: 42%; height: 100%; border-radius: inherit; background: #e7bd5e; animation: map-opening-progress 1.45s ease-in-out infinite; }
+.map-opening p { margin: 12px 0 0; color: rgba(247,242,229,.68); font-size: 12px; }
+@keyframes map-opening-progress { 0% { transform: translateX(-110%); } 100% { transform: translateX(350%); } }
 .map-shell.is-dropping .map-canvas { cursor: crosshair; }
 
 .brand-panel,
@@ -350,9 +372,11 @@ button { cursor: pointer; }
 .map-shell.has-sheet .maplibregl-ctrl-bottom-right { display: none; }
 
 @media (max-width: 680px) {
-  .account-shell { place-items: start center; padding-top: 72px; }
-  .account-brand { top: 20px; left: 20px; }
+  .account-shell { place-items: start center; padding: 94px 14px 28px; }
+  .account-brand { top: 14px; left: 14px; }
+  .account-brand--full img { width: 42px; height: 42px; }
   .login-card { padding: 24px 20px; border-radius: 20px; }
+  .login-card h1 { font-size: 31px; }
   .customer-header { min-height: 62px; padding: 11px 15px; }
   .customer-header > div span { display: none; }
   .customer-layout { display: block; width: 100%; min-height: calc(100dvh - 62px); margin: 0; overflow: visible; border-radius: 0; }

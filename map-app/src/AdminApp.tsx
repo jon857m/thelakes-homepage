@@ -69,8 +69,11 @@ async function optimiseImage(file: File, maxDimension: number) {
 }
 
 function Login({ onSession }: { onSession: (session: Session) => void }) {
+  const [mode, setMode] = useState<"signup" | "signin">(() => window.location.pathname.startsWith("/map/business") ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -95,6 +98,9 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
 
   async function createAccount() {
     if (!supabase || !email || !password) return setMessage("Enter an email address and password first.");
+    if (password.length < 10) return setMessage("Use at least ten characters for your password.");
+    if (password !== confirmation) return setMessage("The passwords do not match.");
+    if (!acceptedTerms) return setMessage("Please agree to the terms and privacy notice.");
     setBusy(true);
     const customerSignup = window.location.pathname.startsWith("/map/business");
     const { data, error } = await supabase.auth.signUp({
@@ -109,18 +115,30 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
   }
 
   return <main className="account-shell">
-    <a className="account-brand" href="/map/">← The Lake District map</a>
-    <section className="login-card">
-      <div className="account-kicker">Business accounts</div>
-      <h1>Welcome back</h1>
-      <p>Sign in to manage your listing or administer the map.</p>
+    <a className="account-brand account-brand--full" href="/map/">
+      <img src="/map/brand/hero.jpg" alt="" />
+      <span><strong>The Lake District</strong><small>3D Explorer · Business listings</small></span>
+    </a>
+    <section className={`login-card login-card--${mode}`}>
+      <div className="account-kicker">Lake District business listings</div>
+      <h1>{mode === "signup" ? "Put your business on the map" : "Welcome back"}</h1>
+      <p>{mode === "signup" ? "Create your account, add your listing and choose its exact map location. Payment comes at the final step." : "Sign in to manage your listing, subscription or map administration."}</p>
       {!isSupabaseConfigured && <div className="account-alert">Add the Supabase environment variables to enable login.</div>}
-      <form onSubmit={submit}>
-        <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></label>
-        <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label>
-        <button className="account-primary" disabled={busy || !isSupabaseConfigured}>{busy ? "Signing in…" : "Sign in"}</button>
+      <form onSubmit={mode === "signup" ? (event) => { event.preventDefault(); void createAccount(); } : submit}>
+        <label>Work email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="you@yourbusiness.co.uk" required /></label>
+        <label>Password<input type="password" minLength={mode === "signup" ? 10 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} required /></label>
+        {mode === "signup" && <>
+          <label>Confirm password<input type="password" minLength={10} value={confirmation} onChange={(e) => setConfirmation(e.target.value)} autoComplete="new-password" required /></label>
+          <small className="password-help">Use at least 10 characters.</small>
+          <label className="terms-check"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} required /><span>I agree to the <strong>business listing terms</strong> and acknowledge the <strong>privacy notice</strong>.</span></label>
+        </>}
+        <button className="account-primary" disabled={busy || !isSupabaseConfigured}>{busy ? (mode === "signup" ? "Creating account…" : "Signing in…") : (mode === "signup" ? "Create my business account" : "Sign in")}</button>
       </form>
-      <div className="login-links"><button className="account-link" onClick={createAccount}>Create an account</button><button className="account-link" onClick={resetPassword}>Forgotten your password?</button></div>
+      <div className="login-switch">
+        <span>{mode === "signup" ? "Already have an account?" : "New to our business map?"}</span>
+        <button className="account-link" onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setMessage(""); }}>{mode === "signup" ? "Sign in" : "Create an account"}</button>
+      </div>
+      {mode === "signin" && <button className="account-link forgot-link" onClick={resetPassword}>Forgotten your password?</button>}
       {message && <p className="account-message" role="status">{message}</p>}
     </section>
   </main>;

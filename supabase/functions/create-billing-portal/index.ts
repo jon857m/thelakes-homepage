@@ -24,7 +24,7 @@ Deno.serve(async (request) => {
     const origin = Deno.env.get("SITE_URL") ?? "https://www.thelakesincumbria.co.uk";
     const session = await stripe.billingPortal.sessions.create({
       customer: subscription.stripe_customer_id,
-      return_url: `${origin}/map/business/`,
+      return_url: `${origin}/map/business/?billing=returned`,
     });
     return json({ url: session.url });
   } catch (error) {

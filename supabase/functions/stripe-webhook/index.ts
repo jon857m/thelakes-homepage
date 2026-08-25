@@ -12,6 +12,10 @@ function listingStatus(status: Stripe.Subscription.Status) {
   return "awaiting_payment";
 }
 
+function assertDatabaseWrite(error: { message: string } | null, operation: string) {
+  if (error) throw new Error(`${operation}: ${error.message}`);
+}
+
 Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   const signature = request.headers.get("stripe-signature") ?? "";
@@ -43,11 +47,12 @@ Deno.serve(async (request) => {
       const session = event.data.object as Stripe.Checkout.Session;
       const businessId = session.metadata?.business_id ?? session.client_reference_id;
       if (businessId) {
-        await admin.from("business_subscriptions").update({
+        const { error } = await admin.from("business_subscriptions").update({
           stripe_customer_id: String(session.customer),
           stripe_subscription_id: String(session.subscription),
           updated_at: new Date().toISOString(),
         }).eq("business_id", businessId);
+        assertDatabaseWrite(error, "Recording completed Checkout");
       }
     }
 
@@ -56,7 +61,7 @@ Deno.serve(async (request) => {
       const businessId = subscription.metadata.business_id;
       if (businessId) {
         const periodEnd = subscription.items.data[0]?.current_period_end;
-        await admin.from("business_subscriptions").update({
+        const { error: subscriptionError } = await admin.from("business_subscriptions").update({
           stripe_customer_id: String(subscription.customer),
           stripe_subscription_id: subscription.id,
           stripe_price_id: subscription.items.data[0]?.price.id ?? null,
@@ -65,7 +70,9 @@ Deno.serve(async (request) => {
           cancel_at_period_end: subscription.cancel_at_period_end,
           updated_at: new Date().toISOString(),
         }).eq("business_id", businessId);
-        await admin.from("businesses").update({ listing_status: listingStatus(subscription.status) }).eq("id", businessId);
+        assertDatabaseWrite(subscriptionError, "Updating subscription state");
+        const { error: businessError } = await admin.from("businesses").update({ listing_status: listingStatus(subscription.status) }).eq("id", businessId);
+        assertDatabaseWrite(businessError, "Updating listing state");
       }
     }
 
@@ -75,12 +82,16 @@ Deno.serve(async (request) => {
         ? invoice.parent.subscription_details.subscription
         : invoice.parent?.subscription_details?.subscription?.id;
       if (subscriptionId) {
-        await admin.from("business_subscriptions").update({
+        const { error: subscriptionError } = await admin.from("business_subscriptions").update({
           stripe_status: event.type === "invoice.paid" ? "active" : "past_due",
           updated_at: new Date().toISOString(),
         }).eq("stripe_subscription_id", subscriptionId);
+        assertDatabaseWrite(subscriptionError, "Updating invoice state");
         const { data: record } = await admin.from("business_subscriptions").select("business_id").eq("stripe_subscription_id", subscriptionId).single();
-        if (record) await admin.from("businesses").update({ listing_status: event.type === "invoice.paid" ? "active" : "past_due" }).eq("id", record.business_id);
+        if (record) {
+          const { error: businessError } = await admin.from("businesses").update({ listing_status: event.type === "invoice.paid" ? "active" : "past_due" }).eq("id", record.business_id);
+          assertDatabaseWrite(businessError, "Updating listing from invoice");
+        }
       }
     }
 

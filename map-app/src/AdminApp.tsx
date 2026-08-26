@@ -30,6 +30,7 @@ type AdminBusiness = {
 
 type BusinessImage = { id: string; image_url: string; storage_path: string; sort_order: number };
 type AdminSubscription = {
+  business_id: string;
   stripe_status: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
@@ -533,15 +534,21 @@ function AdminDashboard({ session }: { session: Session }) {
   useEffect(() => {
     if (!supabase || !allowed) return;
     void Promise.all([
-      supabase.from("businesses").select("*,business_images(*),business_subscriptions(stripe_status,current_period_end,cancel_at_period_end)").order("name"),
-      supabase.rpc("admin_business_owner_emails")
-    ]).then(([businessResult, ownerResult]) => {
+      supabase.from("businesses").select("*,business_images(*)").order("name"),
+      supabase.rpc("admin_business_owner_emails"),
+      supabase.from("business_subscriptions").select("business_id,stripe_status,current_period_end,cancel_at_period_end")
+    ]).then(([businessResult, ownerResult, subscriptionResult]) => {
       const ownerEmails = new Map<string, string | null>(
         ((ownerResult.data ?? []) as { business_id: string; owner_email: string | null }[])
           .map((item) => [item.business_id, item.owner_email])
       );
+      const subscriptions = (subscriptionResult.data ?? []) as AdminSubscription[];
       const loaded = ((businessResult.data ?? []) as AdminBusiness[])
-        .map((business) => ({ ...business, owner_email: ownerEmails.get(business.id) ?? null }));
+        .map((business) => ({
+          ...business,
+          owner_email: ownerEmails.get(business.id) ?? null,
+          business_subscriptions: subscriptions.filter((subscription) => subscription.business_id === business.id),
+        }));
       setBusinesses(loaded);
       const requestedId = new URLSearchParams(window.location.search).get("business");
       if (requestedId) setSelected(loaded.find((item) => item.id === requestedId) ?? null);

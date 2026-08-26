@@ -10,7 +10,7 @@ const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
 const pickerStyle = mapTilerKey ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${mapTilerKey}` : "https://tiles.openfreemap.org/styles/liberty";
 
 type Hours = Record<string, { closed: boolean; open: string; close: string }>;
-type Subscription = { plan_code: string; amount_pence: number; currency: string; stripe_customer_id: string | null; stripe_status: string | null; current_period_end: string | null; cancel_at_period_end: boolean };
+type Subscription = { business_id: string; plan_code: string; amount_pence: number; currency: string; stripe_customer_id: string | null; stripe_status: string | null; current_period_end: string | null; cancel_at_period_end: boolean };
 type CustomerBusiness = {
   id: string; name: string; slug: string; tagline: string; description: string; category: string;
   latitude: number; longitude: number; address: string | null; town: string | null; postcode: string | null;
@@ -84,13 +84,23 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
   async function load() {
     if (!supabase) return;
     setLoading(true);
-    const { data, error } = await supabase.from("businesses")
-      .select("*,business_subscriptions(*)")
-      .eq("owner_user_id", session.user.id)
-      .order("created_at");
+    const [businessResult, subscriptionResult] = await Promise.all([
+      supabase.from("businesses")
+        .select("*")
+        .eq("owner_user_id", session.user.id)
+        .order("created_at"),
+      supabase.from("business_subscriptions")
+        .select("*")
+        .eq("owner_user_id", session.user.id),
+    ]);
     setLoading(false);
-    if (error) return setMessage(error.message);
-    const loaded = (data ?? []) as CustomerBusiness[];
+    if (businessResult.error) return setMessage(businessResult.error.message);
+    if (subscriptionResult.error) setMessage(`Billing status is temporarily unavailable: ${subscriptionResult.error.message}`);
+    const subscriptions = (subscriptionResult.data ?? []) as Subscription[];
+    const loaded = ((businessResult.data ?? []) as CustomerBusiness[]).map((business) => ({
+      ...business,
+      business_subscriptions: subscriptions.filter((subscription) => subscription.business_id === business.id),
+    }));
     setSelected((current) => loaded.find((item) => item.id === current?.id) ?? loaded[0] ?? null);
   }
 
@@ -123,10 +133,10 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
       directions_url: selected.directions_url || null, opening_hours: selected.opening_hours ?? {}, hours_vary: selected.hours_vary,
       updated_at: new Date().toISOString()
     };
-    const { data, error } = await supabase.from("businesses").update(payload).eq("id", selected.id).select("*,business_subscriptions(*)").single();
+    const { data, error } = await supabase.from("businesses").update(payload).eq("id", selected.id).select("*").single();
     setBusy(false);
     if (error) { setMessage(error.message); return false; }
-    const saved = data as CustomerBusiness;
+    const saved = { ...(data as CustomerBusiness), business_subscriptions: selected.business_subscriptions };
     setSelected(saved);
     setMessage("Saved.");
     if (nextStep) { setStep(nextStep); trackEvent("business_onboarding_step", { business_id: saved.id, step: nextStep }); }
@@ -209,7 +219,9 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
         ? { label: "Payment needs attention", detail: "Review your billing details", tone: "attention" }
         : effectiveStatus === "cancelled"
           ? { label: "Subscription cancelled", detail: "Your listing details are saved", tone: "inactive" }
-          : { label: "No active subscription", detail: "Complete setup to publish", tone: "inactive" };
+          : selected.listing_status === "active"
+            ? { label: "Listing active", detail: "Billing status is syncing", tone: "active" }
+            : { label: "No active subscription", detail: "Complete setup to publish", tone: "inactive" };
   return <main className="customer-shell">
     <header className="customer-header">
       <a className="dashboard-brand" href="/map/">

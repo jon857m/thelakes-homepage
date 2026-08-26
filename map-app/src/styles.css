@@ -94,6 +94,22 @@ button { cursor: pointer; }
 .admin-lifecycle button.danger { border-color: #c9988d; color: #8b3024; background: #fff7f4; }
 .admin-lifecycle button:disabled { opacity: .52; cursor: not-allowed; }
 .admin-lifecycle > span { color: #6b786f; font-size: 12px; font-weight: 850; }
+.admin-account-reset { padding: 18px; border: 1px solid #d7aaa1; border-radius: 14px; background: #fff8f5; }
+.admin-account-reset__heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.admin-account-reset__heading strong { color: #713128; font-size: 13px; }
+.admin-account-reset__heading p, .admin-account-reset__confirm > p { margin: 5px 0 0; color: #745d58; font-size: 12px; line-height: 1.45; }
+.admin-account-reset button { min-height: 40px; padding: 0 14px; border: 1px solid #b9beba; border-radius: 10px; color: #34473a; background: white; font-size: 12px; font-weight: 850; }
+.admin-account-reset button.danger { border-color: #a84536; color: white; background: #9a382c; }
+.admin-account-reset button:disabled { opacity: .5; cursor: not-allowed; }
+.admin-account-reset__confirm { display: grid; gap: 13px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #ead0ca; }
+.admin-account-reset__summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.admin-account-reset__summary span { padding: 10px; border-radius: 9px; color: #6d5a56; background: #f4e7e2; font-size: 10px; text-align: center; text-transform: uppercase; }
+.admin-account-reset__summary b { display: block; margin-bottom: 2px; color: #713128; font-size: 18px; }
+.admin-account-reset code { padding: 2px 5px; border-radius: 5px; color: #682d25; background: #f0ddd7; }
+.admin-account-reset__stripe { display: flex !important; align-items: center; grid-template-columns: none; gap: 9px !important; }
+.admin-account-reset__stripe input { width: 18px !important; min-height: 18px !important; }
+.admin-account-reset__actions { display: flex; justify-content: flex-end; gap: 9px; }
+.admin-account-reset .account-message { margin: 12px 0 0; color: #8b3024; }
 .admin-map-mode { position: absolute; z-index: 7; right: max(16px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); padding: 11px 14px; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; color: #1b271f; background: #f0cf70; box-shadow: 0 10px 28px rgba(0,0,0,.25); font-size: 12px; font-weight: 900; text-decoration: none; }
 
 .business-account-shell .onboarding-start select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #cbd2c8; border-radius: 11px; color: #203027; background: white; font-size: 15px; }
@@ -447,6 +463,9 @@ button { cursor: pointer; }
   .admin-image-slots { grid-template-columns: 1fr 1fr; }
   .admin-image-upload--hero { grid-column: auto; }
   .admin-lifecycle { align-items: stretch; flex-direction: column; }
+  .admin-account-reset__heading { align-items: stretch; flex-direction: column; }
+  .admin-account-reset__summary { grid-template-columns: 1fr 1fr; }
+  .admin-account-reset__actions { align-items: stretch; flex-direction: column; }
   .admin-map-mode { right: 10px; bottom: max(14px, env(safe-area-inset-bottom)); }
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib.maplibregl-compact {
     max-width: calc(100vw - 78px);

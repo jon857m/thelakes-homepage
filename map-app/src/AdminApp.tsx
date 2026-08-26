@@ -29,6 +29,15 @@ type AdminBusiness = {
 
 type BusinessImage = { id: string; image_url: string; storage_path: string; sort_order: number };
 
+type PurgePreview = {
+  user: { id: string; email: string };
+  businesses: { id: string; name: string }[];
+  databaseImageRows: number;
+  storageObjects: number;
+  stripeCustomerIds: string[];
+  stripeSubscriptionIds: string[];
+};
+
 const categories = ["Accommodation", "Camping", "Eating", "Activities", "Gifts"];
 const statuses: AdminBusiness["listing_status"][] = ["draft", "awaiting_payment", "active", "past_due", "cancelled", "suspended"];
 
@@ -180,7 +189,67 @@ function PasswordRecovery({ onComplete }: { onComplete: () => void }) {
   </main>;
 }
 
-function BusinessEditor({ business, onSaved, onDeleted }: { business: AdminBusiness; onSaved: (business: AdminBusiness) => void; onDeleted: (id: string) => void }) {
+function TestAccountReset({ business, onPurged }: { business: AdminBusiness; onPurged: (ownerUserId: string) => void }) {
+  const [preview, setPreview] = useState<PurgePreview | null>(null);
+  const [confirmation, setConfirmation] = useState("");
+  const [purgeStripe, setPurgeStripe] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setPreview(null);
+    setConfirmation("");
+    setMessage("");
+  }, [business.owner_user_id]);
+
+  async function invokePurge(action: "preview" | "purge") {
+    if (!supabase || !business.owner_user_id) return;
+    setBusy(true);
+    setMessage("");
+    const { data, error } = await supabase.functions.invoke("purge-test-account", {
+      body: { action, targetUserId: business.owner_user_id, confirmation, purgeStripe }
+    });
+    setBusy(false);
+    const responseError = (data as { error?: string } | null)?.error;
+    if (error || responseError) {
+      setMessage(responseError || error?.message || "Unable to contact the purge service.");
+      return;
+    }
+    if (action === "preview") {
+      setPreview(data as PurgePreview);
+      return;
+    }
+    const result = data as { email: string; businesses: number; storageObjects: number; stripeCustomers: number };
+    window.alert(`Purged ${result.email}: ${result.businesses} business record(s), ${result.storageObjects} stored file(s) and ${result.stripeCustomers} Stripe test customer(s).`);
+    onPurged(business.owner_user_id);
+  }
+
+  if (!business.owner_user_id) return null;
+  return <section className="admin-account-reset field-wide" aria-label="Test account reset">
+    <div className="admin-account-reset__heading">
+      <div><strong>Developer test-account reset</strong><p>Remove this account’s Auth user, owned listings, subscriptions and uploaded files so the signup journey can be run again.</p></div>
+      {!preview && <button type="button" className="danger" disabled={busy} onClick={() => void invokePurge("preview")}>{busy ? "Checking…" : "Prepare account purge"}</button>}
+    </div>
+    {preview && <div className="admin-account-reset__confirm">
+      <div className="admin-account-reset__summary">
+        <span><b>{preview.businesses.length}</b> businesses</span>
+        <span><b>{preview.databaseImageRows}</b> image records</span>
+        <span><b>{preview.storageObjects}</b> stored files</span>
+        <span><b>{preview.stripeCustomerIds.length}</b> Stripe customers</span>
+      </div>
+      <p><strong>This cannot be undone.</strong> Type <code>{preview.user.email}</code> to confirm.</p>
+      <input type="email" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder={preview.user.email} autoComplete="off" />
+      {preview.stripeCustomerIds.length > 0 && <label className="admin-account-reset__stripe"><input type="checkbox" checked={purgeStripe} onChange={(event) => setPurgeStripe(event.target.checked)} /><span>Also delete the linked Stripe test customer and subscriptions</span></label>}
+      <div className="admin-account-reset__actions">
+        <button type="button" onClick={() => { setPreview(null); setConfirmation(""); setMessage(""); }} disabled={busy}>Cancel</button>
+        <button type="button" className="danger" disabled={busy || confirmation.trim().toLowerCase() !== preview.user.email.toLowerCase()} onClick={() => void invokePurge("purge")}>{busy ? "Purging account…" : "Permanently purge test account"}</button>
+      </div>
+    </div>}
+    {message && <p className="account-message" role="status">{message}</p>}
+  </section>;
+}
+
+function BusinessEditor({ business, onSaved, onDeleted, onAccountPurged }: { business: AdminBusiness; onSaved: (business: AdminBusiness) => void; onDeleted: (id: string) => void; onAccountPurged: (ownerUserId: string) => void }) {
   const [draft, setDraft] = useState(business);
   const [latitudeInput, setLatitudeInput] = useState(String(business.latitude));
   const [longitudeInput, setLongitudeInput] = useState(String(business.longitude));
@@ -394,6 +463,7 @@ function BusinessEditor({ business, onSaved, onDeleted }: { business: AdminBusin
         <div><strong>Listing lifecycle</strong>{draft.listing_type === "subscriber" ? <p>Paid subscriber cancellation will be connected to the payment provider. It cannot be deleted here.</p> : draft.listing_status === "draft" ? <p>This unpaid draft can be permanently deleted.</p> : <p>Archiving removes this editorial listing from the public map without deleting its record.</p>}</div>
         {draft.listing_type === "subscriber" ? <button type="button" disabled>Cancel through payments</button> : draft.listing_status === "draft" ? <button type="button" className="danger" disabled={busy} onClick={() => void deleteDraftListing()}>Delete draft</button> : draft.listing_status !== "suspended" ? <button type="button" disabled={busy} onClick={() => void archiveEditorialListing()}>Archive listing</button> : <span>Archived</span>}
       </section>
+      {draft.listing_type === "subscriber" && <TestAccountReset business={draft} onPurged={onAccountPurged} />}
     </div>
     <div className="admin-save"><button className="account-primary" disabled={busy}>{busy ? "Saving…" : "Save changes"}</button>{message && <span role="status">{message}</span>}</div>
   </form>;
@@ -472,7 +542,7 @@ function AdminDashboard({ session }: { session: Session }) {
     </header>
     <div className="admin-layout">
       <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => <button className={selected?.id === item.id ? "is-selected" : ""} key={item.id} onClick={() => setSelected(item)}><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</button>)}</aside>
-      <section className="admin-workspace">{selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, or use “Edit from map” to find it geographically.</p></div>}</section>
+      <section className="admin-workspace">{selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} onAccountPurged={(ownerUserId) => { setBusinesses((all) => all.filter((item) => item.owner_user_id !== ownerUserId)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, or use “Edit from map” to find it geographically.</p></div>}</section>
     </div>
   </main>;
 }

@@ -32,6 +32,19 @@ The generated `/map/` directory is checked in because the current production hos
 
 Apply `supabase/migrations/202608240001_map_mvp.sql` to a Supabase project before enabling sharing.
 
+## Admin test-account reset
+
+The business administration screen includes a developer-only account purge for repeating complete subscriber signup tests. It removes every business owned by the selected Auth user, the associated subscription and image rows, files below those business IDs in the `business-images` bucket, and finally the Auth user. It can optionally delete linked Stripe customers only when the configured Stripe secret is a test-mode key.
+
+Deploy and explicitly enable the Edge Function on a Supabase project:
+
+```sh
+supabase functions deploy purge-test-account
+supabase secrets set ALLOW_TEST_ACCOUNT_PURGE=true
+```
+
+The function independently verifies the caller against `public.admin_users`, blocks self-deletion, and requires the target email as confirmation. Leave `ALLOW_TEST_ACCOUNT_PURGE` unset or set it to `false` on any project where account purging should not be available.
+
 ## Refreshing the geographic search catalogue
 
 The checked-in `map-app/public/data/map_search.json` is a cached, deduplicated OpenStreetMap extract. After downloading deliberate Overpass JSON snapshots, rebuild it with:

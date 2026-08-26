@@ -162,8 +162,8 @@ button { cursor: pointer; }
 .admin-map-mode { position: absolute; z-index: 7; right: max(16px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); padding: 11px 14px; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; color: #1b271f; background: #f0cf70; box-shadow: 0 10px 28px rgba(0,0,0,.25); font-size: 12px; font-weight: 900; text-decoration: none; }
 
 .business-account-shell .onboarding-start select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #cbd2c8; border-radius: 11px; color: #203027; background: white; font-size: 15px; }
-.customer-shell { height: 100dvh; overflow: auto; color: #203027; background: radial-gradient(circle at 15% 0, #47684f 0, #1c3023 40%, #121d16 100%); }
-.customer-header { display: grid; min-height: 76px; padding: 12px max(24px, calc((100% - 1320px) / 2)); align-items: center; grid-template-columns: 1fr auto 1fr; gap: 20px; color: #f7f3e7; background: rgba(15,31,21,.48); }
+.customer-shell { display: flex; height: 100dvh; padding: 22px; flex-direction: column; overflow: hidden; color: #203027; background: radial-gradient(circle at 15% 0, #47684f 0, #1c3023 40%, #121d16 100%); }
+.customer-header { display: grid; width: 100%; max-width: 1500px; min-height: 58px; margin: 0 auto 18px; align-items: center; grid-template-columns: 1fr auto 1fr; gap: 20px; color: #f7f3e7; background: transparent; }
 .customer-session { display: flex; align-items: center; justify-content: flex-end; gap: 14px; font-size: 12px; }
 .customer-header button { min-height: 38px; padding: 0 13px; border: 1px solid rgba(255,255,255,.3); border-radius: 10px; color: white; background: rgba(255,255,255,.08); font-weight: 800; }
 .customer-subscription-state { display: flex; min-width: 230px; padding: 9px 14px; align-items: center; justify-content: center; gap: 10px; border: 1px solid rgba(255,255,255,.16); border-radius: 13px; background: rgba(255,255,255,.07); }
@@ -174,7 +174,7 @@ button { cursor: pointer; }
 .customer-subscription-state--ending > i { background: #e8c76e; box-shadow: 0 0 0 4px rgba(232,199,110,.12); }
 .customer-subscription-state--attention > i { background: #ef8777; box-shadow: 0 0 0 4px rgba(239,135,119,.12); }
 .customer-subscription-state--inactive > i { background: #a7aea8; box-shadow: 0 0 0 4px rgba(167,174,168,.12); }
-.customer-layout { display: grid; width: min(1320px, calc(100% - 40px)); min-height: calc(100dvh - 100px); margin: 0 auto 30px; grid-template-columns: 285px minmax(0, 1fr); overflow: hidden; border-radius: 22px; background: #f7f4e9; box-shadow: 0 24px 70px rgba(0,0,0,.28); }
+.customer-layout { display: grid; width: 100%; max-width: 1500px; min-height: 0; margin: 0 auto; flex: 1 1 auto; grid-template-columns: 310px minmax(0, 1fr); overflow: hidden; border: 1px solid rgba(255,255,255,.25); border-radius: 22px; background: #f7f4e9; box-shadow: 0 22px 60px rgba(0,0,0,.28); }
 .customer-progress { padding: 30px 24px; border-right: 1px solid #d6ddd2; background: #e9eee7; }
 .customer-progress h1 { margin: 8px 0 12px; font: 700 28px/1.08 Georgia, serif; }
 .listing-status { display: inline-flex; padding: 7px 10px; border-radius: 999px; color: #69471f; background: #ead8aa; font-size: 11px; font-weight: 900; }
@@ -477,14 +477,15 @@ button { cursor: pointer; }
   .account-brand--full img { width: 42px; height: 42px; }
   .login-card { padding: 24px 20px; border-radius: 20px; }
   .login-card h1 { font-size: 31px; }
-  .customer-header { min-height: 68px; padding: 9px 12px; grid-template-columns: 1fr auto; gap: 10px; }
+  .customer-shell { display: block; height: 100dvh; padding: 12px; overflow: auto; }
+  .customer-header { min-height: 68px; margin-bottom: 12px; grid-template-columns: 1fr auto; gap: 10px; }
   .dashboard-brand img { width: 40px; height: 40px; flex-basis: 40px; }
   .dashboard-brand strong { font-size: 15px; }
   .dashboard-brand small { font-size: 8px; }
   .customer-subscription-state { grid-column: 1 / -1; grid-row: 2; min-width: 0; padding: 8px 11px; justify-content: flex-start; }
   .customer-subscription-state small { white-space: normal; }
   .customer-session > span { display: none; }
-  .customer-layout { display: block; width: 100%; min-height: calc(100dvh - 62px); margin: 0; overflow: visible; border-radius: 0; }
+  .customer-layout { display: block; width: 100%; min-height: 0; margin: 0; overflow: visible; border-radius: 22px; }
   .billing-return { display: block; padding: 18px; }
   .billing-return > div:last-child { margin-top: 15px; flex-wrap: wrap; }
   .subscription-summary { display: block; padding: 18px; }

@@ -37,11 +37,9 @@ async function requireAdmin(authorization: string) {
   const { data: { user }, error } = await scoped.auth.getUser();
   if (error || !user) throw new Error("AUTH_REQUIRED");
 
-  const admin = adminClient();
-  const { data: adminRow, error: adminError } = await admin.from("admin_users")
-    .select("user_id").eq("user_id", user.id).maybeSingle();
-  if (adminError || !adminRow) throw new Error("ADMIN_REQUIRED");
-  return { caller: user, admin };
+  const { data: isAdmin, error: adminError } = await scoped.rpc("is_admin");
+  if (adminError || !isAdmin) throw new Error("ADMIN_REQUIRED");
+  return { caller: user, admin: adminClient() };
 }
 
 async function accountSnapshot(admin: ReturnType<typeof adminClient>, targetUserId: string) {

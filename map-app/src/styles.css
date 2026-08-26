@@ -50,6 +50,7 @@ button { cursor: pointer; }
 .dashboard-brand--admin { padding: 7px 12px 7px 7px; border: 1px solid rgba(255,255,255,.18); border-radius: 15px; background: rgba(12,27,18,.34); }
 .admin-header nav { display: flex; align-items: center; gap: 10px; }
 .admin-header nav a, .admin-header nav button { min-height: 42px; padding: 0 14px; border: 1px solid rgba(255,255,255,.3); border-radius: 11px; color: white; background: rgba(255,255,255,.08); font-size: 12px; font-weight: 800; text-decoration: none; }
+.admin-header nav button.is-active { border-color: #e5c76d; color: #20372a; background: #efd782; }
 .admin-layout { display: grid; width: 100%; max-width: 1500px; min-height: 0; margin: 0 auto; flex: 1 1 auto; grid-template-columns: 310px 1fr; overflow: hidden; border: 1px solid rgba(255,255,255,.25); border-radius: 22px; background: #f5f3e9; box-shadow: 0 22px 60px rgba(0,0,0,.28); }
 .admin-list { padding: 16px; overflow: auto; border-right: 1px solid #d8ddd4; background: #e9eee7; }
 .admin-list > p { margin: 10px 3px; color: #728078; font-size: 11px; }
@@ -109,7 +110,7 @@ button { cursor: pointer; }
 .admin-account-reset button.danger { border-color: #a84536; color: white; background: #9a382c; }
 .admin-account-reset button:disabled { opacity: .5; cursor: not-allowed; }
 .admin-account-reset__confirm { display: grid; gap: 13px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #ead0ca; }
-.admin-account-reset__summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.admin-account-reset__summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 8px; }
 .admin-account-reset__summary span { padding: 10px; border-radius: 9px; color: #6d5a56; background: #f4e7e2; font-size: 10px; text-align: center; text-transform: uppercase; }
 .admin-account-reset__summary b { display: block; margin-bottom: 2px; color: #713128; font-size: 18px; }
 .admin-account-reset code { padding: 2px 5px; border-radius: 5px; color: #682d25; background: #f0ddd7; }
@@ -117,6 +118,27 @@ button { cursor: pointer; }
 .admin-account-reset__stripe input { width: 18px !important; min-height: 18px !important; }
 .admin-account-reset__actions { display: flex; justify-content: flex-end; gap: 9px; }
 .admin-account-reset .account-message { margin: 12px 0 0; color: #8b3024; }
+.finance-dashboard { min-width: 0; }
+.finance-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+.finance-metrics article { padding: 18px; border: 1px solid #d5dcd3; border-radius: 14px; background: #eef2ea; }
+.finance-metrics small, .finance-metrics strong { display: block; }
+.finance-metrics small { color: #6b786f; font-size: 10px; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+.finance-metrics strong { margin-top: 8px; color: #254432; font: 700 26px/1 Georgia, serif; }
+.finance-recent { overflow: hidden; border: 1px solid #d5dcd3; border-radius: 16px; background: white; }
+.finance-recent > div:first-child { padding: 18px 20px; border-bottom: 1px solid #e0e4de; }
+.finance-recent h3 { margin: 0; font: 700 20px Georgia, serif; }
+.finance-recent p { margin: 5px 0 0; color: #6b786f; font-size: 12px; }
+.finance-table-wrap { overflow-x: auto; }
+.finance-recent table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.finance-recent th, .finance-recent td { padding: 13px 14px; border-bottom: 1px solid #e5e8e2; text-align: left; vertical-align: top; white-space: nowrap; }
+.finance-recent th { color: #718078; background: #f4f5f0; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.finance-recent td strong, .finance-recent td small { display: block; }
+.finance-recent td small { max-width: 210px; margin-top: 3px; overflow: hidden; color: #758078; text-overflow: ellipsis; }
+.finance-recent td a { color: #2f6041; font-weight: 800; }
+.finance-status { display: inline-flex; padding: 5px 8px; border-radius: 999px; color: #66531a; background: #f2e5a9; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.finance-status--paid { color: #245137; background: #d8eadc; }
+.finance-status--void, .finance-status--uncollectible { color: #7a3028; background: #f0d8d3; }
+.finance-empty { padding: 34px 20px; text-align: center; }
 .admin-map-mode { position: absolute; z-index: 7; right: max(16px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); padding: 11px 14px; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; color: #1b271f; background: #f0cf70; box-shadow: 0 10px 28px rgba(0,0,0,.25); font-size: 12px; font-weight: 900; text-decoration: none; }
 
 .business-account-shell .onboarding-start select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #cbd2c8; border-radius: 11px; color: #203027; background: white; font-size: 15px; }
@@ -473,6 +495,7 @@ button { cursor: pointer; }
   .admin-account-reset__heading { align-items: stretch; flex-direction: column; }
   .admin-account-reset__summary { grid-template-columns: 1fr 1fr; }
   .admin-account-reset__actions { align-items: stretch; flex-direction: column; }
+  .finance-metrics { grid-template-columns: 1fr 1fr; }
   .admin-map-mode { right: 10px; bottom: max(14px, env(safe-area-inset-bottom)); }
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib.maplibregl-compact {
     max-width: calc(100vw - 78px);

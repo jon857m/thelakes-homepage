@@ -55,10 +55,76 @@ type PurgePreview = {
   user: { id: string; email: string };
   businesses: { id: string; name: string }[];
   databaseImageRows: number;
+  databasePaymentRows: number;
   storageObjects: number;
   stripeCustomerIds: string[];
   stripeSubscriptionIds: string[];
 };
+
+type PaymentRecord = {
+  id: string;
+  business_id: string | null;
+  invoice_number: string | null;
+  status: string | null;
+  currency: string;
+  amount_paid: number;
+  amount_remaining: number;
+  paid_at: string | null;
+  stripe_created_at: string;
+  hosted_invoice_url: string | null;
+};
+
+function formatMoney(pence: number, currency = "gbp") {
+  return new Intl.NumberFormat("en-GB", { style: "currency", currency: currency.toUpperCase() }).format(pence / 100);
+}
+
+function FinancialDashboard({ businesses }: { businesses: AdminBusiness[] }) {
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!supabase) return;
+    void supabase.from("subscription_payments").select("id,business_id,invoice_number,status,currency,amount_paid,amount_remaining,paid_at,stripe_created_at,hosted_invoice_url")
+      .order("stripe_created_at", { ascending: false }).limit(250).then(({ data, error }) => {
+        setLoading(false);
+        if (error) setMessage(error.message);
+        else setPayments((data ?? []) as PaymentRecord[]);
+      });
+  }, []);
+
+  const businessById = new Map(businesses.map((business) => [business.id, business]));
+  const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const totalCollected = payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
+  const recentCollected = payments.filter((payment) => new Date(payment.paid_at ?? payment.stripe_created_at).getTime() >= monthAgo)
+    .reduce((sum, payment) => sum + payment.amount_paid, 0);
+  const outstanding = payments.reduce((sum, payment) => sum + payment.amount_remaining, 0);
+  const paidInvoices = payments.filter((payment) => payment.status === "paid").length;
+
+  return <section className="finance-dashboard">
+    <div className="admin-editor__heading"><div><span>Stripe reporting ledger</span><h2>Financial overview</h2></div></div>
+    <div className="finance-metrics">
+      <article><small>Total collected</small><strong>{formatMoney(totalCollected)}</strong></article>
+      <article><small>Last 30 days</small><strong>{formatMoney(recentCollected)}</strong></article>
+      <article><small>Outstanding</small><strong>{formatMoney(outstanding)}</strong></article>
+      <article><small>Paid invoices</small><strong>{paidInvoices}</strong></article>
+    </div>
+    <div className="finance-recent">
+      <div><h3>Recent payments</h3><p>Invoice history synchronized from signed Stripe webhooks.</p></div>
+      {loading ? <p>Loading payments…</p> : message ? <p className="account-message">{message}</p> : payments.length === 0 ? <div className="finance-empty"><strong>No payment records yet</strong><p>New Stripe invoice events will appear here automatically.</p></div> : <div className="finance-table-wrap"><table>
+        <thead><tr><th>Date</th><th>Subscriber</th><th>Invoice</th><th>Status</th><th>Paid</th><th>Outstanding</th></tr></thead>
+        <tbody>{payments.map((payment) => { const business = payment.business_id ? businessById.get(payment.business_id) : undefined; return <tr key={payment.id}>
+          <td>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(new Date(payment.paid_at ?? payment.stripe_created_at))}</td>
+          <td><strong>{business?.name ?? "Unlinked Stripe invoice"}</strong>{business?.owner_email && <small>{business.owner_email}</small>}</td>
+          <td>{payment.hosted_invoice_url ? <a href={payment.hosted_invoice_url} target="_blank" rel="noreferrer">{payment.invoice_number ?? "View invoice"} ↗</a> : payment.invoice_number ?? "—"}</td>
+          <td><span className={`finance-status finance-status--${payment.status ?? "unknown"}`}>{payment.status ?? "unknown"}</span></td>
+          <td>{formatMoney(payment.amount_paid, payment.currency)}</td>
+          <td>{formatMoney(payment.amount_remaining, payment.currency)}</td>
+        </tr>; })}</tbody>
+      </table></div>}
+    </div>
+  </section>;
+}
 
 async function edgeFunctionErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "context" in error) {
@@ -272,6 +338,7 @@ function TestAccountReset({ business, onPurged }: { business: AdminBusiness; onP
         <span><b>{preview.businesses.length}</b> businesses</span>
         <span><b>{preview.databaseImageRows}</b> image records</span>
         <span><b>{preview.storageObjects}</b> stored files</span>
+        <span><b>{preview.databasePaymentRows}</b> payment records</span>
         <span><b>{preview.stripeCustomerIds.length}</b> Stripe customers</span>
       </div>
       <p><strong>This cannot be undone.</strong> Type <code>{preview.user.email}</code> to confirm.</p>
@@ -512,6 +579,7 @@ function AdminDashboard({ session }: { session: Session }) {
   const [businesses, setBusinesses] = useState<AdminBusiness[]>([]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<AdminBusiness | null>(null);
+  const [showFinancials, setShowFinancials] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -581,11 +649,11 @@ function AdminDashboard({ session }: { session: Session }) {
         <img src="/map/brand/hero.jpg" alt="" />
         <span><strong>The Lake District</strong><small>Business administration</small></span>
       </a>
-      <nav><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav>
+      <nav><button className={showFinancials ? "is-active" : ""} onClick={() => { setShowFinancials(true); setSelected(null); }}>Financials</button><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav>
     </header>
     <div className="admin-layout">
-      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => { const indicator = subscriptionIndicator(item); return <button className={`admin-list-item ${selected?.id === item.id ? "is-selected" : ""}`} key={item.id} onClick={() => setSelected(item)}><i className={`subscription-dot subscription-dot--${indicator.tone}`} title={indicator.label} aria-label={indicator.label} /><span className="admin-list-item__content"><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</span></button>; })}</aside>
-      <section className="admin-workspace">{selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} onAccountPurged={(ownerUserId) => { setBusinesses((all) => all.filter((item) => item.owner_user_id !== ownerUserId)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, or use “Edit from map” to find it geographically.</p></div>}</section>
+      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => { const indicator = subscriptionIndicator(item); return <button className={`admin-list-item ${selected?.id === item.id ? "is-selected" : ""}`} key={item.id} onClick={() => { setSelected(item); setShowFinancials(false); }}><i className={`subscription-dot subscription-dot--${indicator.tone}`} title={indicator.label} aria-label={indicator.label} /><span className="admin-list-item__content"><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</span></button>; })}</aside>
+      <section className="admin-workspace">{showFinancials ? <FinancialDashboard businesses={businesses} /> : selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} onAccountPurged={(ownerUserId) => { setBusinesses((all) => all.filter((item) => item.owner_user_id !== ownerUserId)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, open Financials, or use “Edit from map” to find it geographically.</p></div>}</section>
     </div>
   </main>;
 }

@@ -60,6 +60,7 @@ async function accountSnapshot(admin: ReturnType<typeof adminClient>, scoped: Re
 
   let subscriptions: SubscriptionRow[] = [];
   let imageRows = 0;
+  let paymentRows = 0;
   let storageObjects = 0;
   if (businessIds.length) {
     const [subscriptionResult, imageResult] = await Promise.all([
@@ -73,6 +74,11 @@ async function accountSnapshot(admin: ReturnType<typeof adminClient>, scoped: Re
     subscriptions = (subscriptionResult.data ?? []) as SubscriptionRow[];
     imageRows = imageResult.data?.length ?? 0;
 
+    const { count, error: paymentError } = await admin.from("subscription_payments")
+      .select("id", { count: "exact", head: true }).eq("owner_user_id", targetUserId);
+    if (paymentError) throw new Error(`Could not count payment records: ${errorMessage(paymentError, "Unknown database error")}`);
+    paymentRows = count ?? 0;
+
     for (const businessId of businessIds) {
       storageObjects += (await listBusinessStorage(admin, businessId)).length;
     }
@@ -82,6 +88,7 @@ async function accountSnapshot(admin: ReturnType<typeof adminClient>, scoped: Re
     user: { id: userResult.user.id, email: userResult.user.email ?? "" },
     businesses: businessRows,
     databaseImageRows: imageRows,
+    databasePaymentRows: paymentRows,
     storageObjects,
     stripeCustomerIds: unique(subscriptions.map((item) => item.stripe_customer_id)),
     stripeSubscriptionIds: unique(subscriptions.map((item) => item.stripe_subscription_id)),
@@ -142,6 +149,8 @@ Deno.serve(async (request) => {
 
     const businessIds = snapshot.businesses.map((business) => business.id);
     const removedStorageObjects = await removeBusinessStorage(admin, businessIds);
+    const { error: paymentDeleteError } = await admin.from("subscription_payments").delete().eq("owner_user_id", targetUserId);
+    if (paymentDeleteError) throw new Error(`Could not delete payment records: ${errorMessage(paymentDeleteError, "Unknown database error")}`);
     if (businessIds.length) {
       const { error: deleteError } = await admin.from("businesses").delete().in("id", businessIds);
       if (deleteError) throw new Error(`Could not delete owned businesses: ${errorMessage(deleteError, "Unknown database error")}`);
@@ -154,6 +163,7 @@ Deno.serve(async (request) => {
       email: snapshot.user.email,
       businesses: businessIds.length,
       storageObjects: removedStorageObjects,
+      paymentRecords: snapshot.databasePaymentRows,
       stripeCustomers: purgeStripe ? snapshot.stripeCustomerIds.length : 0,
     });
   } catch (error) {

@@ -66,6 +66,51 @@ function assertDatabaseWrite(error: { message: string } | null, operation: strin
   if (error) throw new Error(`${operation}: ${error.message}`);
 }
 
+function invoiceSubscriptionId(invoice: Stripe.Invoice) {
+  return typeof invoice.parent?.subscription_details?.subscription === "string"
+    ? invoice.parent.subscription_details.subscription
+    : invoice.parent?.subscription_details?.subscription?.id ?? null;
+}
+
+async function syncInvoice(admin: ReturnType<typeof adminClient>, invoice: Stripe.Invoice) {
+  const subscriptionId = invoiceSubscriptionId(invoice);
+  const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? null;
+  let subscriptionRecord: { business_id: string; owner_user_id: string } | null = null;
+
+  if (subscriptionId) {
+    const { data } = await admin.from("business_subscriptions")
+      .select("business_id,owner_user_id").eq("stripe_subscription_id", subscriptionId).maybeSingle();
+    subscriptionRecord = data;
+  }
+  if (!subscriptionRecord && customerId) {
+    const { data } = await admin.from("business_subscriptions")
+      .select("business_id,owner_user_id").eq("stripe_customer_id", customerId).maybeSingle();
+    subscriptionRecord = data;
+  }
+
+  const { error } = await admin.from("subscription_payments").upsert({
+    stripe_invoice_id: invoice.id,
+    business_id: subscriptionRecord?.business_id ?? null,
+    owner_user_id: subscriptionRecord?.owner_user_id ?? null,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscriptionId,
+    invoice_number: invoice.number,
+    status: invoice.status,
+    currency: invoice.currency,
+    amount_due: invoice.amount_due,
+    amount_paid: invoice.amount_paid,
+    amount_remaining: invoice.amount_remaining,
+    hosted_invoice_url: invoice.hosted_invoice_url,
+    invoice_pdf: invoice.invoice_pdf,
+    period_start: new Date(invoice.period_start * 1000).toISOString(),
+    period_end: new Date(invoice.period_end * 1000).toISOString(),
+    paid_at: invoice.status_transitions.paid_at ? new Date(invoice.status_transitions.paid_at * 1000).toISOString() : null,
+    stripe_created_at: new Date(invoice.created * 1000).toISOString(),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "stripe_invoice_id" });
+  assertDatabaseWrite(error, "Synchronizing invoice ledger");
+}
+
 Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   const signature = request.headers.get("stripe-signature") ?? "";
@@ -89,8 +134,9 @@ Deno.serve(async (request) => {
     stripe_event_id: event.id,
     event_type: event.type,
   });
-  if (claimError?.code === "23505") return json({ received: true, duplicate: true });
-  if (claimError) return json({ error: claimError.message }, 500);
+  const duplicate = claimError?.code === "23505";
+  if (duplicate && !event.type.startsWith("invoice.")) return json({ received: true, duplicate: true });
+  if (claimError && !duplicate) return json({ error: claimError.message }, 500);
 
   try {
     if (event.type === "checkout.session.completed") {
@@ -114,11 +160,13 @@ Deno.serve(async (request) => {
       }
     }
 
+    if (event.type.startsWith("invoice.")) {
+      await syncInvoice(admin, event.data.object as Stripe.Invoice);
+    }
+
     if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
-      const subscriptionId = typeof invoice.parent?.subscription_details?.subscription === "string"
-        ? invoice.parent.subscription_details.subscription
-        : invoice.parent?.subscription_details?.subscription?.id;
+      const subscriptionId = invoiceSubscriptionId(invoice);
       if (subscriptionId) {
         const { error: subscriptionError } = await admin.from("business_subscriptions").update({
           stripe_status: event.type === "invoice.paid" ? "active" : "past_due",
@@ -135,7 +183,7 @@ Deno.serve(async (request) => {
 
     return json({ received: true });
   } catch (error) {
-    await admin.from("stripe_webhook_events").delete().eq("stripe_event_id", event.id);
+    if (!duplicate) await admin.from("stripe_webhook_events").delete().eq("stripe_event_id", event.id);
     console.error(error);
     return json({ error: "Webhook processing failed" }, 500);
   }

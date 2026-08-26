@@ -20,11 +20,17 @@ function unique(values: (string | null | undefined)[]) {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
 }
 
+function errorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") return error.message;
+  return fallback;
+}
+
 async function listBusinessStorage(admin: ReturnType<typeof adminClient>, businessId: string) {
   const objects: { id: string | null; name: string }[] = [];
   for (let offset = 0; ; offset += 1000) {
     const { data, error } = await admin.storage.from("business-images").list(businessId, { limit: 1000, offset });
-    if (error) throw error;
+    if (error) throw new Error(`Could not inspect Storage for ${businessId}: ${errorMessage(error, "Unknown Storage error")}`);
     const page = (data ?? []) as { id: string | null; name: string }[];
     objects.push(...page.filter((item) => item.id));
     if (page.length < 1000) break;
@@ -48,7 +54,7 @@ async function accountSnapshot(admin: ReturnType<typeof adminClient>, targetUser
 
   const { data: businesses, error: businessError } = await admin.from("businesses")
     .select("id,name").eq("owner_user_id", targetUserId).order("name");
-  if (businessError) throw businessError;
+  if (businessError) throw new Error(`Could not load owned businesses: ${errorMessage(businessError, "Unknown database error")}`);
   const businessRows = (businesses ?? []) as BusinessRow[];
   const businessIds = businessRows.map((business) => business.id);
 
@@ -62,8 +68,8 @@ async function accountSnapshot(admin: ReturnType<typeof adminClient>, targetUser
         .in("business_id", businessIds),
       admin.from("business_images").select("id", { count: "exact", head: true }).in("business_id", businessIds),
     ]);
-    if (subscriptionResult.error) throw subscriptionResult.error;
-    if (imageResult.error) throw imageResult.error;
+    if (subscriptionResult.error) throw new Error(`Could not load subscriptions: ${errorMessage(subscriptionResult.error, "Unknown database error")}`);
+    if (imageResult.error) throw new Error(`Could not count image records: ${errorMessage(imageResult.error, "Unknown database error")}`);
     subscriptions = (subscriptionResult.data ?? []) as SubscriptionRow[];
     imageRows = imageResult.count ?? 0;
 
@@ -131,7 +137,7 @@ Deno.serve(async (request) => {
     const removedStorageObjects = await removeBusinessStorage(admin, businessIds);
     if (businessIds.length) {
       const { error: deleteError } = await admin.from("businesses").delete().in("id", businessIds);
-      if (deleteError) throw deleteError;
+      if (deleteError) throw new Error(`Could not delete owned businesses: ${errorMessage(deleteError, "Unknown database error")}`);
     }
     const { error: authError } = await admin.auth.admin.deleteUser(targetUserId);
     if (authError) throw authError;
@@ -145,7 +151,7 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     console.error(error);
-    const message = error instanceof Error ? error.message : "Unable to purge the test account.";
+    const message = errorMessage(error, "Unable to purge the test account.");
     if (message === "AUTH_REQUIRED") return json({ error: "Sign in to continue." }, 401);
     if (message === "ADMIN_REQUIRED") return json({ error: "Administrator access is required." }, 403);
     return json({ error: message }, 500);

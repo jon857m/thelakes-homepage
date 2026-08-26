@@ -66,12 +66,12 @@ async function accountSnapshot(admin: ReturnType<typeof adminClient>, targetUser
       admin.from("business_subscriptions")
         .select("business_id,stripe_customer_id,stripe_subscription_id")
         .in("business_id", businessIds),
-      admin.from("business_images").select("id", { count: "exact", head: true }).in("business_id", businessIds),
+      admin.from("business_images").select("id").in("business_id", businessIds),
     ]);
     if (subscriptionResult.error) throw new Error(`Could not load subscriptions: ${errorMessage(subscriptionResult.error, "Unknown database error")}`);
     if (imageResult.error) throw new Error(`Could not count image records: ${errorMessage(imageResult.error, "Unknown database error")}`);
     subscriptions = (subscriptionResult.data ?? []) as SubscriptionRow[];
-    imageRows = imageResult.count ?? 0;
+    imageRows = imageResult.data?.length ?? 0;
 
     for (const businessId of businessIds) {
       storageObjects += (await listBusinessStorage(admin, businessId)).length;

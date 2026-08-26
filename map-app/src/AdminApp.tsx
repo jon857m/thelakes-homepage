@@ -463,7 +463,13 @@ function AdminDashboard({ session }: { session: Session }) {
   if (allowed === null) return <main className="account-shell"><div className="login-card">Checking access…</div></main>;
   if (!allowed) return <BusinessAccount session={session} initialMessage={accessError} />;
   return <main className="admin-shell">
-    <header className="admin-header"><div><span className="account-kicker">The Lake District</span><h1>Business administration</h1></div><nav><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav></header>
+    <header className="admin-header">
+      <a className="dashboard-brand dashboard-brand--admin" href="/map/">
+        <img src="/map/brand/hero.jpg" alt="" />
+        <span><strong>The Lake District</strong><small>Business administration</small></span>
+      </a>
+      <nav><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav>
+    </header>
     <div className="admin-layout">
       <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => <button className={selected?.id === item.id ? "is-selected" : ""} key={item.id} onClick={() => setSelected(item)}><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</button>)}</aside>
       <section className="admin-workspace">{selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, or use “Edit from map” to find it geographically.</p></div>}</section>

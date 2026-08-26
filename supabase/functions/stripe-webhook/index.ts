@@ -12,6 +12,56 @@ function listingStatus(status: Stripe.Subscription.Status) {
   return "awaiting_payment";
 }
 
+function subscriptionPriority(subscription: Stripe.Subscription) {
+  const rank: Partial<Record<Stripe.Subscription.Status, number>> = {
+    active: 60,
+    trialing: 50,
+    past_due: 40,
+    unpaid: 30,
+    incomplete: 20,
+    paused: 10,
+    canceled: 0,
+    incomplete_expired: -10,
+  };
+  return (rank[subscription.status] ?? 0) * 10_000_000_000 + subscription.created;
+}
+
+function belongsToBusiness(subscription: Stripe.Subscription, businessId: string) {
+  return subscription.metadata.business_id === businessId;
+}
+
+async function reconcileBusinessSubscription(
+  admin: ReturnType<typeof adminClient>,
+  businessId: string,
+  customerId: string,
+) {
+  const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
+  const relevant = subscriptions.data.filter((subscription) => belongsToBusiness(subscription, businessId));
+  if (!relevant.length) return;
+
+  // Stripe can deliver events out of order. Always retain the best current
+  // entitlement, so an older cancelled subscription cannot hide a newer one.
+  const selected = relevant.sort((a, b) => subscriptionPriority(b) - subscriptionPriority(a))[0];
+  const periodEnd = selected.items.data[0]?.current_period_end;
+  const cancellationDate = selected.cancel_at ?? null;
+  const { error: subscriptionError } = await admin.from("business_subscriptions").update({
+    stripe_customer_id: customerId,
+    stripe_subscription_id: selected.id,
+    stripe_price_id: selected.items.data[0]?.price.id ?? null,
+    stripe_status: selected.status,
+    current_period_end: cancellationDate
+      ? new Date(cancellationDate * 1000).toISOString()
+      : periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+    cancel_at_period_end: selected.cancel_at_period_end || Boolean(cancellationDate),
+    updated_at: new Date().toISOString(),
+  }).eq("business_id", businessId);
+  assertDatabaseWrite(subscriptionError, "Reconciling subscription state");
+
+  const { error: businessError } = await admin.from("businesses")
+    .update({ listing_status: listingStatus(selected.status) })
+    .eq("id", businessId);
+  assertDatabaseWrite(businessError, "Reconciling listing state");
+}
 function assertDatabaseWrite(error: { message: string } | null, operation: string) {
   if (error) throw new Error(`${operation}: ${error.message}`);
 }
@@ -60,24 +110,7 @@ Deno.serve(async (request) => {
       const subscription = event.data.object as Stripe.Subscription;
       const businessId = subscription.metadata.business_id;
       if (businessId) {
-        const periodEnd = subscription.items.data[0]?.current_period_end;
-        const cancellationDate = subscription.cancel_at ?? null;
-        const { error: subscriptionError } = await admin.from("business_subscriptions").update({
-          stripe_customer_id: String(subscription.customer),
-          stripe_subscription_id: subscription.id,
-          stripe_price_id: subscription.items.data[0]?.price.id ?? null,
-          stripe_status: subscription.status,
-          current_period_end: cancellationDate
-            ? new Date(cancellationDate * 1000).toISOString()
-            : periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
-          // Newer Stripe Billing configurations can schedule a future
-          // `cancel_at` date while leaving `cancel_at_period_end` false.
-          cancel_at_period_end: subscription.cancel_at_period_end || Boolean(cancellationDate),
-          updated_at: new Date().toISOString(),
-        }).eq("business_id", businessId);
-        assertDatabaseWrite(subscriptionError, "Updating subscription state");
-        const { error: businessError } = await admin.from("businesses").update({ listing_status: listingStatus(subscription.status) }).eq("id", businessId);
-        assertDatabaseWrite(businessError, "Updating listing state");
+        await reconcileBusinessSubscription(admin, businessId, String(subscription.customer));
       }
     }
 

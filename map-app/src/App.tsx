@@ -678,7 +678,10 @@ export function App() {
       const marker = new maplibregl.Marker({ element, anchor: "bottom" })
         .setLngLat([business.longitude, business.latitude])
         .addTo(instance);
-      marker.setOpacity(1, 1);
+      // Keep visible pins fully opaque, but let MapLibre hide markers that are
+      // behind the camera or covered by the 3D terrain. Giving covered markers
+      // full opacity makes southern listings leak over the northern horizon.
+      marker.setOpacity(1, 0);
       return marker;
       });
     return () => businessMarkers.current.forEach((marker) => marker.remove());

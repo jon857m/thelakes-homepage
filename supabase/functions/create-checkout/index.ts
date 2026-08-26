@@ -29,7 +29,6 @@ Deno.serve(async (request) => {
     if (!["draft", "awaiting_payment", "past_due", "cancelled"].includes(business.listing_status)) {
       return json({ error: "This listing already has an active subscription" }, 409);
     }
-
     const admin = adminClient();
     const { data: subscription, error: subscriptionError } = await admin.from("business_subscriptions")
       .select("*").eq("business_id", business.id).single();
@@ -38,6 +37,9 @@ Deno.serve(async (request) => {
       return json({ error: subscriptionError.message }, 500);
     }
     if (!subscription) return json({ error: "Subscription record not found" }, 409);
+
+    const priceId = Deno.env.get("STRIPE_PRICE_STANDARD_MONTHLY");
+    if (!priceId) throw new Error("The Stripe monthly price has not been configured");
 
     let customerId = subscription.stripe_customer_id as string | null;
     if (!customerId) {
@@ -50,9 +52,33 @@ Deno.serve(async (request) => {
       await admin.from("business_subscriptions").update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() }).eq("business_id", business.id);
     }
 
+    const stripeSubscriptions = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
+    const existing = stripeSubscriptions.data
+      .filter((candidate) => !["canceled", "incomplete_expired"].includes(candidate.status))
+      .find((candidate) => candidate.metadata.business_id === business.id || (
+        !candidate.metadata.business_id && candidate.items.data.some((item) => item.price.id === priceId)
+      ));
+    if (existing) {
+      const periodEnd = existing.items.data[0]?.current_period_end;
+      const cancellationDate = existing.cancel_at ?? null;
+      const paidStatus = existing.status === "active" || existing.status === "trialing" ? "active" : "past_due";
+      const { error: reconciliationError } = await admin.from("business_subscriptions").update({
+        stripe_subscription_id: existing.id,
+        stripe_price_id: existing.items.data[0]?.price.id ?? priceId,
+        stripe_status: existing.status,
+        current_period_end: cancellationDate
+          ? new Date(cancellationDate * 1000).toISOString()
+          : periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+        cancel_at_period_end: existing.cancel_at_period_end || Boolean(cancellationDate),
+        updated_at: new Date().toISOString(),
+      }).eq("business_id", business.id);
+      if (reconciliationError) throw new Error(`Unable to reconcile subscription: ${reconciliationError.message}`);
+      const { error: listingError } = await admin.from("businesses").update({ listing_status: paidStatus }).eq("id", business.id);
+      if (listingError) throw new Error(`Unable to reconcile listing: ${listingError.message}`);
+      return json({ error: "This listing already has a Stripe subscription. Use Manage billing instead of subscribing again." }, 409);
+    }
+
     const origin = Deno.env.get("SITE_URL") ?? "https://www.thelakesincumbria.co.uk";
-    const priceId = Deno.env.get("STRIPE_PRICE_STANDARD_MONTHLY");
-    if (!priceId) throw new Error("The Stripe monthly price has not been configured");
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

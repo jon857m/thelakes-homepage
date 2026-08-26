@@ -174,6 +174,9 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
         try { detail = ((await context.clone().json()) as { error?: string; message?: string }).error; }
         catch { /* Keep the SDK's fallback message for non-JSON responses. */ }
       }
+      if (functionName === "create-checkout" && detail?.includes("already has a Stripe subscription")) {
+        await load();
+      }
       return setMessage(detail ?? error?.message ?? "Unable to open payment page.");
     }
     if (functionName === "create-checkout") trackEvent("begin_checkout", { business_id: selected.id, business_slug: selected.slug, value: 10, currency: "GBP" });
@@ -198,8 +201,27 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
   const isEnding = Boolean(subscription?.cancel_at_period_end && paidAccess);
   const effectiveStatus = paidAccess ? "active" : selected.listing_status;
   const displayedStatus = isEnding && billingEndDate ? `Live until ${billingEndDate}` : statusLabel(effectiveStatus);
+  const headerStatus = isEnding
+    ? { label: "Subscription active", detail: billingEndDate ? `Ends ${billingEndDate}` : "Renewal cancelled", tone: "ending" }
+    : paidAccess
+      ? { label: "Subscription active", detail: billingEndDate ? `Renews after ${billingEndDate}` : "Your listing is live", tone: "active" }
+      : effectiveStatus === "past_due"
+        ? { label: "Payment needs attention", detail: "Review your billing details", tone: "attention" }
+        : effectiveStatus === "cancelled"
+          ? { label: "Subscription cancelled", detail: "Your listing details are saved", tone: "inactive" }
+          : { label: "No active subscription", detail: "Complete setup to publish", tone: "inactive" };
   return <main className="customer-shell">
-    <header className="customer-header"><a href="/map/">The Lake District · 3D Explorer</a><div><span>{session.user.email}</span><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></div></header>
+    <header className="customer-header">
+      <a className="dashboard-brand" href="/map/">
+        <img src="/map/brand/hero.jpg" alt="" />
+        <span><strong>The Lake District</strong><small>Business listings</small></span>
+      </a>
+      <div className={`customer-subscription-state customer-subscription-state--${headerStatus.tone}`}>
+        <i aria-hidden="true" />
+        <span><strong>{headerStatus.label}</strong><small>{headerStatus.detail}</small></span>
+      </div>
+      <div className="customer-session"><span>{session.user.email}</span><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></div>
+    </header>
     <div className="customer-layout">
       <aside className="customer-progress"><div className="account-kicker">Your listing</div><h1>{selected.name}</h1><span className={`listing-status listing-status--${effectiveStatus}`}>{displayedStatus}</span>{!isActive && <ol>{["Your business", "Location", "Details & preview"].map((label, index) => <li className={step === index + 1 ? "is-current" : step > index + 1 ? "is-done" : ""} key={label}><button onClick={() => setStep(index + 1)}><i>{index + 1}</i>{label}</button></li>)}</ol>}
         {isActive && <nav><button onClick={() => setStep(1)}>Edit business</button><a href={`/map/?business=${selected.id}`} target="_blank">View on map ↗</a><button onClick={() => void openHostedPage("create-billing-portal")}>Manage billing</button></nav>}

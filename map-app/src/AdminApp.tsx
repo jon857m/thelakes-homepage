@@ -668,6 +668,7 @@ function BusinessEditor({ business, onSaved, onDeleted, onAccountPurged }: { bus
 
 function AdminDashboard({ session }: { session: Session }) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [subscriberAccessReady, setSubscriberAccessReady] = useState(false);
   const [accessError, setAccessError] = useState("");
   const [businesses, setBusinesses] = useState<AdminBusiness[]>([]);
   const [query, setQuery] = useState("");
@@ -690,10 +691,19 @@ function AdminDashboard({ session }: { session: Session }) {
   }, []);
   useEffect(() => {
     if (allowed === null) return;
-    const canonicalPath = allowed ? "/map/admin/" : "/map/business/";
-    if (!window.location.pathname.startsWith(canonicalPath)) {
-      window.history.replaceState({}, "", canonicalPath);
+    if (allowed) {
+      if (!window.location.pathname.startsWith("/map/admin/")) window.history.replaceState({}, "", "/map/admin/");
+      return;
     }
+    if (!supabase) return;
+    void supabase.from("site_operations").select("maintenance_enabled").eq("id", "global").single().then(({ data }) => {
+      if (data?.maintenance_enabled) {
+        window.location.replace("/");
+        return;
+      }
+      if (!window.location.pathname.startsWith("/map/business/")) window.history.replaceState({}, "", "/map/business/");
+      setSubscriberAccessReady(true);
+    });
   }, [allowed]);
   useEffect(() => {
     if (!supabase || !allowed) return;
@@ -748,6 +758,7 @@ function AdminDashboard({ session }: { session: Session }) {
   }
 
   if (allowed === null) return <LoadingScreen label="Checking account access…" />;
+  if (!allowed && !subscriberAccessReady) return <LoadingScreen label="Checking site availability…" />;
   if (!allowed) return <BusinessAccount session={session} initialMessage={accessError} />;
   return <main className="admin-shell">
     <header className="admin-header">

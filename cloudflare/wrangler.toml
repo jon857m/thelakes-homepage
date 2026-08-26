@@ -1,10 +1,13 @@
 name = "thelakes-maintenance-gate"
 main = "maintenance-worker.js"
 compatibility_date = "2026-08-26"
+workers_dev = false
+preview_urls = false
+routes = [
+  { pattern = "www.thelakesincumbria.co.uk/*", zone_name = "thelakesincumbria.co.uk" },
+  { pattern = "thelakesincumbria.co.uk/*", zone_name = "thelakesincumbria.co.uk" }
+]
 
-# Add the production route in Cloudflare after the first preview deployment:
-# www.thelakesincumbria.co.uk/*
-#
 # Configure these with `wrangler secret put` rather than committing values:
 # SUPABASE_URL
 # SUPABASE_ANON_KEY

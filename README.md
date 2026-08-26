@@ -30,6 +30,12 @@ npm run map:check
 
 The generated `/map/` directory is checked in because the current production host publishes the repository as static files without running a build command. Run `npm run map:build` and commit the refreshed bundle before deployment. The build also creates physical entry points for `/map/login/`, `/map/admin/` and `/map/business/` because the current host does not honour SPA fallback rules. If hosting later moves to a build-aware Cloudflare Pages project, it can instead run that command during deployment and ignore the generated directory. `_redirects` supplies the SPA fallback for shared-location URLs where the host supports redirect rules.
 
+## Operational maintenance gate
+
+`cloudflare/maintenance-worker.js` is an edge-level maintenance gate. It reads the public operational state from Supabase, serves a temporary HTTP 503 notice when maintenance is enabled, and issues an eight-hour signed bypass cookie only after validating a Supabase administrator session. The admin dashboard also has an independent signup pause; both draft creation and Stripe Checkout enforce that pause server-side.
+
+Deploy the Worker only after setting its `SUPABASE_URL`, `SUPABASE_ANON_KEY` and randomly generated `BYPASS_SIGNING_SECRET` secrets. Route it over `www.thelakesincumbria.co.uk/*`. The gate fails open if Supabase cannot be reached, so an operational-state outage does not accidentally take the public site offline.
+
 Apply `supabase/migrations/202608240001_map_mvp.sql` to a Supabase project before enabling sharing.
 
 ## Admin test-account reset

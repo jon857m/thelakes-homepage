@@ -17,6 +17,7 @@ map-app/node_modules/
 .env.local
 map-app/.env
 map-app/.env.local
+cloudflare/.dev.vars
 
 # Supabase CLI local state
 supabase/.temp/

@@ -80,6 +80,53 @@ type ReviewEvent = {
   current_values: Record<string, unknown>; review_status: "pending" | "reviewed"; created_at: string;
 };
 
+type SiteOperations = {
+  maintenance_enabled: boolean;
+  signup_paused: boolean;
+  maintenance_message: string;
+  expected_back_at: string | null;
+  updated_at: string;
+};
+
+function OperationsPanel() {
+  const [settings, setSettings] = useState<SiteOperations | null>(null);
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+    void supabase.from("site_operations").select("maintenance_enabled,signup_paused,maintenance_message,expected_back_at,updated_at")
+      .eq("id", "global").single().then(({ data, error }) => error ? setMessage(error.message) : setSettings(data as SiteOperations));
+  }, []);
+
+  async function save(next: SiteOperations) {
+    if (!supabase) return;
+    if (next.maintenance_enabled && !window.confirm("Enable full maintenance mode for public visitors? Your current admin browser will retain access.")) return;
+    setBusy(true); setMessage("");
+    const { data, error } = await supabase.rpc("set_site_operations", {
+      requested_maintenance: next.maintenance_enabled,
+      requested_signup_pause: next.signup_paused,
+      requested_message: next.maintenance_message,
+      requested_expected_back_at: next.expected_back_at || null,
+    });
+    setBusy(false);
+    if (error) return setMessage(error.message);
+    setSettings(data as SiteOperations);
+    setMessage(next.maintenance_enabled ? "Maintenance mode enabled." : next.signup_paused ? "New subscriptions paused." : "The site and subscriptions are available.");
+  }
+
+  if (!settings) return <section className="operations-panel"><div className="admin-editor__heading"><div><span>Emergency controls</span><h2>Site operations</h2></div></div><p>{message || "Loading operational controls…"}</p></section>;
+  return <section className="operations-panel">
+    <div className="admin-editor__heading"><div><span>Emergency controls</span><h2>Site operations</h2></div><span className={`operations-state ${settings.maintenance_enabled ? "is-maintenance" : settings.signup_paused ? "is-paused" : "is-live"}`}>{settings.maintenance_enabled ? "Maintenance" : settings.signup_paused ? "Signups paused" : "Site live"}</span></div>
+    <p>Use these controls for short operational incidents. Existing Stripe webhooks and Supabase processing continue in the background.</p>
+    <article className="operations-control"><div><strong>New subscriptions</strong><p>Pause account creation and Stripe Checkout while keeping the public map and existing subscriber accounts available.</p></div><button disabled={busy || settings.maintenance_enabled} onClick={() => void save({ ...settings, signup_paused: !settings.signup_paused })}>{settings.signup_paused ? "Resume subscriptions" : "Pause subscriptions"}</button></article>
+    <article className="operations-control operations-control--danger"><div><strong>Full maintenance mode</strong><p>Public visitors receive a temporary maintenance notice. Your authenticated admin browser retains access for diagnosis.</p></div><button disabled={busy} onClick={() => void save({ ...settings, maintenance_enabled: !settings.maintenance_enabled, signup_paused: settings.maintenance_enabled ? settings.signup_paused : true })}>{settings.maintenance_enabled ? "Restore public site" : "Enable maintenance"}</button></article>
+    <div className="operations-fields"><label>Public maintenance message<textarea rows={3} value={settings.maintenance_message} onChange={(event) => setSettings({ ...settings, maintenance_message: event.target.value })} /></label><label>Expected return (optional)<input type="datetime-local" value={settings.expected_back_at?.slice(0, 16) ?? ""} onChange={(event) => setSettings({ ...settings, expected_back_at: event.target.value ? new Date(event.target.value).toISOString() : null })} /></label><button className="account-primary" disabled={busy} onClick={() => void save(settings)}>{busy ? "Updating…" : "Save notice settings"}</button></div>
+    {message && <p className="account-message" role="status">{message}</p>}
+    <small>Last changed {new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(settings.updated_at))}. Cloudflare may take a few seconds to reflect a change.</small>
+  </section>;
+}
+
 function ReviewInbox({ businesses, onReviewed }: { businesses: AdminBusiness[]; onReviewed: () => void }) {
   const [events, setEvents] = useState<ReviewEvent[]>([]);
   const [message, setMessage] = useState("");
@@ -225,6 +272,13 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [signupPaused, setSignupPaused] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+    void supabase.from("site_operations").select("signup_paused,maintenance_enabled").eq("id", "global").single()
+      .then(({ data }) => setSignupPaused(Boolean(data?.signup_paused || data?.maintenance_enabled)));
+  }, []);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -246,6 +300,7 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
   }
 
   async function createAccount() {
+    if (signupPaused) return setMessage("New subscriptions are temporarily paused. Please try again shortly.");
     if (!supabase || !email || !password) return setMessage("Enter an email address and password first.");
     if (password.length < 10) return setMessage("Use at least ten characters for your password.");
     if (password !== confirmation) return setMessage("The passwords do not match.");
@@ -273,6 +328,7 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
       <h1>{mode === "signup" ? "Put your business on the map" : "Welcome back"}</h1>
       <p>{mode === "signup" ? "Create your account, add your listing and choose its exact map location. Payment comes at the final step." : "Sign in to manage your listing, subscription or map administration."}</p>
       {!isSupabaseConfigured && <div className="account-alert">Add the Supabase environment variables to enable login.</div>}
+      {mode === "signup" && signupPaused && <div className="account-alert">New subscriptions are temporarily paused while we carry out an update. Existing subscribers can still sign in.</div>}
       <form onSubmit={mode === "signup" ? (event) => { event.preventDefault(); void createAccount(); } : submit}>
         <label>Work email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="you@yourbusiness.co.uk" required /></label>
         <label>Password<input type="password" minLength={mode === "signup" ? 10 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} required /></label>
@@ -281,7 +337,7 @@ function Login({ onSession }: { onSession: (session: Session) => void }) {
           <small className="password-help">Use at least 10 characters.</small>
           <label className="terms-check"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} required /><span>I agree to the <strong>business listing terms</strong> and acknowledge the <strong>privacy notice</strong>.</span></label>
         </>}
-        <button className="account-primary" disabled={busy || !isSupabaseConfigured}>{busy ? (mode === "signup" ? "Creating account…" : "Signing in…") : (mode === "signup" ? "Create my business account" : "Sign in")}</button>
+        <button className="account-primary" disabled={busy || !isSupabaseConfigured || (mode === "signup" && signupPaused)}>{busy ? (mode === "signup" ? "Creating account…" : "Signing in…") : (mode === "signup" ? "Create my business account" : "Sign in")}</button>
       </form>
       <div className="login-switch">
         <span>{mode === "signup" ? "Already have an account?" : "New to our business map?"}</span>
@@ -618,6 +674,7 @@ function AdminDashboard({ session }: { session: Session }) {
   const [selected, setSelected] = useState<AdminBusiness | null>(null);
   const [showFinancials, setShowFinancials] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
+  const [showOperations, setShowOperations] = useState(false);
   const [pendingReviews, setPendingReviews] = useState(0);
 
   useEffect(() => {
@@ -640,6 +697,10 @@ function AdminDashboard({ session }: { session: Session }) {
   }, [allowed]);
   useEffect(() => {
     if (!supabase || !allowed) return;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!data.session?.access_token) return;
+      void fetch("/_ops/maintenance/bypass", { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}` } }).catch(() => undefined);
+    });
     void supabase.from("listing_review_events").select("id", { count: "exact", head: true }).eq("review_status", "pending")
       .then(({ count }) => setPendingReviews(count ?? 0));
   }, [allowed]);
@@ -682,6 +743,7 @@ function AdminDashboard({ session }: { session: Session }) {
     if (error) return window.alert(error.message);
     const created = data as AdminBusiness;
     setBusinesses((all) => [created, ...all]);
+    setShowOperations(false);
     setSelected(created);
   }
 
@@ -693,11 +755,11 @@ function AdminDashboard({ session }: { session: Session }) {
         <img src="/map/brand/hero.jpg" alt="" />
         <span><strong>The Lake District</strong><small>Business administration</small></span>
       </a>
-      <nav><button className={showReviews ? "is-active" : ""} onClick={() => { setShowReviews(true); setShowFinancials(false); setSelected(null); }}>Reviews{pendingReviews > 0 ? ` (${pendingReviews})` : ""}</button><button className={showFinancials ? "is-active" : ""} onClick={() => { setShowFinancials(true); setShowReviews(false); setSelected(null); }}>Financials</button><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav>
+      <nav><button className={showReviews ? "is-active" : ""} onClick={() => { setShowReviews(true); setShowFinancials(false); setShowOperations(false); setSelected(null); }}>Reviews{pendingReviews > 0 ? ` (${pendingReviews})` : ""}</button><button className={showFinancials ? "is-active" : ""} onClick={() => { setShowFinancials(true); setShowReviews(false); setShowOperations(false); setSelected(null); }}>Financials</button><button className={showOperations ? "is-active" : ""} onClick={() => { setShowOperations(true); setShowFinancials(false); setShowReviews(false); setSelected(null); }}>Site controls</button><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav>
     </header>
     <div className="admin-layout">
-      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => { const indicator = subscriptionIndicator(item); return <button className={`admin-list-item ${selected?.id === item.id ? "is-selected" : ""}`} key={item.id} onClick={() => { setSelected(item); setShowFinancials(false); setShowReviews(false); }}><i className={`subscription-dot subscription-dot--${indicator.tone}`} title={indicator.label} aria-label={indicator.label} /><span className="admin-list-item__content"><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</span></button>; })}</aside>
-      <section className="admin-workspace">{showReviews ? <ReviewInbox businesses={businesses} onReviewed={() => setPendingReviews((count) => Math.max(0, count - 1))} /> : showFinancials ? <FinancialDashboard businesses={businesses} /> : selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} onAccountPurged={(ownerUserId) => { setBusinesses((all) => all.filter((item) => item.owner_user_id !== ownerUserId)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, open Reviews or Financials, or use “Edit from map” to find it geographically.</p></div>}</section>
+      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => { const indicator = subscriptionIndicator(item); return <button className={`admin-list-item ${selected?.id === item.id ? "is-selected" : ""}`} key={item.id} onClick={() => { setSelected(item); setShowFinancials(false); setShowReviews(false); setShowOperations(false); }}><i className={`subscription-dot subscription-dot--${indicator.tone}`} title={indicator.label} aria-label={indicator.label} /><span className="admin-list-item__content"><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</span></button>; })}</aside>
+      <section className="admin-workspace">{showOperations ? <OperationsPanel /> : showReviews ? <ReviewInbox businesses={businesses} onReviewed={() => setPendingReviews((count) => Math.max(0, count - 1))} /> : showFinancials ? <FinancialDashboard businesses={businesses} /> : selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} onAccountPurged={(ownerUserId) => { setBusinesses((all) => all.filter((item) => item.owner_user_id !== ownerUserId)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, open Reviews, Financials or Site controls, or use “Edit from map” to find it geographically.</p></div>}</section>
     </div>
   </main>;
 }

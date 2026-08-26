@@ -17,6 +17,14 @@ Deno.serve(async (request) => {
     const { businessId } = await request.json() as { businessId?: string };
     if (!businessId) return json({ error: "Choose a business listing" }, 400);
 
+    const admin = adminClient();
+    const { data: operations, error: operationsError } = await admin.from("site_operations")
+      .select("maintenance_enabled,signup_paused").eq("id", "global").single();
+    if (operationsError) throw new Error(`Unable to check site availability: ${operationsError.message}`);
+    if (operations?.maintenance_enabled || operations?.signup_paused) {
+      return json({ error: "New subscriptions are temporarily paused. Please try again shortly." }, 503);
+    }
+
     const { data: business, error: businessError } = await scoped.from("businesses")
       .select("id,name,owner_user_id,listing_type,listing_status")
       .eq("id", businessId).single();
@@ -29,7 +37,6 @@ Deno.serve(async (request) => {
     if (!["draft", "awaiting_payment", "past_due", "cancelled"].includes(business.listing_status)) {
       return json({ error: "This listing already has an active subscription" }, 409);
     }
-    const admin = adminClient();
     const { data: subscription, error: subscriptionError } = await admin.from("business_subscriptions")
       .select("*").eq("business_id", business.id).single();
     if (subscriptionError) {

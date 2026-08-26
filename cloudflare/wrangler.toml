@@ -1,0 +1,11 @@
+name = "thelakes-maintenance-gate"
+main = "maintenance-worker.js"
+compatibility_date = "2026-08-26"
+
+# Add the production route in Cloudflare after the first preview deployment:
+# www.thelakesincumbria.co.uk/*
+#
+# Configure these with `wrangler secret put` rather than committing values:
+# SUPABASE_URL
+# SUPABASE_ANON_KEY
+# BYPASS_SIGNING_SECRET

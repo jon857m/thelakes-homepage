@@ -130,7 +130,14 @@ Deno.serve(async (request) => {
         return json({ error: "Stripe deletion is allowed only when STRIPE_SECRET_KEY is a test-mode key." }, 409);
       }
       const stripe = new Stripe(stripeKey);
-      for (const customerId of snapshot.stripeCustomerIds) await stripe.customers.del(customerId);
+      for (const customerId of snapshot.stripeCustomerIds) {
+        try {
+          await stripe.customers.del(customerId);
+        } catch (error) {
+          const stripeError = error as { code?: string };
+          if (stripeError.code !== "resource_missing") throw error;
+        }
+      }
     }
 
     const businessIds = snapshot.businesses.map((business) => business.id);

@@ -20,6 +20,7 @@ type AdminBusiness = {
   logo_url: string | null;
   image_url: string | null;
   business_images?: BusinessImage[];
+  business_subscriptions?: AdminSubscription[];
   listing_type: "editorial" | "subscriber";
   listing_status: "draft" | "awaiting_payment" | "active" | "past_due" | "cancelled" | "suspended";
   featured: boolean;
@@ -28,6 +29,26 @@ type AdminBusiness = {
 };
 
 type BusinessImage = { id: string; image_url: string; storage_path: string; sort_order: number };
+type AdminSubscription = {
+  stripe_status: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+};
+
+type SubscriptionIndicator = { tone: "green" | "red" | "orange" | "yellow" | "neutral"; label: string };
+
+function subscriptionIndicator(business: AdminBusiness): SubscriptionIndicator {
+  if (business.listing_type !== "subscriber") return { tone: "neutral", label: "Editorial listing — no subscription" };
+  const subscription = business.business_subscriptions?.[0];
+  if (!subscription) return { tone: "yellow", label: "Subscription setup pending" };
+
+  const periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end).getTime() : null;
+  const periodHasEnded = periodEnd !== null && periodEnd <= Date.now();
+  if (subscription.cancel_at_period_end && !periodHasEnded) return { tone: "orange", label: "Cancelled — access remains until the renewal date" };
+  if (subscription.stripe_status === "canceled" || periodHasEnded) return { tone: "red", label: "Subscription ended" };
+  if (subscription.stripe_status === "active" || subscription.stripe_status === "trialing") return { tone: "green", label: "Subscription active" };
+  return { tone: "yellow", label: "Subscription needs payment or setup attention" };
+}
 
 type PurgePreview = {
   user: { id: string; email: string };
@@ -512,7 +533,7 @@ function AdminDashboard({ session }: { session: Session }) {
   useEffect(() => {
     if (!supabase || !allowed) return;
     void Promise.all([
-      supabase.from("businesses").select("*,business_images(*)").order("name"),
+      supabase.from("businesses").select("*,business_images(*),business_subscriptions(stripe_status,current_period_end,cancel_at_period_end)").order("name"),
       supabase.rpc("admin_business_owner_emails")
     ]).then(([businessResult, ownerResult]) => {
       const ownerEmails = new Map<string, string | null>(
@@ -556,7 +577,7 @@ function AdminDashboard({ session }: { session: Session }) {
       <nav><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav>
     </header>
     <div className="admin-layout">
-      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => <button className={selected?.id === item.id ? "is-selected" : ""} key={item.id} onClick={() => setSelected(item)}><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</button>)}</aside>
+      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => { const indicator = subscriptionIndicator(item); return <button className={`admin-list-item ${selected?.id === item.id ? "is-selected" : ""}`} key={item.id} onClick={() => setSelected(item)}><i className={`subscription-dot subscription-dot--${indicator.tone}`} title={indicator.label} aria-label={indicator.label} /><span className="admin-list-item__content"><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</span></button>; })}</aside>
       <section className="admin-workspace">{selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} onAccountPurged={(ownerUserId) => { setBusinesses((all) => all.filter((item) => item.owner_user_id !== ownerUserId)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, or use “Edit from map” to find it geographically.</p></div>}</section>
     </div>
   </main>;

@@ -55,9 +55,16 @@ button { cursor: pointer; }
 .admin-list > p { margin: 10px 3px; color: #728078; font-size: 11px; }
 .admin-list > .admin-create { display: flex; min-height: 42px; margin-bottom: 10px; align-items: center; justify-content: center; border: 0; border-radius: 11px; color: white; background: #2b593d; font-weight: 850; }
 .admin-list > button { display: grid; width: 100%; gap: 4px; padding: 12px; border: 0; border-top: 1px solid #d5dcd3; color: #26342b; background: transparent; text-align: left; }
+.admin-list > .admin-list-item { grid-template-columns: 11px minmax(0, 1fr); align-items: start; column-gap: 10px; }
 .admin-list > button.is-selected { border-radius: 11px; background: white; box-shadow: 0 4px 14px rgba(32,51,39,.08); }
-.admin-list > button span { color: #6b786f; font-size: 11px; text-transform: capitalize; }
+.admin-list-item__content { display: grid; min-width: 0; gap: 4px; }
+.admin-list > button .admin-list-item__content > span { color: #6b786f; font-size: 11px; text-transform: capitalize; }
 .admin-list > button small { overflow: hidden; color: #65736a; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.subscription-dot { width: 10px; height: 10px; margin-top: 4px; border: 2px solid rgba(255,255,255,.9); border-radius: 50%; background: #9aa39d; box-shadow: 0 0 0 1px rgba(32,51,39,.16); }
+.subscription-dot--green { background: #2f9958; }
+.subscription-dot--red { background: #c7473c; }
+.subscription-dot--orange { background: #e38731; }
+.subscription-dot--yellow { background: #dfb52f; }
 .admin-workspace { min-width: 0; padding: 28px; overflow: auto; }
 .admin-empty { display: grid; min-height: 55vh; place-content: center; text-align: center; }
 .admin-empty p { color: #68756c; }

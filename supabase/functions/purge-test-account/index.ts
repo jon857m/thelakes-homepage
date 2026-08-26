@@ -45,10 +45,10 @@ async function requireAdmin(authorization: string) {
 
   const { data: isAdmin, error: adminError } = await scoped.rpc("is_admin");
   if (adminError || !isAdmin) throw new Error("ADMIN_REQUIRED");
-  return { caller: user, admin: adminClient() };
+  return { caller: user, scoped, admin: adminClient() };
 }
 
-async function accountSnapshot(admin: ReturnType<typeof adminClient>, targetUserId: string) {
+async function accountSnapshot(admin: ReturnType<typeof adminClient>, scoped: ReturnType<typeof userClient>, targetUserId: string) {
   const { data: userResult, error: userError } = await admin.auth.admin.getUserById(targetUserId);
   if (userError || !userResult.user) throw new Error("Account not found.");
 
@@ -66,7 +66,7 @@ async function accountSnapshot(admin: ReturnType<typeof adminClient>, targetUser
       admin.from("business_subscriptions")
         .select("business_id,stripe_customer_id,stripe_subscription_id")
         .in("business_id", businessIds),
-      admin.from("business_images").select("id").in("business_id", businessIds),
+      scoped.from("business_images").select("id").in("business_id", businessIds),
     ]);
     if (subscriptionResult.error) throw new Error(`Could not load subscriptions: ${errorMessage(subscriptionResult.error, "Unknown database error")}`);
     if (imageResult.error) throw new Error(`Could not count image records: ${errorMessage(imageResult.error, "Unknown database error")}`);
@@ -112,12 +112,12 @@ Deno.serve(async (request) => {
     }
 
     const authorization = request.headers.get("Authorization") ?? "";
-    const { caller, admin } = await requireAdmin(authorization);
+    const { caller, scoped, admin } = await requireAdmin(authorization);
     const { action, targetUserId, confirmation, purgeStripe = false } = await request.json() as RequestBody;
     if (!targetUserId) return json({ error: "Choose an account to purge." }, 400);
     if (targetUserId === caller.id) return json({ error: "You cannot purge the admin account you are signed in with." }, 409);
 
-    const snapshot = await accountSnapshot(admin, targetUserId);
+    const snapshot = await accountSnapshot(admin, scoped, targetUserId);
     if (action === "preview") return json(snapshot);
     if (action !== "purge") return json({ error: "Unknown action." }, 400);
     if (!snapshot.user.email || confirmation?.trim().toLowerCase() !== snapshot.user.email.toLowerCase()) {

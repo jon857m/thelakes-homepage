@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ChangeEvent, type ClipboardEvent, ty
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import { BusinessAccount } from "./BusinessAccount";
+import { LoadingScreen } from "./LoadingScreen";
 
 type AdminBusiness = {
   id: string;
@@ -684,7 +685,7 @@ function AdminDashboard({ session }: { session: Session }) {
     setSelected(created);
   }
 
-  if (allowed === null) return <main className="account-shell"><div className="login-card">Checking access…</div></main>;
+  if (allowed === null) return <LoadingScreen label="Checking account access…" />;
   if (!allowed) return <BusinessAccount session={session} initialMessage={accessError} />;
   return <main className="admin-shell">
     <header className="admin-header">
@@ -713,7 +714,7 @@ export function AdminApp() {
     });
     return () => data.subscription.unsubscribe();
   }, []);
-  if (session === undefined) return <main className="account-shell"><div className="login-card">Loading…</div></main>;
+  if (session === undefined) return <LoadingScreen label="Preparing your account…" />;
   if (!session) return <Login onSession={setSession} />;
   if (recovering) return <PasswordRecovery onComplete={() => setRecovering(false)} />;
   // Always resolve the user's role before choosing an account experience.

@@ -11,6 +11,15 @@ button, a { font: inherit; }
 button { cursor: pointer; }
 
 .account-shell, .admin-shell { min-height: 100dvh; color: #213027; background: radial-gradient(circle at 15% 0, #47684f 0, #1c3023 40%, #121d16 100%); overflow: auto; }
+.account-loading { display: grid; min-height: 100dvh; place-content: center; justify-items: center; padding: 24px; color: #f7f2e5; background: radial-gradient(circle at 30% 20%, #45654d 0, #1d3526 42%, #101c15 100%); text-align: center; }
+.account-loading__brand { display: flex; align-items: center; gap: 14px; text-align: left; }
+.account-loading__brand img { width: 62px; height: 62px; border: 1px solid rgba(255,255,255,.25); border-radius: 15px; object-fit: cover; box-shadow: 0 12px 35px rgba(0,0,0,.3); }
+.account-loading__brand strong, .account-loading__brand small { display: block; }
+.account-loading__brand strong { font: 700 25px/1 Georgia, serif; }
+.account-loading__brand small { margin-top: 7px; color: rgba(247,242,229,.65); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.account-loading__progress { width: min(310px, 72vw); height: 3px; margin-top: 28px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.13); }
+.account-loading__progress i { display: block; width: 42%; height: 100%; border-radius: inherit; background: #e7bd5e; animation: map-startup-progress 1.45s ease-in-out infinite; }
+.account-loading p { margin: 12px 0 0; color: rgba(247,242,229,.68); font-size: 12px; }
 .account-shell { display: grid; place-items: center; padding: 106px 20px 38px; }
 .account-brand { position: absolute; top: 24px; left: 24px; color: #f5f0df; font-weight: 800; text-decoration: none; }
 .account-brand--full { display: flex; align-items: center; gap: 12px; padding: 8px 13px 8px 8px; border: 1px solid rgba(255,255,255,.2); border-radius: 17px; background: rgba(17,29,21,.62); box-shadow: 0 12px 32px rgba(0,0,0,.2); }
@@ -29,6 +38,7 @@ button { cursor: pointer; }
 .admin-fields .admin-readonly { color: #5c6961; background: #edf0ea; cursor: default; }
 .account-primary { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; padding: 0 18px; border: 0; border-radius: 11px; color: white; background: #28563a; font-weight: 850; text-decoration: none; }
 .account-primary:disabled { opacity: .55; }
+.autosave-status { margin-right: auto; color: #68756c; font-size: 12px; font-weight: 750; }
 .account-link { margin-top: 18px; padding: 0; border: 0; color: #355a41; background: transparent; font-size: 12px; font-weight: 800; }
 .login-links { display: flex; justify-content: space-between; gap: 12px; }
 .login-switch { display: flex; justify-content: center; gap: 5px; margin-top: 20px; color: #68746b; font-size: 12px; }

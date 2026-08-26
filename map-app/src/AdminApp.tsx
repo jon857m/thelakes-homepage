@@ -38,6 +38,21 @@ type PurgePreview = {
   stripeSubscriptionIds: string[];
 };
 
+async function edgeFunctionErrorMessage(error: unknown, fallback: string) {
+  if (error && typeof error === "object" && "context" in error) {
+    const context = (error as { context?: Response }).context;
+    if (context) {
+      try {
+        const body = await context.clone().json() as { error?: string };
+        if (body.error) return body.error;
+      } catch {
+        // Fall through to the SDK message when the response is not JSON.
+      }
+    }
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
 const categories = ["Accommodation", "Camping", "Eating", "Activities", "Gifts"];
 const statuses: AdminBusiness["listing_status"][] = ["draft", "awaiting_payment", "active", "past_due", "cancelled", "suspended"];
 
@@ -212,7 +227,7 @@ function TestAccountReset({ business, onPurged }: { business: AdminBusiness; onP
     setBusy(false);
     const responseError = (data as { error?: string } | null)?.error;
     if (error || responseError) {
-      setMessage(responseError || error?.message || "Unable to contact the purge service.");
+      setMessage(responseError || await edgeFunctionErrorMessage(error, "Unable to contact the purge service."));
       return;
     }
     if (action === "preview") {

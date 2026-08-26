@@ -74,6 +74,36 @@ type PaymentRecord = {
   hosted_invoice_url: string | null;
 };
 
+type ReviewEvent = {
+  id: string; business_id: string; event_type: "published" | "edited"; changed_fields: string[];
+  current_values: Record<string, unknown>; review_status: "pending" | "reviewed"; created_at: string;
+};
+
+function ReviewInbox({ businesses, onReviewed }: { businesses: AdminBusiness[]; onReviewed: () => void }) {
+  const [events, setEvents] = useState<ReviewEvent[]>([]);
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (!supabase) return;
+    void supabase.from("listing_review_events").select("id,business_id,event_type,changed_fields,current_values,review_status,created_at")
+      .eq("review_status", "pending").order("created_at", { ascending: false }).then(({ data, error }) => error ? setMessage(error.message) : setEvents((data ?? []) as ReviewEvent[]));
+  }, []);
+  const businessById = new Map(businesses.map((business) => [business.id, business]));
+  async function markReviewed(id: string) {
+    if (!supabase) return;
+    const { error } = await supabase.from("listing_review_events").update({ review_status: "reviewed", reviewed_at: new Date().toISOString() }).eq("id", id);
+    if (error) return setMessage(error.message);
+    setEvents((all) => all.filter((event) => event.id !== id)); onReviewed();
+  }
+  return <section className="review-inbox"><div className="admin-editor__heading"><div><span>Non-blocking moderation</span><h2>Listing review inbox</h2></div></div>
+    <p>Newly published listings and subscriber edits appear here without delaying the live listing.</p>
+    {message && <p className="account-message">{message}</p>}
+    {!message && events.length === 0 ? <div className="finance-empty"><strong>Nothing waiting for review</strong><p>New publications and edits will appear automatically.</p></div> : <div className="review-list">{events.map((event) => { const business = businessById.get(event.business_id); return <article key={event.id}>
+      <div><span className={`review-kind review-kind--${event.event_type}`}>{event.event_type}</span><h3>{business?.name ?? String(event.current_values.name ?? "Unknown listing")}</h3><p>{event.event_type === "edited" ? `Changed: ${event.changed_fields.join(", ")}` : "New paid listing published"}</p><small>{business?.owner_email} · {new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(event.created_at))}</small></div>
+      <div><a href={`/map/?business=${event.business_id}`} target="_blank">View listing ↗</a><button onClick={() => void markReviewed(event.id)}>Mark reviewed</button></div>
+    </article>; })}</div>}
+  </section>;
+}
+
 function formatMoney(pence: number, currency = "gbp") {
   return new Intl.NumberFormat("en-GB", { style: "currency", currency: currency.toUpperCase() }).format(pence / 100);
 }
@@ -100,6 +130,11 @@ function FinancialDashboard({ businesses }: { businesses: AdminBusiness[] }) {
     .reduce((sum, payment) => sum + payment.amount_paid, 0);
   const outstanding = payments.reduce((sum, payment) => sum + payment.amount_remaining, 0);
   const paidInvoices = payments.filter((payment) => payment.status === "paid").length;
+  const currentSubscribers = businesses.filter((business) => {
+    const subscription = business.business_subscriptions?.[0];
+    if (!subscription || !["active", "trialing"].includes(subscription.stripe_status ?? "")) return false;
+    return !subscription.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now();
+  }).length;
 
   return <section className="finance-dashboard">
     <div className="admin-editor__heading"><div><span>Stripe reporting ledger</span><h2>Financial overview</h2></div></div>
@@ -108,6 +143,7 @@ function FinancialDashboard({ businesses }: { businesses: AdminBusiness[] }) {
       <article><small>Last 30 days</small><strong>{formatMoney(recentCollected)}</strong></article>
       <article><small>Outstanding</small><strong>{formatMoney(outstanding)}</strong></article>
       <article><small>Paid invoices</small><strong>{paidInvoices}</strong></article>
+      <article><small>Current subscribers</small><strong>{currentSubscribers}</strong></article>
     </div>
     <div className="finance-recent">
       <div><h3>Recent payments</h3><p>Invoice history synchronized from signed Stripe webhooks.</p></div>
@@ -580,6 +616,8 @@ function AdminDashboard({ session }: { session: Session }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<AdminBusiness | null>(null);
   const [showFinancials, setShowFinancials] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
+  const [pendingReviews, setPendingReviews] = useState(0);
 
   useEffect(() => {
     if (!supabase) return;
@@ -598,6 +636,11 @@ function AdminDashboard({ session }: { session: Session }) {
     if (!window.location.pathname.startsWith(canonicalPath)) {
       window.history.replaceState({}, "", canonicalPath);
     }
+  }, [allowed]);
+  useEffect(() => {
+    if (!supabase || !allowed) return;
+    void supabase.from("listing_review_events").select("id", { count: "exact", head: true }).eq("review_status", "pending")
+      .then(({ count }) => setPendingReviews(count ?? 0));
   }, [allowed]);
   useEffect(() => {
     if (!supabase || !allowed) return;
@@ -649,11 +692,11 @@ function AdminDashboard({ session }: { session: Session }) {
         <img src="/map/brand/hero.jpg" alt="" />
         <span><strong>The Lake District</strong><small>Business administration</small></span>
       </a>
-      <nav><button className={showFinancials ? "is-active" : ""} onClick={() => { setShowFinancials(true); setSelected(null); }}>Financials</button><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav>
+      <nav><button className={showReviews ? "is-active" : ""} onClick={() => { setShowReviews(true); setShowFinancials(false); setSelected(null); }}>Reviews{pendingReviews > 0 ? ` (${pendingReviews})` : ""}</button><button className={showFinancials ? "is-active" : ""} onClick={() => { setShowFinancials(true); setShowReviews(false); setSelected(null); }}>Financials</button><a href="/map/?admin=1">Edit from map</a><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></nav>
     </header>
     <div className="admin-layout">
-      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => { const indicator = subscriptionIndicator(item); return <button className={`admin-list-item ${selected?.id === item.id ? "is-selected" : ""}`} key={item.id} onClick={() => { setSelected(item); setShowFinancials(false); }}><i className={`subscription-dot subscription-dot--${indicator.tone}`} title={indicator.label} aria-label={indicator.label} /><span className="admin-list-item__content"><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</span></button>; })}</aside>
-      <section className="admin-workspace">{showFinancials ? <FinancialDashboard businesses={businesses} /> : selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} onAccountPurged={(ownerUserId) => { setBusinesses((all) => all.filter((item) => item.owner_user_id !== ownerUserId)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, open Financials, or use “Edit from map” to find it geographically.</p></div>}</section>
+      <aside className="admin-list"><button className="admin-create" onClick={createBusiness}>＋ Add business</button><input type="search" placeholder="Search business, email, town or postcode" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /><p>{visible.length} businesses</p>{visible.map((item) => { const indicator = subscriptionIndicator(item); return <button className={`admin-list-item ${selected?.id === item.id ? "is-selected" : ""}`} key={item.id} onClick={() => { setSelected(item); setShowFinancials(false); setShowReviews(false); }}><i className={`subscription-dot subscription-dot--${indicator.tone}`} title={indicator.label} aria-label={indicator.label} /><span className="admin-list-item__content"><strong>{item.name}</strong><span>{item.town || "No town"} · {item.listing_status.replace("_", " ")}</span>{item.owner_email && <small>{item.owner_email}</small>}</span></button>; })}</aside>
+      <section className="admin-workspace">{showReviews ? <ReviewInbox businesses={businesses} onReviewed={() => setPendingReviews((count) => Math.max(0, count - 1))} /> : showFinancials ? <FinancialDashboard businesses={businesses} /> : selected ? <BusinessEditor business={selected} onSaved={(saved) => { setSelected(saved); setBusinesses((all) => all.map((item) => item.id === saved.id ? saved : item)); }} onDeleted={(id) => { setBusinesses((all) => all.filter((item) => item.id !== id)); setSelected(null); }} onAccountPurged={(ownerUserId) => { setBusinesses((all) => all.filter((item) => item.owner_user_id !== ownerUserId)); setSelected(null); }} /> : <div className="admin-empty"><h2>Select a business</h2><p>Search the list, open Reviews or Financials, or use “Edit from map” to find it geographically.</p></div>}</section>
     </div>
   </main>;
 }

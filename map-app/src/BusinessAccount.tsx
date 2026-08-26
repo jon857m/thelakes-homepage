@@ -76,6 +76,7 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
   const [selected, setSelected] = useState<CustomerBusiness | null>(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1);
+  const [section, setSection] = useState<"dashboard" | "editor">("dashboard");
   const [message, setMessage] = useState(initialMessage);
   const [busy, setBusy] = useState(false);
   const [newName, setNewName] = useState("");
@@ -101,7 +102,9 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
       ...business,
       business_subscriptions: subscriptions.filter((subscription) => subscription.business_id === business.id),
     }));
-    setSelected((current) => loaded.find((item) => item.id === current?.id) ?? loaded[0] ?? null);
+    const chosen = loaded.find((item) => item.id === selected?.id) ?? loaded[0] ?? null;
+    setSelected(chosen);
+    setSection(chosen && (chosen.listing_status === "active" || hasPaidAccess(chosen.business_subscriptions?.[0])) ? "dashboard" : "editor");
   }
 
   useEffect(() => { void load(); }, []);
@@ -114,7 +117,7 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
     setBusy(false);
     if (error) return setMessage(error.message);
     const created = { ...(data as CustomerBusiness), opening_hours: blankHours(), business_subscriptions: [] };
-    setSelected(created); setStep(1);
+    setSelected(created); setStep(1); setSection("editor");
     trackEvent("begin_business_onboarding", { business_id: created.id, business_category: created.category });
   }
 
@@ -235,10 +238,12 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
       <div className="customer-session"><span>{session.user.email}</span><button onClick={() => void supabase?.auth.signOut().then(() => location.assign("/map/login/"))}>Sign out</button></div>
     </header>
     <div className="customer-layout">
-      <aside className="customer-progress"><div className="account-kicker">Your listing</div><h1>{selected.name}</h1><span className={`listing-status listing-status--${effectiveStatus}`}>{displayedStatus}</span>{!isActive && <ol>{["Your business", "Location", "Details & preview"].map((label, index) => <li className={step === index + 1 ? "is-current" : step > index + 1 ? "is-done" : ""} key={label}><button onClick={() => setStep(index + 1)}><i>{index + 1}</i>{label}</button></li>)}</ol>}
-        {isActive && <nav><button onClick={() => setStep(1)}>Edit business</button><a href={`/map/?business=${selected.id}`} target="_blank">View on map ↗</a><button onClick={() => void openHostedPage("create-billing-portal")}>Manage billing</button></nav>}
+      <aside className="customer-progress"><div className="account-kicker">Your listing</div><h1>{selected.name}</h1><span className={`listing-status listing-status--${effectiveStatus}`}>{displayedStatus}</span>{section === "editor" && !isActive && <ol>{["Your business", "Location", "Details & preview"].map((label, index) => <li className={step === index + 1 ? "is-current" : step > index + 1 ? "is-done" : ""} key={label}><button onClick={() => setStep(index + 1)}><i>{index + 1}</i>{label}</button></li>)}</ol>}
+        <nav><button className={section === "dashboard" ? "is-active" : ""} onClick={() => setSection("dashboard")}>Overview</button><button className={section === "editor" ? "is-active" : ""} onClick={() => { setSection("editor"); setStep(1); }}>Edit listing</button>{isActive && <a href={`/map/?business=${selected.id}`} target="_blank">View on map ↗</a>}{hasBillingAccount && <button onClick={() => void openHostedPage("create-billing-portal")}>Manage billing</button>}</nav>
       </aside>
       <section className="customer-workspace">
+        {section === "dashboard" && <div className="subscriber-dashboard"><div className="account-kicker">Account overview</div><h2>Your business dashboard</h2><p>Manage your live listing, subscription and—soon—see how visitors interact with your map pin.</p><div className="subscriber-dashboard__cards"><article><small>Listing status</small><strong>{displayedStatus}</strong></article><article><small>Subscription</small><strong>{headerStatus.label}</strong></article><article className="is-future"><small>Pin views</small><strong>Coming soon</strong></article><article className="is-future"><small>Visitor actions</small><strong>Coming soon</strong></article></div><div className="subscriber-dashboard__actions"><button onClick={() => { setSection("editor"); setStep(1); }}>Edit your listing</button>{isActive && <a href={`/map/?business=${selected.id}`}>View live listing ↗</a>}</div></div>}
+        {section === "editor" && <>
         {hasBillingAccount && <section className={`subscription-summary${isEnding ? " subscription-summary--ending" : ""}`} aria-labelledby="subscription-summary-title">
           <div>
             <div className="account-kicker">Billing &amp; subscription</div>
@@ -261,7 +266,8 @@ export function BusinessAccount({ session, initialMessage = "" }: { session: Ses
         {step === 2 && <div className="onboarding-step"><div className="account-kicker">Step 2 of 3</div><h2>Where are you?</h2><p>Enter the address, then tap or drag the marker to the exact entrance visitors should use.</p><div className="customer-fields"><label className="field-wide">Address<input value={selected.address ?? ""} onChange={(event) => set("address", event.target.value)} /></label><label>Town or village<input value={selected.town ?? ""} onChange={(event) => set("town", event.target.value)} /></label><label>Postcode<input value={selected.postcode ?? ""} onChange={(event) => set("postcode", event.target.value)} /></label><div className="field-wide"><LocationPicker latitude={selected.latitude} longitude={selected.longitude} onChange={(latitude, longitude) => setSelected((current) => current ? { ...current, latitude, longitude } : current)} /><p className="map-confirmation">Marker position: {selected.latitude.toFixed(6)}, {selected.longitude.toFixed(6)}</p></div></div><div className="onboarding-actions"><button className="secondary" onClick={() => setStep(1)}>Back</button><button className="account-primary" onClick={() => void saveCurrent(3)} disabled={busy}>Yes, this is where we are</button></div></div>}
         {step === 3 && <div className="onboarding-step"><div className="account-kicker">Step 3 of 3</div><h2>Details, preview and payment</h2><div className="customer-fields"><label>Facebook (optional)<input type="url" value={selected.facebook_url ?? ""} onChange={(event) => set("facebook_url", event.target.value)} /></label><label>Instagram (optional)<input type="url" value={selected.instagram_url ?? ""} onChange={(event) => set("instagram_url", event.target.value)} /></label><label className="check-field field-wide"><input type="checkbox" checked={selected.hours_vary} onChange={(event) => set("hours_vary", event.target.checked)} /> Hours vary—ask visitors to check our website</label>{!selected.hours_vary && <fieldset className="opening-hours field-wide"><legend>Opening hours</legend>{days.map((day) => { const hours = selected.opening_hours?.[day] ?? blankHours()[day]; return <div key={day}><strong>{day}</strong><label><input type="checkbox" checked={hours.closed} onChange={(event) => set("opening_hours", { ...selected.opening_hours, [day]: { ...hours, closed: event.target.checked } })} /> Closed</label><input type="time" disabled={hours.closed} value={hours.open} onChange={(event) => set("opening_hours", { ...selected.opening_hours, [day]: { ...hours, open: event.target.value } })} /><span>to</span><input type="time" disabled={hours.closed} value={hours.close} onChange={(event) => set("opening_hours", { ...selected.opening_hours, [day]: { ...hours, close: event.target.value } })} /></div>; })}</fieldset>}<fieldset className="subscriber-images field-wide" disabled={busy}><legend>Images</legend><label>{selected.logo_url ? <img src={selected.logo_url} alt="Current logo" /> : <span>Logo</span>}<b>{selected.logo_url ? "Replace logo" : "Add logo"}</b><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void uploadImage(event, "logo")} /></label><label>{selected.image_url ? <img src={selected.image_url} alt="Current main" /> : <span>Main image</span>}<b>{selected.image_url ? "Replace image" : "Add main image"}</b><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void uploadImage(event, "hero")} /></label></fieldset></div>
           <article className="listing-preview"><div className="account-kicker">Preview</div>{selected.logo_url && <img className="listing-preview__logo" src={selected.logo_url} alt="" />}<h3>{selected.name}</h3><strong>{selected.tagline || "Your tagline will appear here"}</strong>{selected.image_url && <img className="listing-preview__hero" src={selected.image_url} alt="" />}<p>{selected.description || "Your short description will appear here."}</p><small>{selected.town} · {selected.category}</small></article>
-          <div className="onboarding-actions"><button className="secondary" onClick={() => setStep(2)}>Back</button><button className="secondary" onClick={() => void saveCurrent()} disabled={busy}>Save preview</button>{!isActive && <button className="account-primary" onClick={() => void saveAndCheckout()} disabled={busy}>Subscribe · £10/month</button>}{isActive && <a className="account-primary" href={`/map/?business=${selected.id}`}>View live listing</a>}</div></div>}
+          <div className="onboarding-actions"><button className="secondary" onClick={() => setStep(2)}>Back</button><button className="secondary" onClick={() => void saveCurrent()} disabled={busy}>Save changes</button>{!isActive && <button className="account-primary" onClick={() => void saveAndCheckout()} disabled={busy}>Subscribe · £10/month</button>}{isActive && <a className="account-primary" href={`/map/?business=${selected.id}`}>View live listing</a>}</div></div>}
+        </>}
         {message && <p className="account-message customer-message" role="status">{message}</p>}
       </section>
     </div>

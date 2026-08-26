@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.purge-test-account]
 verify_jwt = false
+
+[functions.notify-abandoned-signups]
+verify_jwt = false

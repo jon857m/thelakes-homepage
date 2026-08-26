@@ -1,6 +1,7 @@
 import Stripe from "npm:stripe@^22";
 import { json } from "../_shared/cors.ts";
 import { adminClient } from "../_shared/supabase.ts";
+import { escapeHtml, sendAdminEmail } from "../_shared/email.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!);
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
@@ -149,6 +150,11 @@ Deno.serve(async (request) => {
           updated_at: new Date().toISOString(),
         }).eq("business_id", businessId);
         assertDatabaseWrite(error, "Recording completed Checkout");
+        const { data: business } = await admin.from("businesses").select("name,category,town,owner_user_id").eq("id", businessId).single();
+        if (business) {
+          const { data: userData } = await admin.auth.admin.getUserById(business.owner_user_id);
+          await sendAdminEmail(`New subscriber: ${business.name}`, `<h1>New subscriber</h1><p><strong>${escapeHtml(business.name)}</strong> completed Stripe Checkout.</p><p>Email: ${escapeHtml(userData.user?.email)}<br>Category: ${escapeHtml(business.category)}<br>Location: ${escapeHtml(business.town)}</p>`);
+        }
       }
     }
 

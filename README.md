@@ -45,6 +45,16 @@ supabase secrets set ALLOW_TEST_ACCOUNT_PURGE=true
 
 The function independently verifies the caller against `public.admin_users`, blocks self-deletion, and requires the target email as confirmation. Leave `ALLOW_TEST_ACCOUNT_PURGE` unset or set it to `false` on any project where account purging should not be available.
 
+## Subscriber notifications
+
+Paid-subscriber and incomplete-onboarding notifications use Resend when these Edge Function secrets are configured:
+
+```sh
+npx supabase secrets set RESEND_API_KEY=re_... ADMIN_NOTIFICATION_EMAIL=you@example.com EMAIL_FROM='The Lakes <listings@your-verified-domain>' ABANDONMENT_CRON_SECRET=a-long-random-value
+```
+
+Schedule a daily POST to `/functions/v1/notify-abandoned-signups` with the same value in the `x-cron-secret` header. Until the email secrets and schedule exist, the application continues normally and sends no notification email.
+
 ## Refreshing the geographic search catalogue
 
 The checked-in `map-app/public/data/map_search.json` is a cached, deduplicated OpenStreetMap extract. After downloading deliberate Overpass JSON snapshots, rebuild it with:

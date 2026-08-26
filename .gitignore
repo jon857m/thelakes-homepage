@@ -17,3 +17,6 @@ map-app/node_modules/
 .env.local
 map-app/.env
 map-app/.env.local
+
+# Supabase CLI local state
+supabase/.temp/

@@ -9,8 +9,8 @@
     "map:check": "npm run map:lint && npm run map:build"
   },
   "dependencies": {
+    "@maptiler/sdk": "^4.1.0",
     "@supabase/supabase-js": "^2.57.4",
-    "maplibre-gl": "^5.7.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

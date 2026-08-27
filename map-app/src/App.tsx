@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import maplibregl, { type Map as MapLibreMap, type Marker } from "maplibre-gl";
+import * as maptilersdk from "@maptiler/sdk";
+import type { Map as MapTilerMap, Marker } from "@maptiler/sdk";
 import { demoBusinesses } from "./data/demoBusinesses";
 import { searchableSummits, summitOverlayRegistry, type Summit } from "./data/overlays";
 import { specialWalks, type SpecialWalk } from "./data/routes";
@@ -53,6 +54,9 @@ function businessCategory(category: string): BusinessCategory {
 }
 
 const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
+if (mapTilerKey) maptilersdk.config.apiKey = mapTilerKey;
+maptilersdk.config.session = true;
+maptilersdk.config.caching = true;
 // Keep the site's established cartography independent from the imagery
 // provider so adding a MapTiler key does not unexpectedly restyle roads,
 // labels and water across the product.
@@ -149,7 +153,7 @@ function routeBearing(a: number[], b: number[]) {
 
 export function App() {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<MapLibreMap | null>(null);
+  const map = useRef<MapTilerMap | null>(null);
   const businessMarkers = useRef<Marker[]>([]);
   const openedBusiness = useRef<string | null>(null);
   const pinMarker = useRef<Marker | null>(null);
@@ -318,7 +322,7 @@ export function App() {
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
-    const instance = new maplibregl.Map({
+    const instance = new maptilersdk.Map({
       container: mapContainer.current,
       style: styleUrl,
       center: [DEFAULT_CAMERA.longitude, DEFAULT_CAMERA.latitude],
@@ -333,13 +337,15 @@ export function App() {
       // placement fading prevents symbols being stranded half-transparent
       // until the first user camera gesture.
       fadeDuration: 0,
-      attributionControl: false
+      navigationControl: false,
+      geolocateControl: false,
+      forceNoAttributionControl: true
     });
     map.current = instance;
     const cancelFlightFromMap = () => stopRouteFlight();
     instance.on("dragstart", cancelFlightFromMap);
-    instance.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
-    instance.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
+    instance.addControl(new maptilersdk.NavigationControl({ visualizePitch: true }), "bottom-right");
+    instance.addControl(new maptilersdk.AttributionControl({ compact: true }), "bottom-left");
 
     // MapLibre deliberately opens compact attribution on first render. Keep the
     // required credits one tap away without letting them cover the mobile map.
@@ -675,7 +681,7 @@ export function App() {
           padding: { bottom: 220, top: 0, left: 0, right: 0 }
         });
       });
-      const marker = new maplibregl.Marker({ element, anchor: "bottom" })
+      const marker = new maptilersdk.Marker({ element, anchor: "bottom" })
         .setLngLat([business.longitude, business.latitude])
         .addTo(instance);
       // Keep visible pins fully opaque, but let MapLibre hide markers that are
@@ -748,7 +754,7 @@ export function App() {
     const element = document.createElement("div");
     element.className = "location-pin";
     element.innerHTML = "<span></span>";
-    const marker = new maplibregl.Marker({ element, draggable: true, anchor: "bottom" })
+    const marker = new maptilersdk.Marker({ element, draggable: true, anchor: "bottom" })
       .setLngLat([location.longitude, location.latitude])
       .addTo(instance);
     marker.setOpacity(1, 1);
@@ -776,7 +782,7 @@ export function App() {
   useEffect(() => {
     const instance = map.current;
     if (!instance || !mapReady) return;
-    const onClick = (event: maplibregl.MapMouseEvent) => {
+    const onClick = (event: maptilersdk.MapMouseEvent) => {
       if (!dropMode) {
         if (pinSheetOpen) setPinSheetOpen(false);
         return;
@@ -1159,7 +1165,7 @@ export function App() {
       const markerShell = document.createElement("div");
       markerShell.className = "route-flight-marker-shell";
       markerShell.innerHTML = '<span class="route-flight-marker"><i></i></span>';
-      flightMarker.current = new maplibregl.Marker({ element: markerShell, anchor: "center", rotationAlignment: "map", pitchAlignment: "map" })
+      flightMarker.current = new maptilersdk.Marker({ element: markerShell, anchor: "center", rotationAlignment: "map", pitchAlignment: "map" })
         .setLngLat(coordinates[0] as [number, number])
         .setRotation(lastBearing)
         .addTo(instance);

@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "maplibre-gl/dist/maplibre-gl.css";
+import "@maptiler/sdk/dist/maptiler-sdk.css";
 import "./styles.css";
 import { App } from "./App";
 import { AdminApp } from "./AdminApp";

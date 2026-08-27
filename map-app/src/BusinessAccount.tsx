@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
-import maplibregl, { type Map as MapLibreMap, type Marker } from "maplibre-gl";
+import * as maptilersdk from "@maptiler/sdk";
+import type { Map as MapTilerMap, Marker } from "@maptiler/sdk";
 import { supabase } from "./lib/supabase";
 import { trackEvent } from "./lib/analytics";
 import { LoadingScreen } from "./LoadingScreen";
@@ -8,6 +9,9 @@ import { LoadingScreen } from "./LoadingScreen";
 const categories = ["Accommodation", "Camping", "Eating", "Activities", "Gifts"];
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
+if (mapTilerKey) maptilersdk.config.apiKey = mapTilerKey;
+maptilersdk.config.session = true;
+maptilersdk.config.caching = true;
 const pickerStyle = mapTilerKey ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${mapTilerKey}` : "https://tiles.openfreemap.org/styles/liberty";
 
 type Hours = Record<string, { closed: boolean; open: string; close: string }>;
@@ -40,15 +44,15 @@ async function optimiseImage(file: File, maxDimension: number) {
 
 function LocationPicker({ latitude, longitude, onChange }: { latitude: number; longitude: number; onChange: (latitude: number, longitude: number) => void }) {
   const container = useRef<HTMLDivElement>(null);
-  const map = useRef<MapLibreMap | null>(null);
+  const map = useRef<MapTilerMap | null>(null);
   const marker = useRef<Marker | null>(null);
   useEffect(() => {
     if (!container.current || map.current) return;
-    const instance = new maplibregl.Map({ container: container.current, style: pickerStyle, center: [longitude, latitude], zoom: 13, attributionControl: false });
-    const pin = new maplibregl.Marker({ draggable: true }).setLngLat([longitude, latitude]).addTo(instance);
+    const instance = new maptilersdk.Map({ container: container.current, style: pickerStyle, center: [longitude, latitude], zoom: 13, navigationControl: false, geolocateControl: false, forceNoAttributionControl: true });
+    const pin = new maptilersdk.Marker({ draggable: true }).setLngLat([longitude, latitude]).addTo(instance);
     pin.on("dragend", () => { const point = pin.getLngLat(); onChange(point.lat, point.lng); });
     instance.on("click", (event) => { pin.setLngLat(event.lngLat); onChange(event.lngLat.lat, event.lngLat.lng); });
-    instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+    instance.addControl(new maptilersdk.NavigationControl({ showCompass: false }), "bottom-right");
     map.current = instance;
     marker.current = pin;
     return () => { pin.remove(); instance.remove(); map.current = null; };
